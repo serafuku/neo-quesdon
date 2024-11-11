@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL") // uses connection pooling
+}
+
+model user {
+    id              Int      @default(autoincrement())    @id
+    account         String
+    accountLower    String
+    hostName        String
+    handle          String   @unique
+    name            String[]
+    token           String
+    profile         profile?
+}
+
+model profile {
+    id              Int     @default(autoincrement())   @id
+    answer          answer[]
+    questions       question[]
+    account         String
+    handle          String      @unique
+    name            String[]
+    stopNewQuestion Boolean    @default(false)
+    stopAnonQuestion  Boolean   @default(false)
+    avatarUrl       String
+    questionBoxName String      @default("질문함")
+    user            user        @relation(fields: [handle], references: [handle])
+  }
+
+model answer {
+    id              String      @default(cuid())  @id
+    question        String
+    questioner      String?
+    answer          String
+    answeredAt      DateTime    @default(now())
+    answeredPersonHandle  String  
+    answeredPerson  profile       @relation(fields: [answeredPersonHandle], references: [handle])
+    nsfwedAnswer    Boolean
+
+}
+
+model question {
+    id              Int     @default(autoincrement())   @id
+    question        String
+    questioner      String?
+    questionee      profile     @relation(fields: [questioneeHandle], references: [handle])
+    questioneeHandle  String
+    questionedAt    DateTime    @default(now())
+}
+
+model server {
+    id              Int         @default(autoincrement())   @id
+    instances       String      @unique
+    appSecret       String      @unique
+}

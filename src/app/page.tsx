@@ -1,101 +1,174 @@
-import Image from "next/image";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import detectInstance from "./api/functions/web/detectInstance";
+import { getTokenCookie } from "./action";
+import type { loginPayload } from "@/app";
+import { fetchCookies } from "./main/action";
+import Link from "next/link";
+
+interface FormValue {
+  address: string;
+}
+
+interface hosts {
+  protocol: string;
+  host: string;
+}
+
+export const misskeyAuth = async ({
+  protocol,
+  host,
+  address,
+}: loginPayload) => {
+  const res = await fetch(`/api/web/login`, {
+    method: "POST",
+    body: JSON.stringify({
+      protocol: protocol,
+      host: host,
+      address: address,
+    }),
+  });
+
+  return await res.json();
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hosts, setHosts] = useState<hosts>({ protocol: "", host: "" });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const router = useRouter();
+
+  const {
+    register,
+    formState: { errors },
+    handleSubmit,
+  } = useForm<FormValue>();
+
+  const onSubmit: SubmitHandler<FormValue> = async (e) => {
+    setIsLoading(true);
+    localStorage.setItem("server", e.address);
+
+    const payload: loginPayload = {
+      protocol: hosts.protocol,
+      host: hosts.host,
+      address: e.address,
+    };
+
+    detectInstance(e.address).then((r) => {
+      switch (r) {
+        case "misskey":
+          localStorage.setItem("server", e.address);
+          misskeyAuth(payload).then((r) => {
+            setIsLoading(false);
+            router.replace(r.url);
+          });
+          break;
+        case "cherrypick":
+          localStorage.setItem("server", e.address);
+          misskeyAuth(payload).then((r) => {
+            setIsLoading(false);
+            router.replace(r.url);
+          });
+          break;
+        case "mastodon":
+          document.getElementById("mastodon_modal")?.click();
+          setIsLoading(false);
+          break;
+        default:
+          console.log("아무것도 없는뎁쇼?");
+      }
+    });
+  };
+
+  useEffect(() => {
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+
+    setHosts({ protocol: protocol, host: host });
+  }, []);
+
+  return (
+    <div className="w-[100vw] h-[100vh] absolute flex items-center justify-center p-8">
+      <main className="flex flex-col justify-center items-center">
+        <div className="mb-12 flex flex-col items-center">
+          <div className="relative text-7xl font-bold z-10">
+            <h1 className="absolute -inset-0 -z-10 bg-gradient-to-r text-transparent from-red-500 via-fuchsia-500 to-green-500 bg-clip-text blur-lg">
+              Neo-Quesdon
+            </h1>
+            <h1 className="text-7xl font-bold z-10">Neo-Quesdon</h1>
+          </div>
+          <span className="font-thin tracking-wider">
+            "아직은" Misskey / CherryPick에서 사용할 수 있는 새로운 Quesdon
+          </span>
+        </div>
+        <div className="flex gap-4">
+          <form className="flex items-center" onSubmit={handleSubmit(onSubmit)}>
+            <div className="flex flex-col">
+              {errors.address && errors.address.type === "pattern" && (
+                <div
+                  className="tooltip tooltip-open tooltip-error transition-opacity"
+                  data-tip="올바른 URL을 입력해주세요"
+                />
+              )}
+              {errors.address && errors.address.message === "required" && (
+                <div
+                  className="tooltip tooltip-open tooltip-error transition-opacity"
+                  data-tip="URL을 입력해주세요"
+                />
+              )}
+              <input
+                {...register("address", {
+                  pattern: /\./,
+                  required: "required",
+                })}
+                placeholder="serafuku.moe"
+                className="input input-bordered text-3xl"
+              />
+            </div>
+            <button
+              type="submit"
+              className={`btn ml-4 ${
+                isLoading ? "btn-disabled" : "btn-primary"
+              }`}
+            >
+              로그인
+            </button>
+          </form>
+          <button
+            className={`btn ${isLoading ? "btn-disabled" : "btn-outline"}`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <Link href={"/main"}>로그인 없이 즐기기</Link>
+          </button>
+        </div>
+        <input type="checkbox" id="mastodon_modal" className="modal-toggle" />
+        <div className="modal" role="dialog">
+          <div className="modal-box">
+            <h3 className="text-lg font-bold">준비중!</h3>
+            <p className="py-4">
+              마스토돈 로그인은 준비중이에요.
+              <br />{" "}
+              <a
+                className="link link-primary"
+                href="https://serafuku.moe/@Yozumina"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                @Yozumina@serafuku.moe
+              </a>
+              를 쪼아주세요!
+            </p>
+            <div className="modal-action">
+              <label htmlFor="mastodon_modal" className="btn">
+                알겠어요
+              </label>
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center"></footer>
     </div>
   );
 }
