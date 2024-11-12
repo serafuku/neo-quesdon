@@ -10,12 +10,12 @@
     "prisma": "npx prisma db push && npx prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^5.21.1",
+    "@prisma/client": "^5.19.1",
     "daisyui": "^4.12.14",
     "jose": "^5.9.6",
     "next": "15.0.1",
     "pg": "^8.13.1",
-    "prisma": "^5.21.1",
+    "prisma": "^5.19.1",
     "react": "19.0.0-rc-69d4b800-20241021",
     "react-dom": "19.0.0-rc-69d4b800-20241021",
     "react-hook-form": "^7.53.1",
