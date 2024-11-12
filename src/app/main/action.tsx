@@ -1,7 +1,7 @@
 "use server";
 
 import { PrismaClient } from "@prisma/client";
-import type { answers, postQuestion } from "..";
+import type { answers } from "..";
 import { cookies } from "next/headers";
 
 export async function fetchCookies(cookie: string) {
