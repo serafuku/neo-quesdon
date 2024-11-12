@@ -9,9 +9,10 @@ interface formValue {
 
 interface askProps {
   value: questions;
+  hostname: string;
 }
 
-export default function Question({ value }: askProps) {
+export default function Question({ value, hostname }: askProps) {
   const {
     register,
     handleSubmit,
@@ -50,7 +51,8 @@ export default function Question({ value }: askProps) {
       answeredPersonHandle: question!.questioneeHandle,
       nsfwedAnswer: e.nsfw,
     };
-    postAnswer(question, typedAnswer).then(() => {
+
+    postAnswer(question, typedAnswer, hostname).then(() => {
       document.getElementById("my_modal_1")?.click();
     });
   };

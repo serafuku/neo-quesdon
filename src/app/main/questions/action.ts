@@ -18,7 +18,8 @@ export async function getQuestion(id: number) {
 
 export async function postAnswer(
   question: question | null,
-  answer: typedAnswer
+  answer: typedAnswer,
+  hostname: string
 ) {
   const prisma = new PrismaClient();
 
@@ -51,6 +52,8 @@ export async function postAnswer(
       },
     });
 
+    const answerUrl = `https://${hostname}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
+
     if (answeredUser && server) {
       const i = createHash("sha256")
         .update(answeredUser.token + server.appSecret, "utf-8")
@@ -65,7 +68,7 @@ export async function postAnswer(
           },
           body: JSON.stringify({
             cw: `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`,
-            text: `Q: ${question.question}\nA: ${answer.answer}`,
+            text: `Q: ${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`,
           }),
         });
       } else if (answer.nsfwedAnswer === false && answer.questioner !== null) {
@@ -77,7 +80,7 @@ export async function postAnswer(
           },
           body: JSON.stringify({
             cw: `Q: ${question.question} #neo-quesdon`,
-            text: `질문자:${answer.questioner}\nA: ${answer.answer}`,
+            text: `질문자:${answer.questioner}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`,
           }),
         });
       } else if (answer.nsfwedAnswer === true && answer.questioner !== null) {
@@ -89,7 +92,7 @@ export async function postAnswer(
           },
           body: JSON.stringify({
             cw: `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`,
-            text: `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}`,
+            text: `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`,
           }),
         });
       } else {
@@ -101,7 +104,7 @@ export async function postAnswer(
           },
           body: JSON.stringify({
             cw: `Q: ${question.question} #neo-quesdon`,
-            text: `A: ${answer.answer}`,
+            text: `A: ${answer.answer}\n#neo-quesdon ${answerUrl}`,
           }),
         });
       }

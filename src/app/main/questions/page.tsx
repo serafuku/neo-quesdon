@@ -30,7 +30,7 @@ export default function Questions() {
             <div>
               {questions.map((el) => (
                 <div key={el.id}>
-                  <Question value={el} />
+                  <Question value={el} hostname={window.location.hostname} />
                   <input
                     type="checkbox"
                     id="question_delete_modal"
