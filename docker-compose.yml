@@ -12,7 +12,6 @@ services:
       - ./.env
     links:
       - db
-    command: sh -c "npm install --force && npm uninstall prisma @prisma/client --force && npm install prisma@5.19.1 @prisma/client@5.19.1 --force && node server.js"
   db:
     image: postgres:15-alpine
     restart: always
