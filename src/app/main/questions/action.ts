@@ -54,6 +54,8 @@ export async function postAnswer(
 
     const answerUrl = `https://${hostname}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
 
+    console.log(answerUrl);
+
     if (answeredUser && server) {
       const i = createHash("sha256")
         .update(answeredUser.token + server.appSecret, "utf-8")
