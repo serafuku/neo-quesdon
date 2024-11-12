@@ -22,12 +22,3 @@ export async function fetchMainAnswers() {
 
   return answers;
 }
-
-export async function postAnswers(payload: postQuestion) {
-  const res = await fetch("/api/db/post-answers", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  }).then((r) => r.json());
-
-  return res;
-}

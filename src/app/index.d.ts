@@ -1,11 +1,14 @@
 import type { profile, user } from "@prisma/client";
 
-export type loginPayload = {
+export interface loginPayload {
   protocol: string;
   host: string;
   address: string;
-  //token: string | null | undefined;
-};
+}
+
+export interface tokenPayload extends loginPayload {
+  token: string | null | undefined;
+}
 
 export interface userProfile {
   account: string;

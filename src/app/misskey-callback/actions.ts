@@ -4,8 +4,9 @@ import { PrismaClient } from "@prisma/client";
 import { DBpayload } from "./page";
 import { cookies } from "next/headers";
 import { SignJWT } from "jose";
+import { tokenPayload } from "..";
 
-export async function requestAccessToken(payload: any) {
+export async function requestAccessToken(payload: tokenPayload) {
   const prisma = new PrismaClient();
 
   const checkInstances = await prisma.server.findFirst({

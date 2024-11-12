@@ -85,33 +85,39 @@ export default function MainHeader() {
               <li>
                 <Link href={"/main/settings"}>설정</Link>
               </li>
-              <li onClick={() => dialogModal.current?.showModal()}>
+              <li
+                onClick={() => document.getElementById("logout_modal")?.click()}
+              >
                 <a>로그아웃</a>
               </li>
             </ul>
           </div>
         )}
       </div>
-      <dialog id="my_modal_3" className="modal" ref={dialogModal}>
+      <input type="checkbox" id="logout_modal" className="modal-toggle" />
+      <div className="modal" role="dialog">
         <div className="modal-box">
-          <h3 className="font-bold text-lg">로그아웃</h3>
+          <h3 className="text-lg font-bold">로그아웃</h3>
           <p className="py-4">정말로 로그아웃 하시겠어요?</p>
-          <div className="flex justify-end gap-4 ">
+          <div className="modal-action">
             <button
-              className="btn btn-error w-22"
+              className="btn btn-error"
               onClick={() => {
-                dialogModal.current?.close();
+                document.getElementById("logout_modal")?.click();
                 logout();
               }}
             >
               로그아웃
             </button>
-            <form method="dialog">
-              <button className="btn w-22">취소</button>
-            </form>
+            <button
+              onClick={() => document.getElementById("logout_modal")?.click()}
+              className="btn"
+            >
+              취소
+            </button>
           </div>
         </div>
-      </dialog>
+      </div>
     </div>
   );
 }

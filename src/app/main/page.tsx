@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Question from "../_components/answer";
-import { fetchMainAnswers, type answers } from "./action";
+import { fetchMainAnswers } from "./action";
 import { FaExclamationCircle } from "react-icons/fa";
+import { answers } from "..";
 
 export default function MainBody() {
   const [answers, setAnswers] = useState<answers[]>();

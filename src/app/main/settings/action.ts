@@ -1,7 +1,7 @@
 "use server";
 
 import { PrismaClient } from "@prisma/client";
-import { jwtVerify } from "jose";
+import { jwtVerify, JWTVerifyResult } from "jose";
 import { cookies } from "next/headers";
 import { FormValue } from "./page";
 
@@ -14,10 +14,10 @@ export async function fetchUser() {
 
   try {
     if (jwtToken) {
-      const { payload } = await jwtVerify(jwtToken.value, secret, {
+      const { payload } = (await jwtVerify(jwtToken.value, secret, {
         issuer: "urn:example:issuer",
         audience: "urn:example:audience",
-      });
+      })) as JWTVerifyResult<{ handle: string; server: string }>;
 
       const user = await prisma.profile.findUnique({
         where: {

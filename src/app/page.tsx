@@ -4,9 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import detectInstance from "./api/functions/web/detectInstance";
-import { getTokenCookie } from "./action";
 import type { loginPayload } from "@/app";
-import { fetchCookies } from "./main/action";
 import Link from "next/link";
 
 interface FormValue {
@@ -18,11 +16,7 @@ interface hosts {
   host: string;
 }
 
-export const misskeyAuth = async ({
-  protocol,
-  host,
-  address,
-}: loginPayload) => {
+const misskeyAuth = async ({ protocol, host, address }: loginPayload) => {
   const res = await fetch(`/api/web/login`, {
     method: "POST",
     body: JSON.stringify({
@@ -101,7 +95,8 @@ export default function Home() {
             <h1 className="text-7xl font-bold z-10">Neo-Quesdon</h1>
           </div>
           <span className="font-thin tracking-wider">
-            "아직은" Misskey / CherryPick에서 사용할 수 있는 새로운 Quesdon
+            &quot;아직은&quot; Misskey / CherryPick에서 사용할 수 있는 새로운
+            Quesdon
           </span>
         </div>
         <div className="flex gap-4">
