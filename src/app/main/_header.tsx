@@ -3,18 +3,15 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FaUser } from "react-icons/fa";
-import { authJwtToken } from "../api/functions/web/authJwtToken";
 import { fetchCookies } from "./action";
-import { profile } from "@prisma/client";
+import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
 const fetchMyProfile = async () => {
   const cookie = await fetchCookies("jwtToken");
 
   if (cookie) {
-    const user = await authJwtToken(cookie.value);
-    const res = await fetch("/api/db/fetch-my-profile", {
-      method: "POST",
-      body: JSON.stringify(user.handle),
+    const res: userProfileDto = await fetch("/api/db/fetch-my-profile", {
+      method: "GET",
     }).then((r) => r.json());
 
     return res;
@@ -29,7 +26,7 @@ const logout = async () => {
 };
 
 export default function MainHeader() {
-  const [user, setUser] = useState<profile>();
+  const [user, setUser] = useState<userProfileDto>();
 
   useEffect(() => {
     fetchMyProfile().then((r) => setUser(r));

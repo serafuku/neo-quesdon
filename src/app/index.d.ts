@@ -10,15 +10,6 @@ export interface tokenPayload extends loginPayload {
   token: string | null | undefined;
 }
 
-export interface userProfile {
-  account: string;
-  handle: string;
-  name: string[];
-  stopNewQuestion: boolean;
-  stopAnonQuestion: boolean;
-  avatarUrl: string;
-  questionBoxName: string;
-}
 
 export interface questions {
   id: number;
