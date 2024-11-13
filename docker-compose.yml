@@ -21,7 +21,7 @@ services:
       - POSTGRES_DB=quesdon
       - TZ=Asia/Seoul
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - db:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
