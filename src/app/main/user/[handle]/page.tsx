@@ -7,7 +7,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import Question from "@/app/_components/answer";
 import { FaBeer, FaUserSlash } from "react-icons/fa";
 import { fetchCookies } from "../../action";
-import { authJwtToken } from "@/app/api/functions/web/authJwtToken";
+import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { profile } from "@prisma/client";
 import { answers } from "@/app";
 
@@ -68,7 +68,7 @@ export default function UserPage() {
     const cookies = await fetchCookies("jwtToken");
 
     if (questioner === true && cookies !== undefined) {
-      const localHandle = await authJwtToken(cookies.value);
+      const localHandle = await verifyToken(cookies.value);
       questionerHandle = localHandle.handle;
 
       const res = await fetch("/api/db/post-question", {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FaUser } from "react-icons/fa";
-import { authJwtToken } from "../api/functions/web/authJwtToken";
+import { verifyToken } from "../api/functions/web/verify-jwt";
 import { fetchCookies } from "./action";
 import { profile } from "@prisma/client";
 
@@ -11,7 +11,7 @@ const fetchMyProfile = async () => {
   const cookie = await fetchCookies("jwtToken");
 
   if (cookie) {
-    const user = await authJwtToken(cookie.value);
+    const user = await verifyToken(cookie.value);
     const res = await fetch("/api/db/fetch-my-profile", {
       method: "POST",
       body: JSON.stringify(user.handle),

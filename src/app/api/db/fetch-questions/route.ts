@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { authJwtToken } from "../../functions/web/authJwtToken";
+import { verifyToken } from "../../functions/web/verify-jwt";
 
 export async function GET(req: NextRequest) {
   const cookie = req.cookies.get("jwtToken");
@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   try {
     if (cookie) {
-      const jwt = await authJwtToken(cookie.value);
+      const jwt = await verifyToken(cookie.value);
       if (jwt.handle) {
         const questions = await prisma.question.findMany({
           where: {
