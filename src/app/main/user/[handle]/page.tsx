@@ -108,6 +108,19 @@ export default function UserPage() {
         type: "notLoggedIn",
         message: "작성자 공개를 하려면 로그인을 해주세요!",
       });
+    } else {
+      const res = await fetch("/api/db/post-question", {
+        method: "POST",
+        body: JSON.stringify({
+          question: e.question,
+          questioner: null,
+          questionee: profileHandle,
+        }),
+      }).then((r) => r.json());
+
+      if (res.status === 200) {
+        document.getElementById("my_modal_2")?.click();
+      }
     }
   };
 
