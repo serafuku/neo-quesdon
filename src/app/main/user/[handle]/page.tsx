@@ -8,7 +8,7 @@ import Question from "@/app/_components/answer";
 import { FaBeer, FaUserSlash } from "react-icons/fa";
 import { fetchCookies } from "../../action";
 import { verifyToken } from "@/app/api/functions/web/verify-jwt";
-import { profile } from "@prisma/client";
+import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { answers } from "@/app";
 
 type FormValue = {
@@ -27,7 +27,7 @@ const fetchProfile = async (handle: string) => {
 
 export default function UserPage() {
   const { handle } = useParams() as { handle: string };
-  const [userInfo, setUserInfo] = useState<profile>();
+  const [userInfo, setUserInfo] = useState<userProfileDto>();
   const [questions, setQuestions] = useState<answers[]>([]);
 
   const profileHandle = handle.toString().replace(/(?:%40)/g, "@");

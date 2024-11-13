@@ -4,7 +4,7 @@ import NameComponents from "@/app/_components/NameComponents";
 
 import { useEffect, useState } from "react";
 import { fetchUser, updateSetting } from "./action";
-import { userProfile } from "@/app";
+import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { SubmitHandler, useForm } from "react-hook-form";
 
 export type FormValue = {
@@ -14,7 +14,7 @@ export type FormValue = {
 };
 
 export default function Settings() {
-  const [userInfo, setUserInfo] = useState<userProfile | null>();
+  const [userInfo, setUserInfo] = useState<userProfileDto | null>();
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
 
   const {
