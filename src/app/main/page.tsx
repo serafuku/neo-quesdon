@@ -14,7 +14,7 @@ export default function MainBody() {
   }, []);
 
   return (
-    <div className="w-[60%]">
+    <div className="w-[90%] desktop:w-[60%]">
       <h3 className="text-4xl mb-2">최근 올라온 답변들</h3>
       {answers === undefined ? (
         <div className="flex justify-center">

@@ -129,15 +129,15 @@ export default function UserPage() {
   }, [userInfo]);
 
   return (
-    <div className="flex w-[60vw]">
+    <div className="flex w-[90vw] desktop:w-[60vw]">
       {userInfo === null ? (
         <div className="w-full flex flex-col justify-center items-center glass text-4xl rounded-box shadow p-2">
           <FaUserSlash />
           <span>그런 사용자는 없어요!</span>
         </div>
       ) : (
-        <div className="w-full flex">
-          <div className="w-[50%] h-fit sticky z-0 top-2 py-4 glass rounded-box flex flex-col items-center shadow">
+        <div className="w-full flex flex-col desktop:flex-row">
+          <div className="w-full desktop:w-[50%] h-fit desktop:sticky z-0 top-2 py-4 glass rounded-box flex flex-col items-center shadow mb-2">
             <div className="flex flex-col items-center gap-2 py-2">
               {userInfo && userInfo.avatarUrl ? (
                 <div className="flex w-full justify-center">
@@ -159,7 +159,7 @@ export default function UserPage() {
               )}
               <div className="flex items-center text-xl">
                 {userInfo?.stopNewQuestion ? (
-                  <div className="flex">
+                  <div className="flex flex-col items-center desktop:flex-row">
                     <NameComponents
                       username={userInfo?.name}
                       width={32}
@@ -168,7 +168,7 @@ export default function UserPage() {
                     <span>님은 지금 질문을 받지 않고 있어요...</span>
                   </div>
                 ) : (
-                  <div className="flex">
+                  <div className="flex flex-col items-center desktop:flex-row">
                     <NameComponents
                       username={userInfo?.name}
                       width={32}
@@ -224,7 +224,7 @@ export default function UserPage() {
               </div>
             </form>
           </div>
-          <div className="ml-2 w-[50%]">
+          <div className="desktop:ml-2 desktop:w-[50%]">
             {questions !== null ? (
               <div>
                 {questions.length > 0 ? (

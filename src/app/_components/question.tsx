@@ -58,7 +58,7 @@ export default function Question({ value, hostname }: askProps) {
   };
 
   return (
-    <div className="rounded-box p-4 mb-2 glass shadow">
+    <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
       <div className="text-2xl chat chat-start">
         <div className="chat-header">
           {value.questioner ? value.questioner : "익명의 질문자"}
@@ -84,7 +84,7 @@ export default function Question({ value, hostname }: askProps) {
           >
             <textarea
               {...register("answer", { required: "required" })}
-              className={`textarea text-2xl bg-transparent ${
+              className={`textarea textarea-sm desktop:text-2xl bg-transparent ${
                 errors.answer && "textarea-error"
               }`}
               placeholder="답변을 입력하세요..."
@@ -98,7 +98,7 @@ export default function Question({ value, hostname }: askProps) {
                   onClick={() => setValue("nsfw", !nsfwedAnswer)}
                 />
                 <input type="hidden" {...register("nsfw")} />
-                <span>NSFW로 체크</span>
+                <span className="text-lg desktop:text-2xl">NSFW로 체크</span>
               </div>
               <button
                 type={"submit"}

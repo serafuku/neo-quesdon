@@ -19,7 +19,7 @@ export default function Questions() {
   }, []);
 
   return (
-    <div className="w-full flex justify-center">
+    <div className="w-[90%] desktop:w-[60%] flex justify-center">
       {questions === undefined || null ? (
         <div>
           <span className="loading loading-infinity loading-lg" />

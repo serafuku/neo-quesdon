@@ -38,8 +38,8 @@ export default function Settings() {
   }, []);
 
   return (
-    <div className="w-full glass grid grid-cols-2 gap-4 rounded-box shadow p-2">
-      <div className="flex ml-4 gap-2 items-center">
+    <div className="w-[90%] desktop:w-[60%] glass flex flex-col desktop:grid desktop:grid-cols-2 gap-4 rounded-box shadow p-2">
+      <div className="flex flex-col mt-2 desktop:flex-row desktop:ml-4 gap-2 items-center">
         <div className="avatar">
           <div className="ring-primary ring-offset-base-100 w-24 h-24 rounded-full ring ring-offset-2">
             {userInfo?.avatarUrl !== undefined && (
@@ -51,7 +51,7 @@ export default function Settings() {
             )}
           </div>
         </div>
-        <div className="ml-2">
+        <div className="desktop:ml-2 flex flex-col items-center desktop:items-start">
           <span className="text-xl font-thin">안녕하세요,</span>
           <div className="flex text-2xl items-center">
             <NameComponents username={userInfo?.name} width={32} height={32} />
@@ -63,15 +63,21 @@ export default function Settings() {
         <span className="text-3xl mb-4">우리만의 비밀설정창</span>
         <div className="w-full grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <span className="font-thin text-xl">익명 질문을 받지 않기</span>
-            <span className="font-thin text-xl">더 이상 질문을 받지 않기</span>
-            <span className="font-thin text-xl">질문함 이름 (10글자 이내)</span>
+            <span className="font-thin desktop:text-xl">
+              익명 질문을 받지 않기
+            </span>
+            <span className="font-thin desktop:text-xl">
+              더 이상 질문을 받지 않기
+            </span>
+            <span className="font-thin desktop:text-xl">
+              질문함 이름 (10글자 이내)
+            </span>
           </div>
           <div>
             {userInfo ? (
               <form
                 onSubmit={handleSubmit(onSubmit)}
-                className="flex flex-col gap-2"
+                className="flex flex-col gap-2 desktop:gap-3"
               >
                 <input
                   {...register("stopAnonQuestion")}
@@ -91,12 +97,12 @@ export default function Settings() {
                   })}
                   type="text"
                   placeholder={userInfo?.questionBoxName}
-                  className={`input input-bordered mr-2 ${
+                  className={`input input-bordered input-sm mr-2 ${
                     errors.questionBoxName?.type === "maxLength" &&
                     "input-error"
                   }`}
                 />
-                <div className="col-span-2 mr-2 flex justify-end">
+                <div className="mr-2 flex desktop:justify-end">
                   <button
                     type="submit"
                     className={`btn ${

@@ -85,22 +85,27 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="w-[100vw] h-[100vh] absolute flex items-center justify-center p-8">
-      <main className="flex flex-col justify-center items-center">
-        <div className="mb-12 flex flex-col items-center">
+    <div className="w-screen h-screen absolute flex items-center justify-center p-8">
+      <main className="w-full flex flex-col justify-center items-center">
+        <div className="mb-4 flex flex-col items-center">
           <div className="relative text-7xl font-bold z-10">
             <h1 className="absolute -inset-0 -z-10 bg-gradient-to-r text-transparent from-red-500 via-fuchsia-500 to-green-500 bg-clip-text blur-lg">
               Neo-Quesdon
             </h1>
-            <h1 className="text-7xl font-bold z-10">Neo-Quesdon</h1>
+            <h1 className="text-7xl font-bold z-10 mb-2 desktop:mb-0">
+              Neo-Quesdon
+            </h1>
           </div>
-          <span className="font-thin tracking-wider">
-            &quot;아직은&quot; Misskey / CherryPick에서 사용할 수 있는 새로운
+          <span className="font-thin tracking-wider text-base desktop:text-lg ">
+            &quot;아직은&quot; Misskey / CherryPick에서만 사용할 수 있는 새로운
             Quesdon
           </span>
         </div>
-        <div className="flex gap-4">
-          <form className="flex items-center" onSubmit={handleSubmit(onSubmit)}>
+        <div className="flex">
+          <form
+            className="flex flex-col desktop:flex-row items-center"
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <div className="flex flex-col">
               {errors.address && errors.address.type === "pattern" && (
                 <div
@@ -120,23 +125,26 @@ export default function Home() {
                   required: "required",
                 })}
                 placeholder="serafuku.moe"
-                className="input input-bordered text-3xl"
+                className="input input-bordered text-lg desktop:text-3xl mb-4 desktop:mb-0"
               />
             </div>
-            <button
-              type="submit"
-              className={`btn ml-4 ${
-                isLoading ? "btn-disabled" : "btn-primary"
-              }`}
-            >
-              로그인
-            </button>
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                className={`btn ml-4 ${
+                  isLoading ? "btn-disabled" : "btn-primary"
+                }`}
+              >
+                로그인
+              </button>
+
+              <button
+                className={`btn ${isLoading ? "btn-disabled" : "btn-outline"}`}
+              >
+                <Link href={"/main"}>로그인 없이 즐기기</Link>
+              </button>
+            </div>
           </form>
-          <button
-            className={`btn ${isLoading ? "btn-disabled" : "btn-outline"}`}
-          >
-            <Link href={"/main"}>로그인 없이 즐기기</Link>
-          </button>
         </div>
         <input type="checkbox" id="mastodon_modal" className="modal-toggle" />
         <div className="modal" role="dialog">

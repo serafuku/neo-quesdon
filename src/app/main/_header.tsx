@@ -30,14 +30,13 @@ const logout = async () => {
 
 export default function MainHeader() {
   const [user, setUser] = useState<profile>();
-  const dialogModal = useRef(null);
 
   useEffect(() => {
     fetchMyProfile().then((r) => setUser(r));
   }, []);
 
   return (
-    <div className="navbar bg-base-100 w-[60%] shadow rounded-box my-4">
+    <div className="navbar bg-base-100 w-[90%] desktop:w-[60%] shadow rounded-box my-4">
       <div className="flex-1">
         <Link href="/main" className="btn btn-ghost text-xl">
           Neo-Quesdon
