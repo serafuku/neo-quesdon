@@ -14,6 +14,7 @@ export type DBpayload = {
   name: string[];
   avatarUrl: string;
   accessToken: string;
+  userId: string;
 };
 
 export default function CallbackPage() {
@@ -59,6 +60,7 @@ export default function CallbackPage() {
           name: nameWithEmoji.username,
           avatarUrl: user.avatarUrl,
           accessToken: accessToken,
+          userId: user.id,
         };
 
         await generateJwt(dbPayload);

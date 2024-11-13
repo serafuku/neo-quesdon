@@ -80,6 +80,7 @@ export async function pushDB(payload: DBpayload) {
       handle: payload.handle,
       name: payload.name,
       token: payload.accessToken,
+      userId: payload.userId,
       profile: {
         create: {
           account: payload.account,

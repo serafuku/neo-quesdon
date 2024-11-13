@@ -16,6 +16,7 @@ model user {
     handle          String   @unique
     name            String[]
     token           String
+    userId          String   @unique
     profile         profile?
 }
 

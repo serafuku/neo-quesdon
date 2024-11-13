@@ -96,6 +96,7 @@ export default function UserPage() {
             question: e.question,
             questioner: null,
             questionee: profileHandle,
+            address: window.location.host,
           }),
         }).then((r) => r.json());
 
