@@ -8,22 +8,26 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    networks:
+      - internal_network
+      - external_network
     env_file:
-      - ./.env
+      - ./config/docker.env
     links:
       - db
   db:
     image: postgres:15-alpine
     restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=quesdon
-      - TZ=Asia/Seoul
-    ports:
-      - "5432:5432"
+    networks:
+      - internal_network
+    env_file:
+      - ./config/docker.env
     volumes:
       - db:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
 volumes:
   db:
+
+networks:
+  internal_network:
+    internal: true
+  external_network:
