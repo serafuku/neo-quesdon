@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         visibleUserIds: [getUserId?.userId],
         visibility: "specified",
-        text: `${body.questionee} <네오-퀘스돈> 새로운 질문이에요!\nQ. ${body.question}\nhttps://${body.address}/main/user/${body.questionee}/questions`,
+        text: `${body.questionee} <네오-퀘스돈> 새로운 질문이에요!\nQ. ${body.question}\nhttps://${body.address}/main/questions`,
       }),
     });
     return NextResponse.json({ status: 200 });
