@@ -17,12 +17,12 @@ export async function GET(req: NextRequest) {
         });
         return NextResponse.json(questions);
       } else {
-        return NextResponse.json({ status: 401, message: "Unauthorized" });
+        return NextResponse.json({ status: 401, message: "Unauthorized" }, {status: 401});
       }
     } else {
-      return NextResponse.json({ status: 400, message: "Bad Request" });
+      return NextResponse.json({ status: 400, message: "Bad Request" }, {status: 400});
     }
   } catch (err) {
-    return NextResponse.json(err);
+    return NextResponse.json(err, {status: 500});
   }
 }

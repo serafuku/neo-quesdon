@@ -66,6 +66,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(misskeyToken);
     }
   } catch (err) {
-    return NextResponse.json({ error: err });
+    return NextResponse.json({ error: err }, {status: 500});
   }
 }
