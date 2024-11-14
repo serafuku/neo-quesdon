@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import Question from "@/app/_components/answer";
-import { FaBeer, FaUserSlash } from "react-icons/fa";
+import { FaUserSlash } from "react-icons/fa";
 import { fetchCookies } from "../../action";
 import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
-import { answers } from "@/app";
+import { AnswerDto } from "@/app/_dto/fetch-all-answers/Answers.dto";
 
 type FormValue = {
   question: string;
@@ -28,7 +28,7 @@ const fetchProfile = async (handle: string) => {
 export default function UserPage() {
   const { handle } = useParams() as { handle: string };
   const [userInfo, setUserInfo] = useState<userProfileDto>();
-  const [questions, setQuestions] = useState<answers[]>([]);
+  const [questions, setQuestions] = useState<AnswerDto[]>([]);
 
   const profileHandle = handle.toString().replace(/(?:%40)/g, "@");
 

@@ -10,7 +10,6 @@ export interface tokenPayload extends loginPayload {
   token: string | null | undefined;
 }
 
-
 export interface questions {
   id: number;
   question: string;
@@ -18,16 +17,6 @@ export interface questions {
   questionee: profile;
   questioneeHandle: string;
   questionedAt: Date;
-}
-
-export interface answers {
-  id: string;
-  question: string;
-  questioner: string | null;
-  answer: string;
-  answeredAt: Date;
-  answeredPersonHandle: string;
-  nsfwedAnswer: boolean;
 }
 
 export interface typedAnswer {
