@@ -2,15 +2,30 @@
 
 import { useEffect, useState } from "react";
 import Question from "../_components/answer";
-import { fetchMainAnswers } from "./action";
 import { FaExclamationCircle } from "react-icons/fa";
 import { answers } from "..";
+import { FetchAllAnswersDto } from "../_dto/fetch-all-answers/fetch-all-answers.dto";
 
+async function fetchAllAnswers(req: FetchAllAnswersDto) {
+  const res = await fetch('/api/db/fetch-all-answers', {
+    method: 'POST', 
+    headers: {
+      "Content-Type": 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+  if (res.ok) {
+    return await res.json();
+  } else {
+    console.log('error:', res.status, res.statusText);
+    return [];
+  }
+}
 export default function MainBody() {
   const [answers, setAnswers] = useState<answers[]>();
 
   useEffect(() => {
-    fetchMainAnswers().then((r) => setAnswers(r));
+    fetchAllAnswers({}).then((r) => setAnswers(r));
   }, []);
 
   return (

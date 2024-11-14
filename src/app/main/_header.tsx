@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FaUser } from "react-icons/fa";
-import { fetchCookies } from "./action";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
-const fetchMyProfile = async () => {
-  const cookie = await fetchCookies("jwtToken");
 
-  if (cookie) {
+const fetchMyProfile = async () => {
+  const user_handle = localStorage.getItem('user_handle');
+
+  if (user_handle) {
     const res: userProfileDto = await fetch("/api/db/fetch-my-profile", {
       method: "GET",
     }).then((r) => r.json());

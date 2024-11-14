@@ -65,6 +65,7 @@ export default function CallbackPage() {
 
         await generateJwt(dbPayload);
         await pushDB(dbPayload);
+        localStorage.setItem('user_handle', dbPayload.handle);
 
         router.replace("/main");
       }

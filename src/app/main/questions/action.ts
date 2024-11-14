@@ -54,61 +54,29 @@ export async function postAnswer(
 
     const answerUrl = `https://${hostname}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
 
-    console.log(answerUrl);
+    console.log('Created new answer:', answerUrl);
 
     if (answeredUser && server) {
       const i = createHash("sha256")
         .update(answeredUser.token + server.appSecret, "utf-8")
         .digest("hex");
-
+      const host = answeredUser.hostName;
       if (answer.nsfwedAnswer === true && answer.questioner === null) {
-        await fetch(`https://${answeredUser.hostName}/api/notes/create`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${i}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            cw: `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`,
-            text: `Q: ${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`,
-          }),
-        });
+        const title =  `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
+        const text =  `Q: ${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`
+        await mkMisskeyNode(i, title, text, host);
       } else if (answer.nsfwedAnswer === false && answer.questioner !== null) {
-        await fetch(`https://${answeredUser.hostName}/api/notes/create`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${i}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            cw: `Q: ${question.question} #neo-quesdon`,
-            text: `질문자:${answer.questioner}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`,
-          }),
-        });
+        const title = `Q: ${question.question} #neo-quesdon`;
+        const text = `질문자:${answer.questioner}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+        await mkMisskeyNode(i, title, text, host);
       } else if (answer.nsfwedAnswer === true && answer.questioner !== null) {
-        await fetch(`https://${answeredUser.hostName}/api/notes/create`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${i}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            cw: `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`,
-            text: `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`,
-          }),
-        });
+        const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
+        const text = `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+        await mkMisskeyNode(i, title, text, host);
       } else {
-        await fetch(`https://${answeredUser.hostName}/api/notes/create`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${i}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            cw: `Q: ${question.question} #neo-quesdon`,
-            text: `A: ${answer.answer}\n#neo-quesdon ${answerUrl}`,
-          }),
-        });
+        const title = `Q: ${question.question} #neo-quesdon`;
+        const text = `A: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+        await mkMisskeyNode(i, title, text, host);
       }
     } else {
       console.log("user not found");
@@ -116,6 +84,22 @@ export async function postAnswer(
   }
 }
 
+async function mkMisskeyNode(i: string, title: string, text: string, hostname: string) {
+  const res = await fetch(`https://${hostname}/api/notes/create`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${i}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      cw: title,
+      text: text,
+    }),
+  });
+  if (!res.ok) {
+    console.warn(`Note create fail! `, res.status, res.statusText)
+  }
+}
 export async function deleteQuestion(id: number) {
   const prisma = new PrismaClient();
 

@@ -6,8 +6,6 @@ import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import Question from "@/app/_components/answer";
 import { FaBeer, FaUserSlash } from "react-icons/fa";
-import { fetchCookies } from "../../action";
-import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { answers } from "@/app";
 import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
@@ -74,16 +72,13 @@ export default function UserPage() {
   }
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
-    let questionerHandle: string;
-    const cookies = await fetchCookies("jwtToken");
+    const user_handle = localStorage.getItem('user_handle');
 
-    if (questioner === true && cookies !== undefined) {
-      const localHandle = await verifyToken(cookies.value);
-      questionerHandle = localHandle.handle;
+    if (questioner === true && user_handle) {
 
       const req: CreateQuestionDto = {
         question: e.question,
-        questioner: questionerHandle,
+        questioner: user_handle,
         questionee: profileHandle
       }
       const res = await mkQuestionCreateApi(req);
@@ -91,7 +86,7 @@ export default function UserPage() {
       if (res?.status === 200) {
         document.getElementById("my_modal_2")?.click();
       }
-    } else if (questioner === false && cookies !== undefined) {
+    } else if (questioner === false && user_handle === null) {
       if (userInfo?.stopAnonQuestion === true) {
         setError("questioner", {
           type: "stopAnonQuestion",
@@ -109,7 +104,7 @@ export default function UserPage() {
           document.getElementById("my_modal_2")?.click();
         }
       }
-    } else if (questioner === true && cookies === undefined) {
+    } else if (questioner === true && user_handle === null) {
       setError("questioner", {
         type: "notLoggedIn",
         message: "작성자 공개를 하려면 로그인을 해주세요!",
@@ -136,7 +131,7 @@ export default function UserPage() {
 
   useEffect(() => {
     if (userInfo) {
-      fetch("/api/db/fetch-personal-question", {
+      fetch("/api/db/fetch-user-answers", {
         method: "POST",
         body: JSON.stringify(profileHandle),
       })

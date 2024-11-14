@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { deleteQuestion } from "./action";
 
 const fetchQuestions = async () => {
-  const res = await fetch("/api/db/fetch-questions").then((r) => r.json());
+  const res = await fetch("/api/db/fetch-my-questions").then((r) => r.json());
 
   return res;
 };
