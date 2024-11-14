@@ -41,3 +41,6 @@ next-env.d.ts
 
 # vscode settings
 .vscode
+
+#localDB data
+local_db_data

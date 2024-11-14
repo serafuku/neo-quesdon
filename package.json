@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "source config/local_db.env && next dev",
     "build": "next build",
     "start": "next start",
+    "start:local": "source config/local_db.env && next start",
     "start:docker": "prisma migrate deploy && node server.js",
     "lint": "next lint",
-    "prisma": "prisma db push && prisma generate"
+    "prisma": "source config/local_db.env && prisma migrate dev"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
