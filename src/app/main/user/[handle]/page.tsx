@@ -10,6 +10,7 @@ import { fetchCookies } from "../../action";
 import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { answers } from "@/app";
+import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
 
 type FormValue = {
   question: string;
@@ -63,6 +64,14 @@ export default function UserPage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mkQuestionCreateApi = async (q: CreateQuestionDto): Promise<any> => {
+    return await fetch("/api/db/create-question", {
+      method: "POST",
+      body: JSON.stringify(q),
+    }).then((r) => r.json());
+  }
+
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     let questionerHandle: string;
     const cookies = await fetchCookies("jwtToken");
@@ -71,16 +80,14 @@ export default function UserPage() {
       const localHandle = await verifyToken(cookies.value);
       questionerHandle = localHandle.handle;
 
-      const res = await fetch("/api/db/post-question", {
-        method: "POST",
-        body: JSON.stringify({
-          question: e.question,
-          questioner: questionerHandle,
-          questionee: profileHandle,
-        }),
-      }).then((r) => r.json());
+      const req: CreateQuestionDto = {
+        question: e.question,
+        questioner: questionerHandle,
+        questionee: profileHandle
+      }
+      const res = await mkQuestionCreateApi(req);
 
-      if (res.status === 200) {
+      if (res?.status === 200) {
         document.getElementById("my_modal_2")?.click();
       }
     } else if (questioner === false && cookies !== undefined) {
@@ -90,15 +97,12 @@ export default function UserPage() {
           message: "익명 질문은 받지 않고 있어요...",
         });
       } else {
-        const res = await fetch("/api/db/post-question", {
-          method: "POST",
-          body: JSON.stringify({
-            question: e.question,
-            questioner: null,
-            questionee: profileHandle,
-            address: window.location.host,
-          }),
-        }).then((r) => r.json());
+        const req: CreateQuestionDto = {
+          question: e.question,
+          questioner: null,
+          questionee: profileHandle
+        }
+        const res = await mkQuestionCreateApi(req);
 
         if (res.status === 200) {
           document.getElementById("my_modal_2")?.click();
@@ -110,14 +114,12 @@ export default function UserPage() {
         message: "작성자 공개를 하려면 로그인을 해주세요!",
       });
     } else {
-      const res = await fetch("/api/db/post-question", {
-        method: "POST",
-        body: JSON.stringify({
-          question: e.question,
-          questioner: null,
-          questionee: profileHandle,
-        }),
-      }).then((r) => r.json());
+      const req: CreateQuestionDto = {
+        question: e.question,
+        questioner: null,
+        questionee: profileHandle
+      }
+      const res = await mkQuestionCreateApi(req);
 
       if (res.status === 200) {
         document.getElementById("my_modal_2")?.click();
