@@ -3,7 +3,7 @@ services:
     image: postgres:15-alpine
     restart: always
     env_file:
-      - ./config/local_db.env
+      - ./config/local_dev.env
     ports:
       - 127.0.0.1:5432:5432
     volumes:
