@@ -1,7 +1,5 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
-import type { answers } from "..";
 import { cookies } from "next/headers";
 
 export async function fetchCookies(cookie: string) {
@@ -13,12 +11,4 @@ export async function fetchCookies(cookie: string) {
   } else {
     return undefined;
   }
-}
-
-export async function fetchMainAnswers() {
-  const prisma = new PrismaClient();
-
-  const answers: answers[] = await prisma.answer.findMany({});
-
-  return answers;
 }

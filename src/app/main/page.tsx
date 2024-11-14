@@ -1,17 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Question from "../_components/answer";
-import { fetchMainAnswers } from "./action";
 import { FaExclamationCircle } from "react-icons/fa";
-import { answers } from "..";
+import { AnswerDto } from "../_dto/fetch-all-answers/Answers.dto";
 
 export default function MainBody() {
-  const [answers, setAnswers] = useState<answers[]>();
+  const [answers, setAnswers] = useState<AnswerDto[]>([]);
+
+  const fetchMainAnswers = useCallback(async () => {
+    const res = await fetch("/api/db/fetch-all-answers").then((r) => r.json());
+
+    setAnswers(res);
+  }, []);
 
   useEffect(() => {
-    fetchMainAnswers().then((r) => setAnswers(r));
-  }, []);
+    fetchMainAnswers();
+  }, [fetchMainAnswers]);
 
   return (
     <div className="w-[90%] desktop:w-[60%]">
