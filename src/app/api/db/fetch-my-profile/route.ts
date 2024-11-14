@@ -5,12 +5,11 @@ import { verifyToken } from "../../functions/web/verify-jwt";
 
 export async function GET(req: NextRequest) {
   const prisma = new PrismaClient();
-  const token = req.cookies.get('jwtToken')?.value;
-  
+  const token = req.cookies.get("jwtToken")?.value;
 
   try {
     if (!token) {
-      throw new Error('No token');
+      throw new Error("No token");
     }
     const { handle } = await verifyToken(token);
     const userProfile = await prisma.profile.findUnique({
@@ -19,7 +18,7 @@ export async function GET(req: NextRequest) {
       },
     });
     if (!userProfile) {
-      return NextResponse.json({message: `User not found`}, {status: 404});
+      return NextResponse.json({ message: `User not found` }, { status: 404 });
     }
     const res: userProfileDto = {
       handle: userProfile.handle,
@@ -28,10 +27,15 @@ export async function GET(req: NextRequest) {
       stopAnonQuestion: userProfile.stopAnonQuestion,
       avatarUrl: userProfile.avatarUrl,
       questionBoxName: userProfile.questionBoxName,
-    }
+      stopNotiNewQuestion: userProfile.stopNotiNewQuestion,
+      stopPostAnswer: userProfile.stopPostAnswer,
+    };
 
     return NextResponse.json(res);
   } catch (err) {
-    return NextResponse.json({ status: 400, message: `Bad Request: ${err}` }, {status: 400});
+    return NextResponse.json(
+      { message: `Bad Request: ${err}` },
+      { status: 400 }
+    );
   }
 }

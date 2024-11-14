@@ -20,18 +20,29 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    await fetch(`https://serafuku.moe/api/notes/create`, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${process.env.NOTI_TOKEN}`,
-        "Content-Type": "application/json",
+    const userSettings = await prisma.profile.findUnique({
+      where: {
+        handle: body.questionee,
       },
-      body: JSON.stringify({
-        visibleUserIds: [getUserId?.userId],
-        visibility: "specified",
-        text: `${body.questionee} <네오-퀘스돈> 새로운 질문이에요!\nQ. ${body.question}\nhttps://${body.address}/main/questions`,
-      }),
     });
+
+    if (userSettings && userSettings.stopNotiNewQuestion === true) {
+      return NextResponse.json({ status: 200 });
+    } else {
+      await fetch(`https://serafuku.moe/api/notes/create`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${process.env.NOTI_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          visibleUserIds: [getUserId?.userId],
+          visibility: "specified",
+          text: `${body.questionee} <네오-퀘스돈> 새로운 질문이에요!\nQ. ${body.question}\nhttps://${body.address}/main/questions`,
+        }),
+      });
+    }
+
     return NextResponse.json({ status: 200 });
   } catch (err) {
     console.log(err);

@@ -10,6 +10,8 @@ import { SubmitHandler, useForm } from "react-hook-form";
 export type FormValue = {
   stopAnonQuestion: boolean;
   stopNewQuestion: boolean;
+  stopNotiNewQuestion: boolean;
+  stopPostAnswer: boolean;
   questionBoxName: string;
 };
 
@@ -70,6 +72,12 @@ export default function Settings() {
               더 이상 질문을 받지 않기
             </span>
             <span className="font-thin desktop:text-xl">
+              새 질문 DM으로 받지 않기
+            </span>
+            <span className="font-thin desktop:text-xl">
+              내 답변을 올리지 않기
+            </span>
+            <span className="font-thin desktop:text-xl">
               질문함 이름 (10글자 이내)
             </span>
           </div>
@@ -90,6 +98,18 @@ export default function Settings() {
                   type="checkbox"
                   className="toggle toggle-success"
                   defaultChecked={userInfo.stopNewQuestion}
+                />
+                <input
+                  {...register("stopNotiNewQuestion")}
+                  type="checkbox"
+                  className="toggle toggle-success"
+                  defaultChecked={userInfo.stopNotiNewQuestion}
+                />
+                <input
+                  {...register("stopPostAnswer")}
+                  type="checkbox"
+                  className="toggle toggle-success"
+                  defaultChecked={userInfo.stopPostAnswer}
                 />
                 <input
                   {...register("questionBoxName", {
