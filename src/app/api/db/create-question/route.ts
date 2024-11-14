@@ -9,21 +9,29 @@ export async function POST(req: NextRequest) {
 
   try {
     const body: CreateQuestionDto = await req.json();
-    const questionee_user = await prisma.user.findUnique({
+    const questionee_user = await prisma.user.findUniqueOrThrow({
       where: {
         handle: body.questionee,
       },
     });
+    const questionee_profile = await prisma.profile.findUniqueOrThrow({
+      where: {
+        handle: questionee_user?.handle,
+      }
+    })
 
-    if (!questionee_user) {
-      throw new Error(`questionee_user not found`);
+    if (questionee_profile.stopAnonQuestion && !body.questioner) {
+      throw new Error('The user has prohibits anonymous questions.');
+    } else if (questionee_profile.stopNewQuestion) {
+      throw new Error('User stops stopNewQuestion');
     }
+
     // 제시된 questioner 핸들이 JWT토큰의 핸들과 일치하는지 검사
     if (body.questioner) {
       const token = req.cookies.get('jwtToken')?.value;
       try {
         if (typeof token !== 'string') {
-          throw new Error(`no token`);
+          throw new Error(`Token Error`);
         }
         const tokenPayload = await verifyToken(token);
         if (tokenPayload.handle.toLowerCase() !== body.questioner.toLowerCase()) {
