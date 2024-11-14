@@ -22,10 +22,12 @@ export async function POST(req: NextRequest) {
       stopAnonQuestion: profile.stopAnonQuestion,
       avatarUrl: profile.avatarUrl,
       questionBoxName: profile.questionBoxName,
-    }
+      stopNotiNewQuestion: profile.stopNotiNewQuestion,
+      stopPostAnswer: profile.stopPostAnswer,
+    };
 
     return NextResponse.json(res);
   } catch (err) {
-    return NextResponse.json(err, {status: 400});
+    return NextResponse.json(err, { status: 400 });
   }
 }

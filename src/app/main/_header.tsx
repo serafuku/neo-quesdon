@@ -1,22 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa";
-import { fetchCookies } from "./action";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
-
-const fetchMyProfile = async () => {
-  const cookie = await fetchCookies("jwtToken");
-
-  if (cookie) {
-    const res: userProfileDto = await fetch("/api/db/fetch-my-profile", {
-      method: "GET",
-    }).then((r) => r.json());
-
-    return res;
-  }
-};
 
 const logout = async () => {
   await fetch("/api/web/logout");
@@ -28,9 +15,16 @@ const logout = async () => {
 export default function MainHeader() {
   const [user, setUser] = useState<userProfileDto>();
 
-  useEffect(() => {
-    fetchMyProfile().then((r) => setUser(r));
+  const fetchMyProfile = useCallback(async () => {
+    const res: userProfileDto = await fetch("/api/db/fetch-my-profile").then(
+      (r) => r.json()
+    );
+    setUser(res);
   }, []);
+
+  useEffect(() => {
+    fetchMyProfile();
+  }, [fetchMyProfile]);
 
   return (
     <div className="navbar bg-base-100 w-[90%] desktop:w-[60%] shadow rounded-box my-4">

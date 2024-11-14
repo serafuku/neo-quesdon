@@ -1,11 +1,11 @@
 "use server";
 
-import { jwtVerify, JWTVerifyResult } from "jose";
+import { jwtVerify } from "jose";
 
 type jwtPayload = {
   handle: string;
   server: string;
-}
+};
 
 /**
  * JWT 를 검증하고, 디코딩된 JWT의 페이로드를 반환
@@ -17,16 +17,19 @@ export async function verifyToken(token: string) {
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
   try {
-    const { payload } = (await jwtVerify(token, secret));
-    const data: jwtPayload  = {
+    const { payload } = await jwtVerify(token, secret);
+    const data: jwtPayload = {
       handle: "",
-      server: ""
-    }
-    if (typeof payload.handle === 'string' && typeof payload.server === 'string') {
+      server: "",
+    };
+    if (
+      typeof payload.handle === "string" &&
+      typeof payload.server === "string"
+    ) {
       data.handle = payload.handle;
       data.server = payload.server;
     } else {
-      throw new Error('JWT payload error');
+      throw new Error("JWT payload error");
     }
     return data;
   } catch (err) {
