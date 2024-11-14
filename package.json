@@ -9,7 +9,7 @@
     "start:local": "source config/local_env.env && next start",
     "start:docker": "prisma migrate deploy && node server.js",
     "lint": "next lint",
-    "prisma": "source config/local_env.env && prisma migrate dev"
+    "prisma": "source config/local_dev.env && prisma migrate dev"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",

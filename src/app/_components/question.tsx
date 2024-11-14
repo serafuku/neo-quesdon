@@ -103,7 +103,6 @@ export default function Question({ value, hostname }: askProps) {
               <button
                 type={"submit"}
                 className="btn btn-outline"
-                onClick={() => document.getElementById("my_modal_1")?.click()}
               >
                 답변
               </button>
