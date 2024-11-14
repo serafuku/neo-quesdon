@@ -3,20 +3,31 @@
 import Link from "next/link";
 import type { answers } from "..";
 import { useEffect, useState } from "react";
-import { fetchUser } from "./action";
-import { profile } from "@prisma/client";
 import NameComponents from "./NameComponents";
+import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
 interface askProps {
   value: answers;
 }
 
+export async function fetchProfile(handle: string) {
+  const profile = await fetch('/api/db/fetch-profile', {
+    method: 'POST',
+    body: JSON.stringify(handle),
+  });
+  if (profile && profile.ok) {
+    return profile.json() as unknown as userProfileDto;
+  } else {
+    return undefined;
+  }
+}
+
 export default function Answer({ value }: askProps) {
   const [showNsfw, setShowNsfw] = useState(false);
-  const [userInfo, setUserInfo] = useState<profile>();
+  const [userInfo, setUserInfo] = useState<userProfileDto>();
 
   useEffect(() => {
-    fetchUser(value.answeredPersonHandle).then((r) => setUserInfo(r));
+    fetchProfile(value.answeredPersonHandle).then((r) => setUserInfo(r));
     setShowNsfw(!value.nsfwedAnswer);
   }, []);
 
