@@ -11,10 +11,7 @@ interface askProps {
 }
 
 export async function fetchProfile(handle: string) {
-  const profile = await fetch('/api/db/fetch-profile', {
-    method: 'POST',
-    body: JSON.stringify(handle),
-  });
+  const profile = await fetch(`/api/db/fetch-profile/${handle}`);
   if (profile && profile.ok) {
     return profile.json() as unknown as userProfileDto;
   } else {

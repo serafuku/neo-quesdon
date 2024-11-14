@@ -17,14 +17,14 @@ type FormValue = {
   questioner: boolean;
 };
 
-const fetchProfile = async (handle: string) => {
-  const res = await fetch("/api/db/fetch-profile", {
-    method: "POST",
-    body: JSON.stringify(handle),
-  }).then((r) => r.json());
-
-  return res;
-};
+export async function fetchProfile(handle: string) {
+  const profile = await fetch(`/api/db/fetch-profile/${handle}`);
+  if (profile && profile.ok) {
+    return profile.json() as unknown as userProfileDto;
+  } else {
+    return undefined;
+  }
+}
 
 export default function UserPage() {
   const { handle } = useParams() as { handle: string };
