@@ -1,22 +1,45 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Question from "../_components/answer";
+import { useEffect, useState } from "react";
+import Answer from "../_components/answer";
 import { FaExclamationCircle } from "react-icons/fa";
 import { AnswerDto } from "../_dto/fetch-all-answers/Answers.dto";
 
 export default function MainBody() {
   const [answers, setAnswers] = useState<AnswerDto[]>([]);
+  const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchMainAnswers = useCallback(async () => {
-    const res = await fetch("/api/db/fetch-all-answers").then((r) => r.json());
+  const fetchMainAnswers = async () => {
+    setLoading(true);
+    const res = await fetch(
+      `/api/db/fetch-all-answers?limit=5&cursor=${cursor || ""}`
+    ).then((r) => r.json());
 
-    setAnswers(res);
-  }, []);
+    setAnswers((prevAnswers) => [...prevAnswers, ...res.answers]);
+    setCursor(res.nextCursor);
+    setLoading(false);
+  };
 
   useEffect(() => {
     fetchMainAnswers();
-  }, [fetchMainAnswers]);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && cursor !== null) fetchMainAnswers();
+      },
+      {
+        threshold: 0.7,
+      }
+    );
+    if (mounted) observer.observe(mounted);
+    return () => {
+      if (mounted) observer.unobserve(mounted);
+    };
+  }, [mounted, cursor]);
 
   return (
     <div className="w-[90%] desktop:w-[60%]">
@@ -28,12 +51,26 @@ export default function MainBody() {
       ) : (
         <div>
           {answers.length > 0 ? (
-            <div className="flex flex-col-reverse">
+            <div className="flex flex-col">
               {answers.map((r) => (
                 <div key={r.id}>
-                  <Question value={r} />
+                  <Answer value={r} />
                 </div>
               ))}
+              <div
+                className="w-full h-16 flex justify-center items-center"
+                ref={(ref) => setMounted(ref)}
+              >
+                {loading ? (
+                  <div>
+                    <span className="loading loading-spinner loading-lg" />
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-3xl">🥂 끝이야 한 잔 해</span>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center text-3xl my-2 p-2">
