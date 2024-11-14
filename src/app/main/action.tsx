@@ -15,10 +15,21 @@ export async function fetchCookies(cookie: string) {
   }
 }
 
-export async function fetchMainAnswers() {
+export async function fetchMainAnswers(limit?: number, untilId?: string, sinceId?: string) {
   const prisma = new PrismaClient();
-
-  const answers: answers[] = await prisma.answer.findMany({});
+  const query_limit = limit ? Math.max(1, Math.min(limit, 100)) : 100;
+  const answers: answers[] = await prisma.answer.findMany({
+    where: {
+      id: {
+        ...(sinceId ? { gt: sinceId } : {}),
+        ...(untilId ? { lt: untilId } : {}),
+      },
+    },
+    orderBy: {
+      id: "asc",
+    },
+    take: query_limit,
+  });
 
   return answers;
 }
