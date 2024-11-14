@@ -17,7 +17,7 @@ type FormValue = {
   questioner: boolean;
 };
 
-export async function fetchProfile(handle: string) {
+async function fetchProfile(handle: string) {
   const profile = await fetch(`/api/db/fetch-profile/${handle}`);
   if (profile && profile.ok) {
     return profile.json() as unknown as userProfileDto;
@@ -27,6 +27,7 @@ export async function fetchProfile(handle: string) {
 }
 
 export default function UserPage() {
+
   const { handle } = useParams() as { handle: string };
   const [userInfo, setUserInfo] = useState<userProfileDto>();
   const [questions, setQuestions] = useState<answers[]>([]);
