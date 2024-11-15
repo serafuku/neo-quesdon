@@ -6,10 +6,10 @@ import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import Question from "@/app/_components/answer";
 import { FaUserSlash } from "react-icons/fa";
-import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
-import { AnswerDto } from "@/app/_dto/fetch-all-answers/Answers.dto";
+import { AnswerDto } from "@/app/_dto/Answers.dto";
+import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
 
 type FormValue = {
   question: string;
@@ -26,10 +26,12 @@ async function fetchProfile(handle: string) {
 }
 
 export default function UserPage() {
-
   const { handle } = useParams() as { handle: string };
   const [userInfo, setUserInfo] = useState<userProfileDto>();
-  const [questions, setQuestions] = useState<AnswerDto[]>([]);
+  const [answers, setAnswers] = useState<AnswerDto[]>([]);
+  const [untilId, setUntilId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
 
   const profileHandle = handle.toString().replace(/(?:%40)/g, "@");
 
@@ -64,16 +66,33 @@ export default function UserPage() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mkQuestionCreateApi = async (q: CreateQuestionDto): Promise<any> => {
-    return await fetch("/api/db/create-question", {
+  const fetchUserAnswers = async (
+    q: FetchUserAnswersDto
+  ): Promise<AnswerDto[]> => {
+    const res = await fetch("/api/db/fetch-user-answers", {
       method: "POST",
       body: JSON.stringify(q),
-    }).then((r) => r.json());
-  }
+    });
+    if (res.ok) {
+      return res.json();
+    } else {
+      throw new Error(
+        `fetch-user-answers fail! ${res.status}, ${res.statusText}`
+      );
+    }
+  };
+  const mkQuestionCreateApi = async (
+    q: CreateQuestionDto
+  ): Promise<Response> => {
+    const res = await fetch("/api/db/create-question", {
+      method: "POST",
+      body: JSON.stringify(q),
+    });
+    return res;
+  };
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
-    const user_handle = localStorage.getItem('user_handle');
+    const user_handle = localStorage.getItem("user_handle");
 
     // 작성자 공개
     if (questioner === true) {
@@ -86,31 +105,31 @@ export default function UserPage() {
       const req: CreateQuestionDto = {
         question: e.question,
         questioner: user_handle,
-        questionee: profileHandle
-      }
+        questionee: profileHandle,
+      };
       const res = await mkQuestionCreateApi(req);
 
-      if (res?.status === 200) {
+      if (res.status === 200) {
         document.getElementById("my_modal_2")?.click();
       }
-    } 
+    }
     // 작성자 비공개
     else {
-        if (userInfo?.stopAnonQuestion === true) {
-          setError("questioner", {
-            type: "stopAnonQuestion",
-            message: "익명 질문은 받지 않고 있어요...",
-          });
-        } else {
-          const req: CreateQuestionDto = {
-            question: e.question,
-            questioner: null,
-            questionee: profileHandle
-          }
-          const res = await mkQuestionCreateApi(req);
-          if (res.status === 200) {
-            document.getElementById("my_modal_2")?.click();
-          }
+      if (userInfo?.stopAnonQuestion === true) {
+        setError("questioner", {
+          type: "stopAnonQuestion",
+          message: "익명 질문은 받지 않고 있어요...",
+        });
+      } else {
+        const req: CreateQuestionDto = {
+          question: e.question,
+          questioner: null,
+          questionee: profileHandle,
+        };
+        const res = await mkQuestionCreateApi(req);
+        if (res.status === 200) {
+          document.getElementById("my_modal_2")?.click();
+        }
       }
     }
   };
@@ -123,14 +142,45 @@ export default function UserPage() {
 
   useEffect(() => {
     if (userInfo) {
-      fetch("/api/db/fetch-user-answers", {
-        method: "POST",
-        body: JSON.stringify(profileHandle),
-      })
-        .then((r) => r.json())
-        .then((r) => setQuestions(r));
+      fetchUserAnswers({
+        answeredPersonHandle: userInfo.handle,
+        sort: "DESC",
+        limit: 20,
+      }).then((r: AnswerDto[]) => {
+        if (r.length === 0) {
+          setLoading(false);
+          return;
+        }
+        setAnswers(r);
+        setUntilId(r[r.length - 1].id);
+      });
     }
   }, [profileHandle, userInfo]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && untilId !== null) {
+          fetchUserAnswers({sort: 'DESC', limit: 20, untilId: untilId, answeredPersonHandle: profileHandle})
+            .then((r) => {
+              if (r.length === 0) {
+                setLoading(false);
+                return;
+              }
+              setAnswers((prev_answers) => [...prev_answers, ...r]);
+              setUntilId(r[r.length-1].id);
+            })
+        };
+      },
+      {
+        threshold: 0.7,
+      }
+    );
+    if (mounted) observer.observe(mounted);
+    return () => {
+      if (mounted) observer.unobserve(mounted);
+    };
+  }, [mounted, untilId]);
 
   return (
     <div className="flex w-[90vw] desktop:w-[60vw]">
@@ -229,15 +279,29 @@ export default function UserPage() {
             </form>
           </div>
           <div className="desktop:ml-2 desktop:w-[50%]">
-            {questions !== null ? (
+            {answers !== null ? (
               <div>
-                {questions.length > 0 ? (
-                  <div className="flex flex-col-reverse">
-                    {questions.map((el) => (
+                {answers.length > 0 ? (
+                  <div className="flex flex-col">
+                    {answers.map((el) => (
                       <div key={el.id}>
                         <Question value={el} />
                       </div>
                     ))}
+                    <div
+                      className="w-full h-16 flex justify-center items-center"
+                      ref={(ref) => setMounted(ref)}
+                    >
+                      {loading ? (
+                        <div>
+                          <span className="loading loading-spinner loading-lg" />
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="text-3xl">🥂 끝이야 한 잔 해</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-2xl flex gap-2 justify-center items-center border shadow rounded-box p-2 glass">

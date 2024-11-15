@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import NameComponents from "./NameComponents";
-import { AnswerDto } from "../_dto/fetch-all-answers/Answers.dto";
+import { AnswerDto } from "../_dto/Answers.dto";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
 interface askProps {
