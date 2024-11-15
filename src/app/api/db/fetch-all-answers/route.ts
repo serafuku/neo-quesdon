@@ -12,7 +12,9 @@ export async function POST(req: NextRequest) {
   const prisma = new PrismaClient();
   const sinceId = body.sinceId;
   const untilId = body.untilId;
-  const orderBy = (body.sort === 'DESC') ? 'desc' : 'asc'
+
+  //내림차순이 기본값
+  const orderBy = (body.sort === 'ASC') ? 'asc' : 'desc';
 
   const questions = await prisma.answer.findMany({
     where: {

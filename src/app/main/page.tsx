@@ -25,7 +25,7 @@ export default function MainBody() {
   const [answers, setAnswers] = useState<answers[]>();
 
   useEffect(() => {
-    fetchAllAnswers({}).then((r) => setAnswers(r));
+    fetchAllAnswers({sort: 'DESC', limit: 100}).then((r) => setAnswers(r));
   }, []);
 
   return (
@@ -38,7 +38,7 @@ export default function MainBody() {
       ) : (
         <div>
           {answers.length > 0 ? (
-            <div className="flex flex-col-reverse">
+            <div className="flex flex-col">
               {answers.map((r) => (
                 <div key={r.id}>
                   <Question value={r} />
