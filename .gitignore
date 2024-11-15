@@ -19,6 +19,7 @@
 
 # production
 /build
+docker-compose.yml
 
 # misc
 .DS_Store
@@ -41,3 +42,6 @@ next-env.d.ts
 
 # vscode settings
 .vscode
+
+#localDB data
+local_db_data

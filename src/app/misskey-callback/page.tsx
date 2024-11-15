@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchUsername } from "../api/functions/web/fetchUsername";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { generateJwt, pushDB, requestAccessToken } from "./actions";
+import { login } from "./actions";
+import { User as MiUser } from "../api/misskey-entities/user";
+import { callbackTokenClaimPayload, userInfoPayload } from "..";
 
 export type DBpayload = {
   account: string;
@@ -23,8 +24,6 @@ export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const host = window.location.host;
-    const protocol = window.location.protocol;
     const server = localStorage.getItem("server");
 
     const url = new URL(window.location.href);
@@ -34,44 +33,45 @@ export default function CallbackPage() {
     setId(randomNumber);
 
     const fn = async () => {
-      if (server) {
-        const payload = {
-          protocol: protocol,
-          host: host,
-          address: server,
-          token: params.get("token"),
-        };
-
-        const res = await requestAccessToken(payload);
-
-        const accessToken = res.accessToken;
-        const user = res.user;
-
-        const nameWithEmoji = await fetchUsername({
-          username: user.name,
-          host: server,
-        });
-
-        const dbPayload: DBpayload = {
-          account: user.username,
-          accountLower: user.username.toLowerCase(),
-          hostName: server,
-          handle: `@${user.username}@${server}`,
-          name: nameWithEmoji.username,
-          avatarUrl: user.avatarUrl,
-          accessToken: accessToken,
-          userId: user.id,
-        };
-
-        await generateJwt(dbPayload);
-        await pushDB(dbPayload);
-
-        router.replace("/main");
+      try {
+        if (server) {
+          const callback_token = params.get("token");
+          if (callback_token === null) { 
+            throw new Error('callback token is null?');
+          }
+          const payload: callbackTokenClaimPayload = {
+            misskeyHost: server,
+            callback_token: callback_token,
+          };
+          
+          let res: userInfoPayload;
+          try {
+            res = await login(payload);
+          } catch (err) {
+            console.error(`login failed!`, err);
+            throw err;
+          }
+  
+          const user: MiUser = res.user;
+  
+  
+          const handle = `@${user.username}@${server}`;
+          localStorage.setItem('user_handle', handle);
+  
+          router.replace("/main");
+        }
+      } catch (err) {
+        console.error(err);
+        return (
+          <div className="w-full h-[100vh] flex flex-col gap-2 justify-center items-center text-3xl">
+            <span>로그인 중에 문제가 발생했어요... 다시 시도해 보세요</span>
+          </div>
+        );
       }
     };
 
     fn();
-  }, []);
+  }, [router]);
 
   return (
     <div className="w-full h-[100vh] flex flex-col gap-2 justify-center items-center text-3xl">

@@ -1,14 +1,15 @@
+import { loginReqDto } from "@/app/_dto/web/login/login.dto";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { protocol, host, address } = await req.json();
+  const { misskeyHost } = await req.json() as loginReqDto;
   const prisma = new PrismaClient();
 
   try {
     const checkInstances = await prisma.server.findFirst({
       where: {
-        instances: address,
+        instances: misskeyHost,
       },
     });
 
@@ -17,10 +18,10 @@ export async function POST(req: NextRequest) {
         name: "Neo-Quesdon",
         description: "새로운 퀘스돈, 네오-퀘스돈입니다.",
         permission: ["write:notes", "read:follower"],
-        callbackUrl: `${protocol}//${host}/misskey-callback`,
+        callbackUrl: `${process.env.WEB_URL}/misskey-callback`,
       };
 
-      const appSecret = await fetch(`https://${address}/api/app/create`, {
+      const appSecret = await fetch(`https://${misskeyHost}/api/app/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -31,12 +32,12 @@ export async function POST(req: NextRequest) {
       const storeAppSecret = await prisma.server.create({
         data: {
           appSecret: appSecret.secret,
-          instances: address,
+          instances: misskeyHost,
         },
       });
 
-      const misskeyToken = await fetch(
-        `https://${address}/api/auth/session/generate`,
+      const misskeyAuthSession = await fetch(
+        `https://${misskeyHost}/api/auth/session/generate`,
         {
           method: "POST",
           headers: {
@@ -47,11 +48,11 @@ export async function POST(req: NextRequest) {
           }),
         }
       ).then((r) => r.json());
-
-      return NextResponse.json(misskeyToken);
+      console.log(misskeyAuthSession);
+      return NextResponse.json(misskeyAuthSession);
     } else if (checkInstances !== null) {
-      const misskeyToken = await fetch(
-        `https://${address}/api/auth/session/generate`,
+      const misskeyAuthSession = await fetch(
+        `https://${misskeyHost}/api/auth/session/generate`,
         {
           method: "POST",
           headers: {
@@ -62,10 +63,9 @@ export async function POST(req: NextRequest) {
           }),
         }
       ).then((r) => r.json());
-
-      return NextResponse.json(misskeyToken);
+      return NextResponse.json(misskeyAuthSession);
     }
   } catch (err) {
-    return NextResponse.json({ error: err });
+    return NextResponse.json({ error: err }, {status: 500});
   }
 }

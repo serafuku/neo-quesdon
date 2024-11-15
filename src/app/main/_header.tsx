@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa";
-import { fetchCookies } from "./action";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
 const fetchMyProfile = async () => {
-  const cookie = await fetchCookies("jwtToken");
+  const user_handle = localStorage.getItem("user_handle");
 
-  if (cookie) {
+  if (user_handle) {
     const res: userProfileDto = await fetch("/api/db/fetch-my-profile", {
       method: "GET",
     }).then((r) => r.json());
@@ -30,10 +29,10 @@ export default function MainHeader() {
 
   useEffect(() => {
     fetchMyProfile().then((r) => setUser(r));
-  }, []);
+  }, [fetchMyProfile]);
 
   return (
-    <div className="navbar bg-base-100 w-[90%] desktop:w-[60%] shadow rounded-box my-4">
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%] navbar bg-base-100 shadow rounded-box my-4">
       <div className="flex-1">
         <Link href="/main" className="btn btn-ghost text-xl">
           Neo-Quesdon

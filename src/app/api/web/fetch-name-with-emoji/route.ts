@@ -1,24 +1,23 @@
+import { fetchNameWithEmojiReqDto, fetchNameWithEmojiResDto } from "@/app/_dto/fetch-name-with-emoji/fetch-name-with-emoji.dto";
 import { NextRequest, NextResponse } from "next/server";
 
-export type payload = {
-  username: string;
-  host: string;
-};
 
-export async function POST(req: NextRequest) {
-  const { username, host }: payload = await req.json();
+export async function POST(req: NextRequest): Promise<NextResponse<fetchNameWithEmojiResDto>> {
+  const { name, misskeyBaseUrl }: fetchNameWithEmojiReqDto = await req.json();
   const usernameIndex: number[] = [];
   const usernameEmojiAddress: string[] = [];
-
-  const emojiInUsername = username
+  if (!name) {
+    return NextResponse.json({ nameWithEmoji: []});
+  }
+  const emojiInUsername = name
     .match(/:[\w]+:/g)
     ?.map((el) => el.replaceAll(":", ""));
-  const usernameArray = username.split(":").filter((el) => el !== "");
+  const nameArray = name.split(":").filter((el) => el !== "");
 
   try {
     if (emojiInUsername) {
       for (let i = 0; i < emojiInUsername.length; i++) {
-        const emojiAddress = await fetch(`${host}/api/emoji`, {
+        const emojiAddress = await fetch(`${misskeyBaseUrl}/api/emoji`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -31,20 +30,19 @@ export async function POST(req: NextRequest) {
         usernameEmojiAddress.push(emojiAddress.url);
       }
 
-      for (const el in usernameArray) {
-        usernameIndex.push(usernameArray.indexOf(emojiInUsername[el]));
+      for (const el in nameArray) {
+        usernameIndex.push(nameArray.indexOf(emojiInUsername[el]));
       }
       const filteredIndex = usernameIndex.filter((value) => value >= 0);
 
       for (let i = 0; i < usernameEmojiAddress.length; i++) {
-        usernameArray.splice(filteredIndex[i], 1, usernameEmojiAddress[i]);
+        nameArray.splice(filteredIndex[i], 1, usernameEmojiAddress[i]);
       }
     }
 
-    return NextResponse.json({ username: usernameArray });
+    return NextResponse.json({ nameWithEmoji: nameArray });
   } catch (err) {
     console.log(err);
-
-    return NextResponse.json({ err: err });
+    throw (err);
   }
 }

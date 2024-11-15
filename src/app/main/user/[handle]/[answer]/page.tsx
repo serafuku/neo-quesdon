@@ -12,10 +12,10 @@ export default function SingleAnswer() {
 
   useEffect(() => {
     fetchAnswer(answer).then((r) => setAnswerBody(r));
-  }, []);
+  }, [answer]);
 
   return (
-    <div className="flex w-[60vw]">
+    <div className="flex w-[90%] window:w-[80%] desktop:w-[70%]">
       {answerBody && <Answer value={answerBody} />}
     </div>
   );

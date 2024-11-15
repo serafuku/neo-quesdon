@@ -9,8 +9,8 @@ const config: Config = {
   ],
   theme: {
     screens: {
-      desktop: "430px",
-      window: "1280px",
+      desktop: "1280px",
+      window: "680px",
     },
     extend: {
       colors: {

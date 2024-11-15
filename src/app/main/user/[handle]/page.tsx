@@ -5,30 +5,33 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import Question from "@/app/_components/answer";
-import { FaBeer, FaUserSlash } from "react-icons/fa";
-import { fetchCookies } from "../../action";
-import { verifyToken } from "@/app/api/functions/web/verify-jwt";
+import { FaUserSlash } from "react-icons/fa";
 import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
-import { answers } from "@/app";
+import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
+import { AnswerDto } from "@/app/_dto/Answers.dto";
+import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
 
 type FormValue = {
   question: string;
   questioner: boolean;
 };
 
-const fetchProfile = async (handle: string) => {
-  const res = await fetch("/api/db/fetch-profile", {
-    method: "POST",
-    body: JSON.stringify(handle),
-  }).then((r) => r.json());
-
-  return res;
-};
+async function fetchProfile(handle: string) {
+  const profile = await fetch(`/api/db/fetch-profile/${handle}`);
+  if (profile && profile.ok) {
+    return profile.json() as unknown as userProfileDto;
+  } else {
+    return undefined;
+  }
+}
 
 export default function UserPage() {
   const { handle } = useParams() as { handle: string };
   const [userInfo, setUserInfo] = useState<userProfileDto>();
-  const [questions, setQuestions] = useState<answers[]>([]);
+  const [answers, setAnswers] = useState<AnswerDto[]>([]);
+  const [untilId, setUntilId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
 
   const profileHandle = handle.toString().replace(/(?:%40)/g, "@");
 
@@ -63,64 +66,70 @@ export default function UserPage() {
     }
   };
 
+  const fetchUserAnswers = async (
+    q: FetchUserAnswersDto
+  ): Promise<AnswerDto[]> => {
+    const res = await fetch("/api/db/fetch-user-answers", {
+      method: "POST",
+      body: JSON.stringify(q),
+    });
+    if (res.ok) {
+      return res.json();
+    } else {
+      throw new Error(
+        `fetch-user-answers fail! ${res.status}, ${res.statusText}`
+      );
+    }
+  };
+  const mkQuestionCreateApi = async (
+    q: CreateQuestionDto
+  ): Promise<Response> => {
+    const res = await fetch("/api/db/create-question", {
+      method: "POST",
+      body: JSON.stringify(q),
+    });
+    return res;
+  };
+
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
-    let questionerHandle: string;
-    const cookies = await fetchCookies("jwtToken");
+    const user_handle = localStorage.getItem("user_handle");
 
-    if (questioner === true && cookies !== undefined) {
-      const localHandle = await verifyToken(cookies.value);
-      questionerHandle = localHandle.handle;
-
-      const res = await fetch("/api/db/post-question", {
-        method: "POST",
-        body: JSON.stringify({
-          question: e.question,
-          questioner: questionerHandle,
-          questionee: profileHandle,
-        }),
-      }).then((r) => r.json());
+    // 작성자 공개
+    if (questioner === true) {
+      if (user_handle === null) {
+        setError("questioner", {
+          type: "notLoggedIn",
+          message: "작성자 공개를 하려면 로그인을 해주세요!",
+        });
+      }
+      const req: CreateQuestionDto = {
+        question: e.question,
+        questioner: user_handle,
+        questionee: profileHandle,
+      };
+      const res = await mkQuestionCreateApi(req);
 
       if (res.status === 200) {
         document.getElementById("my_modal_2")?.click();
       }
-    } else if (questioner === false && cookies !== undefined) {
+    }
+    // 작성자 비공개
+    else {
       if (userInfo?.stopAnonQuestion === true) {
         setError("questioner", {
           type: "stopAnonQuestion",
           message: "익명 질문은 받지 않고 있어요...",
         });
       } else {
-        const res = await fetch("/api/db/post-question", {
-          method: "POST",
-          body: JSON.stringify({
-            question: e.question,
-            questioner: null,
-            questionee: profileHandle,
-            address: window.location.host,
-          }),
-        }).then((r) => r.json());
-
-        if (res.status === 200) {
-          document.getElementById("my_modal_2")?.click();
-        }
-      }
-    } else if (questioner === true && cookies === undefined) {
-      setError("questioner", {
-        type: "notLoggedIn",
-        message: "작성자 공개를 하려면 로그인을 해주세요!",
-      });
-    } else {
-      const res = await fetch("/api/db/post-question", {
-        method: "POST",
-        body: JSON.stringify({
+        const req: CreateQuestionDto = {
           question: e.question,
           questioner: null,
           questionee: profileHandle,
-        }),
-      }).then((r) => r.json());
-
-      if (res.status === 200) {
-        document.getElementById("my_modal_2")?.click();
+        };
+        const res = await mkQuestionCreateApi(req);
+        if (res.status === 200) {
+          document.getElementById("my_modal_2")?.click();
+        }
       }
     }
   };
@@ -129,21 +138,56 @@ export default function UserPage() {
     fetchProfile(profileHandle).then((r) => {
       setUserInfo(r);
     });
-  }, []);
+  }, [profileHandle]);
 
   useEffect(() => {
     if (userInfo) {
-      fetch("/api/db/fetch-personal-question", {
-        method: "POST",
-        body: JSON.stringify(profileHandle),
-      })
-        .then((r) => r.json())
-        .then((r) => setQuestions(r));
+      fetchUserAnswers({
+        answeredPersonHandle: userInfo.handle,
+        sort: "DESC",
+        limit: 20,
+      }).then((r: AnswerDto[]) => {
+        if (r.length === 0) {
+          setLoading(false);
+          return;
+        }
+        setAnswers(r);
+        setUntilId(r[r.length - 1].id);
+      });
     }
-  }, [userInfo]);
+  }, [profileHandle, userInfo]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && untilId !== null) {
+          fetchUserAnswers({
+            sort: "DESC",
+            limit: 20,
+            untilId: untilId,
+            answeredPersonHandle: profileHandle,
+          }).then((r) => {
+            if (r.length === 0) {
+              setLoading(false);
+              return;
+            }
+            setAnswers((prev_answers) => [...prev_answers, ...r]);
+            setUntilId(r[r.length - 1].id);
+          });
+        }
+      },
+      {
+        threshold: 0.7,
+      }
+    );
+    if (mounted) observer.observe(mounted);
+    return () => {
+      if (mounted) observer.unobserve(mounted);
+    };
+  }, [mounted, untilId]);
 
   return (
-    <div className="flex w-[90vw] desktop:w-[60vw]">
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%]">
       {userInfo === null ? (
         <div className="w-full flex flex-col justify-center items-center glass text-4xl rounded-box shadow p-2">
           <FaUserSlash />
@@ -239,15 +283,29 @@ export default function UserPage() {
             </form>
           </div>
           <div className="desktop:ml-2 desktop:w-[50%]">
-            {questions !== null ? (
+            {answers !== null ? (
               <div>
-                {questions.length > 0 ? (
-                  <div className="flex flex-col-reverse">
-                    {questions.map((el) => (
+                {answers.length > 0 ? (
+                  <div className="flex flex-col">
+                    {answers.map((el) => (
                       <div key={el.id}>
                         <Question value={el} />
                       </div>
                     ))}
+                    <div
+                      className="w-full h-16 flex justify-center items-center"
+                      ref={(ref) => setMounted(ref)}
+                    >
+                      {loading ? (
+                        <div>
+                          <span className="loading loading-spinner loading-lg" />
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="text-3xl">🥂 끝이야 한 잔 해</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-2xl flex gap-2 justify-center items-center border shadow rounded-box p-2 glass">

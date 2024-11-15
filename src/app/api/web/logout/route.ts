@@ -11,6 +11,6 @@ export async function GET() {
 
     return NextResponse.json({ status: 200 });
   } catch (err) {
-    return NextResponse.json({ status: 500, error: err });
+    return NextResponse.json({ status: 500, error: err }, {status: 500});
   }
 }

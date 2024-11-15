@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { deleteQuestion } from "./action";
 
 const fetchQuestions = async () => {
-  const res = await fetch("/api/db/fetch-questions").then((r) => r.json());
+  const res = await fetch("/api/db/fetch-my-questions").then((r) => r.json());
 
   return res;
 };
@@ -19,7 +19,7 @@ export default function Questions() {
   }, []);
 
   return (
-    <div className="w-[90%] desktop:w-[60%] flex justify-center">
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%] flex justify-center">
       {questions === undefined || null ? (
         <div>
           <span className="loading loading-infinity loading-lg" />
@@ -30,7 +30,7 @@ export default function Questions() {
             <div>
               {questions.map((el) => (
                 <div key={el.id}>
-                  <Question value={el} hostname={window.location.hostname} />
+                  <Question value={el} />
                   <input
                     type="checkbox"
                     id="question_delete_modal"

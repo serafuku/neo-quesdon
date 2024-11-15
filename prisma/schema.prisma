@@ -29,6 +29,8 @@ model profile {
     name            String[]
     stopNewQuestion Boolean    @default(false)
     stopAnonQuestion  Boolean   @default(false)
+    stopNotiNewQuestion Boolean @default(false)
+    stopPostAnswer  Boolean     @default(false)
     avatarUrl       String
     questionBoxName String      @default("질문함")
     user            user        @relation(fields: [handle], references: [handle])
