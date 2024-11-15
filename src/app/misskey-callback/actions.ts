@@ -42,13 +42,14 @@ export async function generateJwt(payload: DBpayload) {
   const alg = "HS256";
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
+  const webUrl = process.env.WEB_URL;
   const jwtToken = await new SignJWT({
     server: payload.hostName,
     handle: `@${payload.account}@${payload.hostName}`,
   })
     .setProtectedHeader({ alg })
     .setIssuedAt()
-    .setIssuer("urn:example:issuer")
+    .setIssuer(`${webUrl}`)
     .setAudience("urn:example:audience")
     .setExpirationTime("2h")
     .sign(secret);
