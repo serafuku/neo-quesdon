@@ -19,7 +19,7 @@ interface hosts {
 const misskeyAuth = async ({ misskeyHost }: loginReqDto) => {
   const body: loginReqDto = {
     misskeyHost: misskeyHost,
-  }
+  };
   const res = await fetch(`/api/web/login`, {
     method: "POST",
     body: JSON.stringify(body),
@@ -93,7 +93,7 @@ export default function Home() {
               Neo-Quesdon
             </h1>
           </div>
-          <span className="font-thin tracking-wider text-base desktop:text-lg ">
+          <span className="font-thin tracking-wider text-base desktop:text-lg">
             &quot;아직은&quot; Misskey / CherryPick에서만 사용할 수 있는 새로운
             Quesdon
           </span>
