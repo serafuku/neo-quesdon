@@ -31,6 +31,10 @@ export default function MainBody() {
 
   useEffect(() => {
     fetchAllAnswers({sort: 'DESC', limit: 25}).then((r) => {
+      if (r.length === 0) {
+        setLoading(false);
+        return;
+      }
       setAnswers(r);
       setUntilId(r[r.length-1].id);
     });

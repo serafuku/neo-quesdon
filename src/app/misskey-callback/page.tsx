@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { login } from "./actions";
