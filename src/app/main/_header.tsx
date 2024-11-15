@@ -5,9 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
-
 const fetchMyProfile = async () => {
-  const user_handle = localStorage.getItem('user_handle');
+  const user_handle = localStorage.getItem("user_handle");
 
   if (user_handle) {
     const res: userProfileDto = await fetch("/api/db/fetch-my-profile", {
@@ -33,7 +32,7 @@ export default function MainHeader() {
   }, [fetchMyProfile]);
 
   return (
-    <div className="navbar bg-base-100 w-[90%] desktop:w-[60%] shadow rounded-box my-4">
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%] navbar bg-base-100 shadow rounded-box my-4">
       <div className="flex-1">
         <Link href="/main" className="btn btn-ghost text-xl">
           Neo-Quesdon

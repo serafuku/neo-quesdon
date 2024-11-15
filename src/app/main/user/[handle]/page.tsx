@@ -161,16 +161,20 @@ export default function UserPage() {
     const observer = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting && untilId !== null) {
-          fetchUserAnswers({sort: 'DESC', limit: 20, untilId: untilId, answeredPersonHandle: profileHandle})
-            .then((r) => {
-              if (r.length === 0) {
-                setLoading(false);
-                return;
-              }
-              setAnswers((prev_answers) => [...prev_answers, ...r]);
-              setUntilId(r[r.length-1].id);
-            })
-        };
+          fetchUserAnswers({
+            sort: "DESC",
+            limit: 20,
+            untilId: untilId,
+            answeredPersonHandle: profileHandle,
+          }).then((r) => {
+            if (r.length === 0) {
+              setLoading(false);
+              return;
+            }
+            setAnswers((prev_answers) => [...prev_answers, ...r]);
+            setUntilId(r[r.length - 1].id);
+          });
+        }
       },
       {
         threshold: 0.7,
@@ -183,7 +187,7 @@ export default function UserPage() {
   }, [mounted, untilId]);
 
   return (
-    <div className="flex w-[90vw] desktop:w-[60vw]">
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%]">
       {userInfo === null ? (
         <div className="w-full flex flex-col justify-center items-center glass text-4xl rounded-box shadow p-2">
           <FaUserSlash />

@@ -62,7 +62,9 @@ export default function Question({ value }: askProps) {
         <div className="chat-header">
           {value.questioner ? value.questioner : "익명의 질문자"}
         </div>
-        <div className="chat-bubble">{value.question}</div>
+        <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl">
+          {value.question}
+        </div>
         <div className="chat-footer opacity-50">
           {value.questionedAt.toLocaleString()}
           <span
@@ -83,7 +85,7 @@ export default function Question({ value }: askProps) {
           >
             <textarea
               {...register("answer", { required: "required" })}
-              className={`textarea textarea-sm desktop:text-2xl bg-transparent ${
+              className={`textarea textarea-sm text-sm window:text-xl desktop:text-2xl bg-transparent ${
                 errors.answer && "textarea-error"
               }`}
               placeholder="답변을 입력하세요..."
@@ -99,10 +101,7 @@ export default function Question({ value }: askProps) {
                 <input type="hidden" {...register("nsfw")} />
                 <span className="text-lg desktop:text-2xl">NSFW로 체크</span>
               </div>
-              <button
-                type={"submit"}
-                className="btn btn-outline"
-              >
+              <button type={"submit"} className="btn btn-outline">
                 답변
               </button>
             </div>

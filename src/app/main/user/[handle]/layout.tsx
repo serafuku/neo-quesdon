@@ -3,9 +3,5 @@ export default function UserLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="w-full flex justify-center">
-      <main className="flex">{children}</main>
-    </div>
-  );
+  return <main className="w-full flex justify-center">{children}</main>;
 }

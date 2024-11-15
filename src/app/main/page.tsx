@@ -8,17 +8,17 @@ import { answer } from "@prisma/client";
 import { FetchAllAnswersDto } from "../_dto/fetch-all-answers/fetch-all-answers.dto";
 
 async function fetchAllAnswers(req: FetchAllAnswersDto) {
-  const res = await fetch('/api/db/fetch-all-answers', {
-    method: 'POST', 
+  const res = await fetch("/api/db/fetch-all-answers", {
+    method: "POST",
     headers: {
-      "Content-Type": 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(req),
   });
   if (res.ok) {
-    return await res.json() as answer[];
+    return (await res.json()) as answer[];
   } else {
-    console.log('error:', res.status, res.statusText);
+    console.log("error:", res.status, res.statusText);
     return [];
   }
 }
@@ -28,15 +28,14 @@ export default function MainBody() {
   const [untilId, setUntilId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-
   useEffect(() => {
-    fetchAllAnswers({sort: 'DESC', limit: 25}).then((r) => {
+    fetchAllAnswers({ sort: "DESC", limit: 25 }).then((r) => {
       if (r.length === 0) {
         setLoading(false);
         return;
       }
       setAnswers(r);
-      setUntilId(r[r.length-1].id);
+      setUntilId(r[r.length - 1].id);
     });
   }, []);
 
@@ -44,16 +43,17 @@ export default function MainBody() {
     const observer = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting && untilId !== null) {
-          fetchAllAnswers({sort: 'DESC', limit: 25, untilId: untilId})
-            .then((r) => {
+          fetchAllAnswers({ sort: "DESC", limit: 25, untilId: untilId }).then(
+            (r) => {
               if (r.length === 0) {
                 setLoading(false);
                 return;
               }
               setAnswers((prev_answers) => [...prev_answers, ...r]);
-              setUntilId(r[r.length-1].id);
-            })
-        };
+              setUntilId(r[r.length - 1].id);
+            }
+          );
+        }
       },
       {
         threshold: 0.7,
@@ -66,8 +66,8 @@ export default function MainBody() {
   }, [mounted, untilId]);
 
   return (
-    <div className="w-[90%] desktop:w-[60%]">
-      <h3 className="text-4xl mb-2">최근 올라온 답변들</h3>
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%]">
+      <h3 className="text-3xl desktop:text-4xl mb-2">최근 올라온 답변들</h3>
       {answers === undefined ? (
         <div className="flex justify-center">
           <span className="loading loading-spinner loading-lg" />
