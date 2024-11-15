@@ -19,7 +19,6 @@ export async function getQuestion(id: number) {
 export async function postAnswer(
   question: question | null,
   answer: typedAnswer,
-  hostname: string
 ) {
   const prisma = new PrismaClient();
 
@@ -52,7 +51,8 @@ export async function postAnswer(
       },
     });
 
-    const answerUrl = `https://${hostname}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
+    const baseUrl = process.env.WEB_URL;
+    const answerUrl = `${baseUrl}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
 
     console.log('Created new answer:', answerUrl);
 
