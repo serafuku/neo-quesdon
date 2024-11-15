@@ -29,6 +29,9 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 # copy config example file
 cp config/docker.env.example config/docker.env
 
+# copy example compose file
+cp docker-compose-example.yml docker-compose.yml
+
 # Edit config file
 vim config/docker.env
 
