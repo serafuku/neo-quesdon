@@ -52,11 +52,21 @@ export async function POST(req: NextRequest) {
       },
     });
   
-    //알림 전송
-    const url = `${process.env.WEB_URL}/main/questions`;
-    setImmediate(() => {
-      sendNotify(questionee_user, newQuestion.question, url);
+    const userSettings = await prisma.profile.findUnique({
+      where: {
+        handle: body.questionee,
+      },
     });
+
+    if (userSettings && userSettings.stopNotiNewQuestion === true) {
+      return NextResponse.json({ status: 200 });
+    } else {
+      //알림 전송
+      const url = `${process.env.WEB_URL}/main/questions`;
+      setImmediate(() => {
+        sendNotify(questionee_user, newQuestion.question, url);
+      });
+    }
     
     // notify send 기다라지 않고 200반환
     return NextResponse.json({ status: 200 });

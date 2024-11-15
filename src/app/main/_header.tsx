@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
@@ -30,7 +30,7 @@ export default function MainHeader() {
 
   useEffect(() => {
     fetchMyProfile().then((r) => setUser(r));
-  }, []);
+  }, [fetchMyProfile]);
 
   return (
     <div className="navbar bg-base-100 w-[90%] desktop:w-[60%] shadow rounded-box my-4">

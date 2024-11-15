@@ -51,10 +51,16 @@ export async function postAnswer(
       },
     });
 
-    const baseUrl = process.env.WEB_URL;
-    const answerUrl = `${baseUrl}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
+    const userSettings = await prisma.profile.findUnique({
+      where: {
+        handle: question.questioneeHandle,
+      },
+    });
 
-    console.log('Created new answer:', answerUrl);
+    //답변 올리는 부분
+    if (userSettings && !userSettings.stopPostAnswer) {
+      const baseUrl = process.env.WEB_URL;
+      const answerUrl = `${baseUrl}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
 
     if (answeredUser && server) {
       const i = createHash("sha256")
@@ -80,6 +86,8 @@ export async function postAnswer(
       }
     } else {
       console.log("user not found");
+    }
+      console.log('Created new answer:', answerUrl);
     }
   }
 }

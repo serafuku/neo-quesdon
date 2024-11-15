@@ -47,6 +47,8 @@ export async function updateSetting(handle: string, payload: FormValue) {
         data: {
           stopAnonQuestion: payload.stopAnonQuestion,
           stopNewQuestion: payload.stopNewQuestion,
+          stopNotiNewQuestion: payload.stopNotiNewQuestion,
+          stopPostAnswer: payload.stopPostAnswer,
           questionBoxName: `${
             payload.questionBoxName === "" ? "질문함" : payload.questionBoxName
           }`,

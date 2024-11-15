@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import type { answers } from "..";
 import { useEffect, useState } from "react";
 import NameComponents from "./NameComponents";
+import { AnswerDto } from "../_dto/fetch-all-answers/Answers.dto";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
 interface askProps {
-  value: answers;
+  value: AnswerDto;
 }
 
 export async function fetchProfile(handle: string) {

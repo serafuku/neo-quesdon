@@ -26,6 +26,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{handl
       stopAnonQuestion: profile.stopAnonQuestion,
       avatarUrl: profile.avatarUrl,
       questionBoxName: profile.questionBoxName,
+      stopNotiNewQuestion: profile.stopNotiNewQuestion,
+      stopPostAnswer: profile.stopPostAnswer,
     }
 
 
