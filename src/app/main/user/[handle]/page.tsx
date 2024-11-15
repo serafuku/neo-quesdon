@@ -127,7 +127,7 @@ export default function UserPage() {
     fetchProfile(profileHandle).then((r) => {
       setUserInfo(r);
     });
-  }, []);
+  }, [profileHandle]);
 
   useEffect(() => {
     if (userInfo) {
@@ -138,7 +138,7 @@ export default function UserPage() {
         .then((r) => r.json())
         .then((r) => setQuestions(r));
     }
-  }, [userInfo]);
+  }, [profileHandle, userInfo]);
 
   return (
     <div className="flex w-[90vw] desktop:w-[60vw]">

@@ -26,7 +26,7 @@ export default function Answer({ value }: askProps) {
   useEffect(() => {
     fetchProfile(value.answeredPersonHandle).then((r) => setUserInfo(r));
     setShowNsfw(!value.nsfwedAnswer);
-  }, []);
+  }, [value.answeredPersonHandle, value.nsfwedAnswer]);
 
   return (
     <div className="w-full glass rounded-box p-4 mb-2 shadow">
