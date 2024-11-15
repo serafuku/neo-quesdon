@@ -11,11 +11,12 @@ export async function fetchUser() {
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const cookieStore = await cookies();
   const jwtToken = cookieStore.get("jwtToken");
+  
 
   try {
     if (jwtToken) {
       const { payload } = (await jwtVerify(jwtToken.value, secret, {
-        issuer: "urn:example:issuer",
+        issuer: `${process.env.WEB_URL}`,
         audience: "urn:example:audience",
       })) as JWTVerifyResult<{ handle: string; server: string }>;
 

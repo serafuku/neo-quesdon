@@ -50,9 +50,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --chown=nextjs:nodejs prisma ./prisma
 COPY --chown=nextjs:nodejs package-lock.json .
-RUN npm install -g prisma
 
 USER nextjs
+RUN npm install prisma
 
 EXPOSE 3000
 

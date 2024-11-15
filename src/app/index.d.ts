@@ -1,14 +1,17 @@
 import type { profile, user } from "@prisma/client";
+import { User } from "./api/misskey-entities/user";
 
-export interface loginPayload {
-  protocol: string;
-  host: string;
-  address: string;
+export interface callbackTokenClaimPayload {
+  //Misskey Access key 를 요청할 misskey의 host (예: serafuku.moe)
+  misskeyHost: string;
+
+  //callback으로 받은 토큰
+  callback_token: string;
+}
+export interface userInfoPayload {
+  user: User;
 }
 
-export interface tokenPayload extends loginPayload {
-  token: string | null | undefined;
-}
 
 export interface questions {
   id: number;

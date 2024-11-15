@@ -12,7 +12,7 @@ export default function SingleAnswer() {
 
   useEffect(() => {
     fetchAnswer(answer).then((r) => setAnswerBody(r));
-  }, []);
+  }, [answer]);
 
   return (
     <div className="flex w-[60vw]">

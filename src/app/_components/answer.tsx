@@ -2,23 +2,31 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { fetchUser } from "./action";
-import { profile } from "@prisma/client";
 import NameComponents from "./NameComponents";
 import { AnswerDto } from "../_dto/fetch-all-answers/Answers.dto";
+import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
 interface askProps {
   value: AnswerDto;
 }
 
+export async function fetchProfile(handle: string) {
+  const profile = await fetch(`/api/db/fetch-profile/${handle}`);
+  if (profile && profile.ok) {
+    return profile.json() as unknown as userProfileDto;
+  } else {
+    return undefined;
+  }
+}
+
 export default function Answer({ value }: askProps) {
   const [showNsfw, setShowNsfw] = useState(false);
-  const [userInfo, setUserInfo] = useState<profile>();
+  const [userInfo, setUserInfo] = useState<userProfileDto>();
 
   useEffect(() => {
-    fetchUser(value.answeredPersonHandle).then((r) => setUserInfo(r));
+    fetchProfile(value.answeredPersonHandle).then((r) => setUserInfo(r));
     setShowNsfw(!value.nsfwedAnswer);
-  }, []);
+  }, [value.answeredPersonHandle, value.nsfwedAnswer]);
 
   return (
     <div className="w-full glass rounded-box p-4 mb-2 shadow">

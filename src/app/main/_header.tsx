@@ -5,6 +5,19 @@ import { useCallback, useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 
+
+const fetchMyProfile = async () => {
+  const user_handle = localStorage.getItem('user_handle');
+
+  if (user_handle) {
+    const res: userProfileDto = await fetch("/api/db/fetch-my-profile", {
+      method: "GET",
+    }).then((r) => r.json());
+
+    return res;
+  }
+};
+
 const logout = async () => {
   await fetch("/api/web/logout");
 
@@ -15,15 +28,8 @@ const logout = async () => {
 export default function MainHeader() {
   const [user, setUser] = useState<userProfileDto>();
 
-  const fetchMyProfile = useCallback(async () => {
-    const res: userProfileDto = await fetch("/api/db/fetch-my-profile").then(
-      (r) => r.json()
-    );
-    setUser(res);
-  }, []);
-
   useEffect(() => {
-    fetchMyProfile();
+    fetchMyProfile().then((r) => setUser(r));
   }, [fetchMyProfile]);
 
   return (

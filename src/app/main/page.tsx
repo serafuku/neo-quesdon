@@ -1,12 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Question from "../_components/answer";
 import Answer from "../_components/answer";
 import { FaExclamationCircle } from "react-icons/fa";
-import { AnswerDto } from "../_dto/fetch-all-answers/Answers.dto";
+import { answer } from "@prisma/client";
+import { FetchAllAnswersDto } from "../_dto/fetch-all-answers/fetch-all-answers.dto";
 
+async function fetchAllAnswers(req: FetchAllAnswersDto) {
+  const res = await fetch('/api/db/fetch-all-answers', {
+    method: 'POST', 
+    headers: {
+      "Content-Type": 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+  if (res.ok) {
+    return await res.json();
+  } else {
+    console.log('error:', res.status, res.statusText);
+    return [];
+  }
+}
 export default function MainBody() {
-  const [answers, setAnswers] = useState<AnswerDto[]>([]);
+  const [answers, setAnswers] = useState<answer[]>([]);
   const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -23,7 +40,7 @@ export default function MainBody() {
   };
 
   useEffect(() => {
-    fetchMainAnswers();
+    fetchAllAnswers({sort: 'DESC', limit: 100}).then((r) => setAnswers(r));
   }, []);
 
   useEffect(() => {

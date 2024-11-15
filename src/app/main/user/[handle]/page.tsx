@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import Question from "@/app/_components/answer";
 import { FaUserSlash } from "react-icons/fa";
-import { fetchCookies } from "../../action";
 import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
+import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
 import { AnswerDto } from "@/app/_dto/fetch-all-answers/Answers.dto";
 
 type FormValue = {
@@ -16,16 +16,17 @@ type FormValue = {
   questioner: boolean;
 };
 
-const fetchProfile = async (handle: string) => {
-  const res = await fetch("/api/db/fetch-profile", {
-    method: "POST",
-    body: JSON.stringify(handle),
-  }).then((r) => r.json());
-
-  return res;
-};
+async function fetchProfile(handle: string) {
+  const profile = await fetch(`/api/db/fetch-profile/${handle}`);
+  if (profile && profile.ok) {
+    return profile.json() as unknown as userProfileDto;
+  } else {
+    return undefined;
+  }
+}
 
 export default function UserPage() {
+
   const { handle } = useParams() as { handle: string };
   const [userInfo, setUserInfo] = useState<userProfileDto>();
   const [questions, setQuestions] = useState<AnswerDto[]>([]);
@@ -63,61 +64,59 @@ export default function UserPage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mkQuestionCreateApi = async (q: CreateQuestionDto): Promise<any> => {
+    return await fetch("/api/db/create-question", {
+      method: "POST",
+      body: JSON.stringify(q),
+    }).then((r) => r.json());
+  }
+
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
-    let questionerHandle: string;
-    const cookies = await fetchCookies("jwtToken");
+    const user_handle = localStorage.getItem('user_handle');
 
-    if (questioner === true && cookies !== undefined) {
-      const localHandle = await verifyToken(cookies.value);
-      questionerHandle = localHandle.handle;
+    if (questioner === true && user_handle) {
 
-      const res = await fetch("/api/db/post-question", {
-        method: "POST",
-        body: JSON.stringify({
-          question: e.question,
-          questioner: questionerHandle,
-          questionee: profileHandle,
-        }),
-      }).then((r) => r.json());
+      const req: CreateQuestionDto = {
+        question: e.question,
+        questioner: user_handle,
+        questionee: profileHandle
+      }
+      const res = await mkQuestionCreateApi(req);
 
-      if (res.status === 200) {
+      if (res?.status === 200) {
         document.getElementById("my_modal_2")?.click();
       }
-    } else if (questioner === false && cookies !== undefined) {
+    } else if (questioner === false && user_handle === null) {
       if (userInfo?.stopAnonQuestion === true) {
         setError("questioner", {
           type: "stopAnonQuestion",
           message: "익명 질문은 받지 않고 있어요...",
         });
       } else {
-        const res = await fetch("/api/db/post-question", {
-          method: "POST",
-          body: JSON.stringify({
-            question: e.question,
-            questioner: null,
-            questionee: profileHandle,
-            address: window.location.host,
-          }),
-        }).then((r) => r.json());
+        const req: CreateQuestionDto = {
+          question: e.question,
+          questioner: null,
+          questionee: profileHandle
+        }
+        const res = await mkQuestionCreateApi(req);
 
         if (res.status === 200) {
           document.getElementById("my_modal_2")?.click();
         }
       }
-    } else if (questioner === true && cookies === undefined) {
+    } else if (questioner === true && user_handle === null) {
       setError("questioner", {
         type: "notLoggedIn",
         message: "작성자 공개를 하려면 로그인을 해주세요!",
       });
     } else {
-      const res = await fetch("/api/db/post-question", {
-        method: "POST",
-        body: JSON.stringify({
-          question: e.question,
-          questioner: null,
-          questionee: profileHandle,
-        }),
-      }).then((r) => r.json());
+      const req: CreateQuestionDto = {
+        question: e.question,
+        questioner: null,
+        questionee: profileHandle
+      }
+      const res = await mkQuestionCreateApi(req);
 
       if (res.status === 200) {
         document.getElementById("my_modal_2")?.click();
@@ -129,18 +128,18 @@ export default function UserPage() {
     fetchProfile(profileHandle).then((r) => {
       setUserInfo(r);
     });
-  }, []);
+  }, [profileHandle]);
 
   useEffect(() => {
     if (userInfo) {
-      fetch("/api/db/fetch-personal-question", {
+      fetch("/api/db/fetch-user-answers", {
         method: "POST",
         body: JSON.stringify(profileHandle),
       })
         .then((r) => r.json())
         .then((r) => setQuestions(r));
     }
-  }, [userInfo]);
+  }, [profileHandle, userInfo]);
 
   return (
     <div className="flex w-[90vw] desktop:w-[60vw]">

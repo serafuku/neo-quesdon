@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import detectInstance from "./api/functions/web/detectInstance";
-import type { loginPayload } from "@/app";
 import Link from "next/link";
+import { loginReqDto } from "./_dto/web/login/login.dto";
 
 interface FormValue {
   address: string;
@@ -16,14 +16,13 @@ interface hosts {
   host: string;
 }
 
-const misskeyAuth = async ({ protocol, host, address }: loginPayload) => {
+const misskeyAuth = async ({ misskeyHost }: loginReqDto) => {
+  const body: loginReqDto = {
+    misskeyHost: misskeyHost,
+  }
   const res = await fetch(`/api/web/login`, {
     method: "POST",
-    body: JSON.stringify({
-      protocol: protocol,
-      host: host,
-      address: address,
-    }),
+    body: JSON.stringify(body),
   });
 
   return await res.json();
@@ -45,10 +44,8 @@ export default function Home() {
     setIsLoading(true);
     localStorage.setItem("server", e.address);
 
-    const payload: loginPayload = {
-      protocol: hosts.protocol,
-      host: hosts.host,
-      address: e.address,
+    const payload: loginReqDto = {
+      misskeyHost: e.address,
     };
 
     detectInstance(e.address).then((r) => {
