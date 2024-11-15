@@ -75,8 +75,14 @@ export default function UserPage() {
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     const user_handle = localStorage.getItem('user_handle');
 
-    if (questioner === true && user_handle) {
-
+    // 작성자 공개
+    if (questioner === true) {
+      if (user_handle === null) {
+        setError("questioner", {
+          type: "notLoggedIn",
+          message: "작성자 공개를 하려면 로그인을 해주세요!",
+        });
+      }
       const req: CreateQuestionDto = {
         question: e.question,
         questioner: user_handle,
@@ -87,39 +93,24 @@ export default function UserPage() {
       if (res?.status === 200) {
         document.getElementById("my_modal_2")?.click();
       }
-    } else if (questioner === false && user_handle === null) {
-      if (userInfo?.stopAnonQuestion === true) {
-        setError("questioner", {
-          type: "stopAnonQuestion",
-          message: "익명 질문은 받지 않고 있어요...",
-        });
-      } else {
-        const req: CreateQuestionDto = {
-          question: e.question,
-          questioner: null,
-          questionee: profileHandle
-        }
-        const res = await mkQuestionCreateApi(req);
-
-        if (res.status === 200) {
-          document.getElementById("my_modal_2")?.click();
-        }
-      }
-    } else if (questioner === true && user_handle === null) {
-      setError("questioner", {
-        type: "notLoggedIn",
-        message: "작성자 공개를 하려면 로그인을 해주세요!",
-      });
-    } else {
-      const req: CreateQuestionDto = {
-        question: e.question,
-        questioner: null,
-        questionee: profileHandle
-      }
-      const res = await mkQuestionCreateApi(req);
-
-      if (res.status === 200) {
-        document.getElementById("my_modal_2")?.click();
+    } 
+    // 작성자 비공개
+    else {
+        if (userInfo?.stopAnonQuestion === true) {
+          setError("questioner", {
+            type: "stopAnonQuestion",
+            message: "익명 질문은 받지 않고 있어요...",
+          });
+        } else {
+          const req: CreateQuestionDto = {
+            question: e.question,
+            questioner: null,
+            questionee: profileHandle
+          }
+          const res = await mkQuestionCreateApi(req);
+          if (res.status === 200) {
+            document.getElementById("my_modal_2")?.click();
+          }
       }
     }
   };

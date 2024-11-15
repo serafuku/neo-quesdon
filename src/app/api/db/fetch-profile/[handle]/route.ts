@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{handl
     return NextResponse.json(resBody, {
       status: 200,
       headers: {
-        'Cache-Control': 'public, max-age=60',
+        'Cache-Control': 'public, max-age=10',
       }
     });
   } catch (err) {
