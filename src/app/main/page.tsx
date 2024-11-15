@@ -16,7 +16,7 @@ async function fetchAllAnswers(req: FetchAllAnswersDto) {
     body: JSON.stringify(req),
   });
   if (res.ok) {
-    return await res.json();
+    return await res.json() as answer[];
   } else {
     console.log('error:', res.status, res.statusText);
     return [];
@@ -25,28 +25,31 @@ async function fetchAllAnswers(req: FetchAllAnswersDto) {
 export default function MainBody() {
   const [answers, setAnswers] = useState<answer[]>([]);
   const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [untilId, setUntilId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchMainAnswers = async () => {
-    setLoading(true);
-    const res = await fetch(
-      `/api/db/fetch-all-answers?limit=5&cursor=${cursor || ""}`
-    ).then((r) => r.json());
-
-    setAnswers((prevAnswers) => [...prevAnswers, ...res.answers]);
-    setCursor(res.nextCursor);
-    setLoading(false);
-  };
 
   useEffect(() => {
-    fetchAllAnswers({sort: 'DESC', limit: 100}).then((r) => setAnswers(r));
+    fetchAllAnswers({sort: 'DESC', limit: 25}).then((r) => {
+      setAnswers(r);
+      setUntilId(r[r.length-1].id);
+    });
   }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting && cursor !== null) fetchMainAnswers();
+        if (e.isIntersecting && untilId !== null) {
+          fetchAllAnswers({sort: 'DESC', limit: 25, untilId: untilId})
+            .then((r) => {
+              if (r.length === 0) {
+                setLoading(false);
+                return;
+              }
+              setAnswers((prev_answers) => [...prev_answers, ...r]);
+              setUntilId(r[r.length-1].id);
+            })
+        };
       },
       {
         threshold: 0.7,
@@ -56,7 +59,7 @@ export default function MainBody() {
     return () => {
       if (mounted) observer.unobserve(mounted);
     };
-  }, [mounted, cursor]);
+  }, [mounted, untilId]);
 
   return (
     <div className="w-[90%] desktop:w-[60%]">
