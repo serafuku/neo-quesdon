@@ -116,6 +116,7 @@ export default function UserPage() {
       const res = await mkQuestionCreateApi(req);
 
       if (res.status === 200) {
+        reset();
         document.getElementById("my_modal_2")?.click();
       }
     }
@@ -134,6 +135,7 @@ export default function UserPage() {
         };
         const res = await mkQuestionCreateApi(req);
         if (res.status === 200) {
+          reset();
           document.getElementById("my_modal_2")?.click();
         }
       }
@@ -343,7 +345,6 @@ export default function UserPage() {
               className="btn"
               onClick={() => {
                 document.getElementById("my_modal_2")?.click();
-                reset();
               }}
             >
               닫기
