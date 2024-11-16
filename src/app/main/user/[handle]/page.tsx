@@ -28,6 +28,7 @@ async function fetchProfile(handle: string) {
 export default function UserPage() {
   const { handle } = useParams() as { handle: string };
   const [userInfo, setUserInfo] = useState<userProfileDto>();
+  const [localHandle, setLocalHandle] = useState<string>("");
   const [answers, setAnswers] = useState<AnswerDto[]>([]);
   const [untilId, setUntilId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -56,13 +57,25 @@ export default function UserPage() {
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      trigger();
+      const isValid = await trigger();
 
-      const value = getValues();
-
-      if (value) {
-        await onSubmit(value);
+      if (isValid === false) {
+        return;
+      } else {
+        const value = getValues();
+        if (value) {
+          await onSubmit(value);
+        }
       }
+    }
+  };
+
+  const onEscape = (e: React.KeyboardEvent) => {
+    const modalState = document.getElementById(
+      "my_modal_2"
+    ) as HTMLInputElement;
+    if (e.key === "Escape") {
+      modalState.click();
     }
   };
 
@@ -99,6 +112,7 @@ export default function UserPage() {
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     const user_handle = localStorage.getItem("user_handle");
+    const detectWhiteSpaces = new RegExp(/^\s+$/);
 
     // 작성자 공개
     if (questioner === true) {
@@ -107,7 +121,18 @@ export default function UserPage() {
           type: "notLoggedIn",
           message: "작성자 공개를 하려면 로그인을 해주세요!",
         });
+        return;
       }
+      if (detectWhiteSpaces.test(e.question) === true) {
+        setError("question", {
+          type: "questionOnlyWhiteSpace",
+          message: "아무것도 없는 질문을 보내시려구요...?",
+        });
+        return;
+      }
+
+      document.getElementById("my_modal_2")?.click();
+
       const req: CreateQuestionDto = {
         question: e.question,
         questioner: user_handle,
@@ -117,7 +142,6 @@ export default function UserPage() {
 
       if (res.status === 200) {
         reset();
-        document.getElementById("my_modal_2")?.click();
       }
     }
     // 작성자 비공개
@@ -127,7 +151,18 @@ export default function UserPage() {
           type: "stopAnonQuestion",
           message: "익명 질문은 받지 않고 있어요...",
         });
+        return;
       } else {
+        if (detectWhiteSpaces.test(e.question) === true) {
+          setError("question", {
+            type: "questionOnlyWhiteSpace",
+            message: "아무것도 없는 질문을 보내시려구요...?",
+          });
+          return;
+        }
+
+        document.getElementById("my_modal_2")?.click();
+
         const req: CreateQuestionDto = {
           question: e.question,
           questioner: null,
@@ -136,7 +171,6 @@ export default function UserPage() {
         const res = await mkQuestionCreateApi(req);
         if (res.status === 200) {
           reset();
-          document.getElementById("my_modal_2")?.click();
         }
       }
     }
@@ -146,6 +180,7 @@ export default function UserPage() {
     fetchProfile(profileHandle).then((r) => {
       setUserInfo(r);
     });
+    setLocalHandle(localStorage.getItem("user_handle") ?? "");
   }, [profileHandle]);
 
   useEffect(() => {
@@ -195,7 +230,10 @@ export default function UserPage() {
   }, [mounted, untilId]);
 
   return (
-    <div className="w-[90%] window:w-[80%] desktop:w-[70%]">
+    <div
+      className="w-[90%] window:w-[80%] desktop:w-[70%]"
+      onKeyDown={onEscape}
+    >
       {userInfo === null ? (
         <div className="w-full flex flex-col justify-center items-center glass text-4xl rounded-box shadow p-2">
           <FaUserSlash />
@@ -275,6 +313,13 @@ export default function UserPage() {
                       data-tip={errors.questioner.message}
                     />
                   )}
+                {errors.question &&
+                  errors.question.type === "questionOnlyWhiteSpace" && (
+                    <div
+                      className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
+                      data-tip={errors.question.message}
+                    />
+                  )}
                 <div className="w-[90%] flex justify-between">
                   <div className="flex gap-2 items-center">
                     <input
@@ -291,11 +336,13 @@ export default function UserPage() {
                 </div>
               </form>
             </div>
-            <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
-              <a className="link" href={shareUrl()} target="_blank">
-                Misskey에 질문상자 페이지를 공유
-              </a>
-            </div>
+            {localHandle === profileHandle && (
+              <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
+                <a className="link" href={shareUrl()} target="_blank">
+                  Misskey에 질문상자 페이지를 공유
+                </a>
+              </div>
+            )}
           </div>
           <div className="desktop:ml-2 desktop:w-[50%]">
             {answers !== null ? (
