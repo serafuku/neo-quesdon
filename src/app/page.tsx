@@ -47,14 +47,12 @@ function urlToHost(urlOrHost: string) {
 export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hosts, setHosts] = useState<hosts>({ protocol: "", host: "" });
-
   const router = useRouter();
-
   const {
     register,
     formState: { errors },
     handleSubmit,
-  } = useForm<FormValue>();
+  } = useForm<FormValue>({defaultValues: {address: ''}});
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     setIsLoading(true);
@@ -94,7 +92,12 @@ export default function Home() {
   useEffect(() => {
     const protocol = window.location.protocol;
     const host = window.location.host;
-
+    const lastUsedHost = localStorage.getItem('server');
+    const ele = document.getElementById('serverNameInput') as HTMLInputElement;
+    if (lastUsedHost && ele) {
+      ele.value = lastUsedHost;
+      ele.focus();
+    }
     setHosts({ protocol: protocol, host: host });
   }, []);
 
@@ -133,7 +136,7 @@ export default function Home() {
                   data-tip="URL을 입력해주세요"
                 />
               )}
-              <input
+              <input id="serverNameInput"
                 {...register("address", {
                   pattern: /\./,
                   required: "required",

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     try {
       handle = (await verifyToken(token)).handle;
     } catch {
-      return sendApiError(403, 'Token Verify Error');
+      return sendApiError(401, 'Token Verify Error');
     }
 
     const userProfile = await prisma.profile.findUnique({
