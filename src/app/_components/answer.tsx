@@ -56,7 +56,7 @@ export default function Answer({ value }: askProps) {
               </Link>
             </div>
           </div>
-          <div className="chat-header text-blue-500">
+          <div className="chat-header">
             <Link href={`/main/user/${value.answeredPersonHandle}`}>
               <NameComponents
                 username={userInfo?.name}
