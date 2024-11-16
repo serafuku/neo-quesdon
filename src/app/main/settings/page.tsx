@@ -78,21 +78,21 @@ export default function Settings() {
                 />
                 <span className="font-thin">더 이상 질문을 받지 않기</span>
                 <input
-                  {...register("stopAnonQuestion")}
+                  {...register("stopNewQuestion")}
                   type="checkbox"
                   className="toggle toggle-success"
                   defaultChecked={userInfo.stopNewQuestion}
                 />
                 <span className="font-thin">새 질문 DM으로 받지 않기</span>
                 <input
-                  {...register("stopNewQuestion")}
+                  {...register("stopNotiNewQuestion")}
                   type="checkbox"
                   className="toggle toggle-success"
                   defaultChecked={userInfo.stopNotiNewQuestion}
                 />
                 <span className="font-thin">내 답변을 올리지 않기</span>
                 <input
-                  {...register("stopNotiNewQuestion")}
+                  {...register("stopPostAnswer")}
                   type="checkbox"
                   className="toggle toggle-success"
                   defaultChecked={userInfo.stopPostAnswer}
