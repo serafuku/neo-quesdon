@@ -1,6 +1,6 @@
 "use server";
 
-import type { typedAnswer } from "@/app";
+import type { MkNoteAnswers, typedAnswer } from "@/app";
 import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { PrismaClient, question } from "@prisma/client";
 import { createHash } from "crypto";
@@ -72,22 +72,22 @@ export async function postAnswer(
         if (answer.nsfwedAnswer === true && answer.questioner === null) {
           const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
           const text = `Q: ${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNode(i, title, text, host);
+          await mkMisskeyNote(i, title, text, host, answer.visibility);
         } else if (
           answer.nsfwedAnswer === false &&
           answer.questioner !== null
         ) {
           const title = `Q: ${question.question} #neo-quesdon`;
           const text = `질문자:${answer.questioner}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNode(i, title, text, host);
+          await mkMisskeyNote(i, title, text, host, answer.visibility);
         } else if (answer.nsfwedAnswer === true && answer.questioner !== null) {
           const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
           const text = `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNode(i, title, text, host);
+          await mkMisskeyNote(i, title, text, host, answer.visibility);
         } else {
           const title = `Q: ${question.question} #neo-quesdon`;
           const text = `A: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNode(i, title, text, host);
+          await mkMisskeyNote(i, title, text, host, answer.visibility);
         }
       } else {
         console.log("user not found");
@@ -97,22 +97,25 @@ export async function postAnswer(
   }
 }
 
-async function mkMisskeyNode(
+async function mkMisskeyNote(
   i: string,
   title: string,
   text: string,
-  hostname: string
+  hostname: string,
+  visibility: "public" | "home" | "followers"
 ) {
+  const newAnswerNote: MkNoteAnswers = {
+    cw: title,
+    text: text,
+    visibility: visibility,
+  };
   const res = await fetch(`https://${hostname}/api/notes/create`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${i}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      cw: title,
-      text: text,
-    }),
+    body: JSON.stringify(newAnswerNote),
   });
   if (!res.ok) {
     console.warn(`Note create fail! `, res.status, res.statusText);

@@ -12,7 +12,6 @@ export interface userInfoPayload {
   user: User;
 }
 
-
 export interface questions {
   id: number;
   question: string;
@@ -28,6 +27,13 @@ export interface typedAnswer {
   answer: string;
   answeredPersonHandle: string;
   nsfwedAnswer: boolean;
+  visibility: "public" | "home" | "followers";
+}
+
+export interface MkNoteAnswers {
+  cw: string;
+  text: string;
+  visibility: "public" | "home" | "followers";
 }
 
 export interface postQuestion {
