@@ -3,15 +3,25 @@ import { PrismaClient } from "@prisma/client";
 import type { user } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
+import { validateStrict } from "@/utils/validator/strictValidator";
+import { ApiError } from "next/dist/server/api-utils";
+import { sendErrorResponse } from "../../functions/web/errorResponse";
 
 export async function POST(req: NextRequest) {
   const prisma = new PrismaClient();
 
   try {
-    const body: CreateQuestionDto = await req.json();
+    const body = await req.json();
+    let data;
+    try {
+      data = await validateStrict(CreateQuestionDto, body);
+    } catch (errors) {
+      return sendErrorResponse(400, `${errors}`);
+    }
+
     const questionee_user = await prisma.user.findUniqueOrThrow({
       where: {
-        handle: body.questionee,
+        handle: data.questionee,
       },
     });
     const questionee_profile = await prisma.profile.findUniqueOrThrow({
@@ -20,41 +30,41 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    if (questionee_profile.stopAnonQuestion && !body.questioner) {
+    if (questionee_profile.stopAnonQuestion && !data.questioner) {
       throw new Error('The user has prohibits anonymous questions.');
     } else if (questionee_profile.stopNewQuestion) {
       throw new Error('User stops stopNewQuestion');
     }
 
     // 제시된 questioner 핸들이 JWT토큰의 핸들과 일치하는지 검사
-    if (body.questioner) {
+    if (data.questioner) {
       const token = req.cookies.get('jwtToken')?.value;
       try {
         if (typeof token !== 'string') {
-          throw new Error(`Token Error`);
+          throw new Error(`Token is not string!`);
         }
         const tokenPayload = await verifyToken(token);
-        if (tokenPayload.handle.toLowerCase() !== body.questioner.toLowerCase()) {
+        if (tokenPayload.handle.toLowerCase() !== data.questioner.toLowerCase()) {
           throw new Error(`Token and questioner not match`);
         }
       } catch (err) {
         console.log(`questioner verify ERROR! ${err}`);
-        throw(err);
+        return sendErrorResponse(403, `${err}`);
       }
     }
 
     //질문 생성
     const newQuestion = await prisma.question.create({
       data: {
-        question: body.question,
-        questioner: body.questioner,
-        questioneeHandle: body.questionee,
+        question: data.question,
+        questioner: data.questioner,
+        questioneeHandle: data.questionee,
       },
     });
   
     const userSettings = await prisma.profile.findUnique({
       where: {
-        handle: body.questionee,
+        handle: data.questionee,
       },
     });
 
