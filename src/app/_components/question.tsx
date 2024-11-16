@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { SubmitHandler, useForm } from "react-hook-form";
-import type { questions } from "..";
+import type { questions, typedAnswer } from "..";
 import { getQuestion, postAnswer } from "../main/questions/action";
 
 interface formValue {
   answer: string;
   nsfw: boolean;
+  visibility: "public" | "home" | "followers";
 }
 
 interface askProps {
@@ -33,6 +34,7 @@ export default function Question({
     defaultValues: {
       answer: "",
       nsfw: false,
+      visibility: "public",
     },
   });
 
@@ -52,12 +54,13 @@ export default function Question({
 
   const onSubmit: SubmitHandler<formValue> = async (e) => {
     const question = await getQuestion(singleQuestion.id);
-    const typedAnswer = {
+    const typedAnswer: typedAnswer = {
       question: question!.question,
       questioner: question!.questioner,
       answer: e.answer,
       answeredPersonHandle: question!.questioneeHandle,
       nsfwedAnswer: e.nsfw,
+      visibility: e.visibility,
     };
     const filteredQuestions = multipleQuestions.filter(
       (el) => el.id !== singleQuestion.id
@@ -92,7 +95,7 @@ export default function Question({
         </div>
       </div>
       <div className="text-2xl chat chat-end">
-        <div className="chat-bubble bg-green-700">
+        <div className="chat-bubble bg-green-600">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-2 py-2"
@@ -106,14 +109,25 @@ export default function Question({
               onKeyDown={onCtrlEnter}
             />
             <div className="w-full flex justify-between items-center">
-              <div className="flex gap-2 items-center text-xl">
-                <input
-                  type="checkbox"
-                  className="toggle toggle-accent"
-                  onClick={() => setValue("nsfw", !nsfwedAnswer)}
-                />
-                <input type="hidden" {...register("nsfw")} />
-                <span className="text-lg desktop:text-2xl">NSFW로 체크</span>
+              <div className="flex gap-6">
+                <div className="flex gap-2 items-center text-xl">
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-accent"
+                    onClick={() => setValue("nsfw", !nsfwedAnswer)}
+                  />
+                  <input type="hidden" {...register("nsfw")} />
+                  <span className="text-lg desktop:text-xl">NSFW로 체크</span>
+                </div>
+                <select
+                  {...register("visibility")}
+                  className="select select-ghost select-sm"
+                  defaultValue={"public"}
+                >
+                  <option value="public">공개</option>
+                  <option value="home">홈</option>
+                  <option value="followers">팔로워</option>
+                </select>
               </div>
               <button type={"submit"} className="btn btn-outline">
                 답변

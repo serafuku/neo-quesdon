@@ -28,6 +28,7 @@ async function fetchProfile(handle: string) {
 export default function UserPage() {
   const { handle } = useParams() as { handle: string };
   const [userInfo, setUserInfo] = useState<userProfileDto>();
+  const [localHandle, setLocalHandle] = useState<string>("");
   const [answers, setAnswers] = useState<AnswerDto[]>([]);
   const [untilId, setUntilId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -56,13 +57,25 @@ export default function UserPage() {
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      trigger();
+      const isValid = await trigger();
 
-      const value = getValues();
-
-      if (value) {
-        await onSubmit(value);
+      if (isValid === false) {
+        return;
+      } else {
+        const value = getValues();
+        if (value) {
+          await onSubmit(value);
+        }
       }
+    }
+  };
+
+  const onEscape = (e: React.KeyboardEvent) => {
+    const modalState = document.getElementById(
+      "my_modal_2"
+    ) as HTMLInputElement;
+    if (e.key === "Escape") {
+      modalState.click();
     }
   };
 
@@ -91,8 +104,15 @@ export default function UserPage() {
     return res;
   };
 
+  const shareUrl = () => {
+    const server = localStorage.getItem("server");
+    const text = `저의 ${userInfo?.questionBoxName}이에요! #neo-quesdon ${location.origin}/main/user/${userInfo?.handle}`;
+    return `https://${server}/share?text=${encodeURIComponent(text)}`;
+  };
+
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     const user_handle = localStorage.getItem("user_handle");
+    const detectWhiteSpaces = new RegExp(/^\s+$/);
 
     // 작성자 공개
     if (questioner === true) {
@@ -101,7 +121,18 @@ export default function UserPage() {
           type: "notLoggedIn",
           message: "작성자 공개를 하려면 로그인을 해주세요!",
         });
+        return;
       }
+      if (detectWhiteSpaces.test(e.question) === true) {
+        setError("question", {
+          type: "questionOnlyWhiteSpace",
+          message: "아무것도 없는 질문을 보내시려구요...?",
+        });
+        return;
+      }
+
+      document.getElementById("my_modal_2")?.click();
+
       const req: CreateQuestionDto = {
         question: e.question,
         questioner: user_handle,
@@ -110,7 +141,7 @@ export default function UserPage() {
       const res = await mkQuestionCreateApi(req);
 
       if (res.status === 200) {
-        document.getElementById("my_modal_2")?.click();
+        reset();
       }
     }
     // 작성자 비공개
@@ -120,7 +151,18 @@ export default function UserPage() {
           type: "stopAnonQuestion",
           message: "익명 질문은 받지 않고 있어요...",
         });
+        return;
       } else {
+        if (detectWhiteSpaces.test(e.question) === true) {
+          setError("question", {
+            type: "questionOnlyWhiteSpace",
+            message: "아무것도 없는 질문을 보내시려구요...?",
+          });
+          return;
+        }
+
+        document.getElementById("my_modal_2")?.click();
+
         const req: CreateQuestionDto = {
           question: e.question,
           questioner: null,
@@ -128,7 +170,7 @@ export default function UserPage() {
         };
         const res = await mkQuestionCreateApi(req);
         if (res.status === 200) {
-          document.getElementById("my_modal_2")?.click();
+          reset();
         }
       }
     }
@@ -138,6 +180,7 @@ export default function UserPage() {
     fetchProfile(profileHandle).then((r) => {
       setUserInfo(r);
     });
+    setLocalHandle(localStorage.getItem("user_handle") ?? "");
   }, [profileHandle]);
 
   useEffect(() => {
@@ -187,7 +230,10 @@ export default function UserPage() {
   }, [mounted, untilId]);
 
   return (
-    <div className="w-[90%] window:w-[80%] desktop:w-[70%]">
+    <div
+      className="w-[90%] window:w-[80%] desktop:w-[70%]"
+      onKeyDown={onEscape}
+    >
       {userInfo === null ? (
         <div className="w-full flex flex-col justify-center items-center glass text-4xl rounded-box shadow p-2">
           <FaUserSlash />
@@ -195,92 +241,108 @@ export default function UserPage() {
         </div>
       ) : (
         <div className="w-full flex flex-col desktop:flex-row">
-          <div className="w-full desktop:w-[50%] h-fit desktop:sticky z-0 top-2 py-4 glass rounded-box flex flex-col items-center shadow mb-2">
-            <div className="flex flex-col items-center gap-2 py-2">
-              {userInfo && userInfo.avatarUrl ? (
-                <div className="flex w-full justify-center">
-                  <img
-                    src={userInfo.avatarUrl}
-                    alt="User Avatar"
-                    className="w-24 h-24 object-cover rounded-full"
-                  />
-                  {userInfo.stopAnonQuestion && (
-                    <div className="chat chat-start absolute left-[21rem] w-full">
-                      <div className="chat-bubble bg-base-100 text-slate-700">
-                        작성자 공개 질문만 받아요!
+          <div className="w-full h-fit desktop:sticky top-2 desktop:w-[50%] flex flex-col">
+            <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
+              <div className="flex flex-col items-center gap-2 py-2">
+                {userInfo && userInfo.avatarUrl ? (
+                  <div className="flex w-full justify-center">
+                    <img
+                      src={userInfo.avatarUrl}
+                      alt="User Avatar"
+                      className="w-24 h-24 object-cover rounded-full"
+                    />
+                    {userInfo.stopAnonQuestion && (
+                      <div className="chat chat-start absolute left-[21rem] w-full">
+                        <div className="chat-bubble bg-base-100 text-slate-700">
+                          작성자 공개 질문만 받아요!
+                        </div>
                       </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="skeleton h-24 w-24 rounded-full" />
+                )}
+                <div className="flex items-center text-xl">
+                  {userInfo?.stopNewQuestion ? (
+                    <div className="flex flex-col items-center desktop:flex-row">
+                      <NameComponents
+                        username={userInfo?.name}
+                        width={32}
+                        height={32}
+                      />
+                      <span>님은 지금 질문을 받지 않고 있어요...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center desktop:flex-row window:flex-row window:text-2xl">
+                      <NameComponents
+                        username={userInfo?.name}
+                        width={32}
+                        height={32}
+                      />
+                      <span>님의 {userInfo?.questionBoxName}이에요!</span>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="skeleton h-24 w-24 rounded-full" />
-              )}
-              <div className="flex items-center text-xl">
-                {userInfo?.stopNewQuestion ? (
-                  <div className="flex flex-col items-center desktop:flex-row">
-                    <NameComponents
-                      username={userInfo?.name}
-                      width={32}
-                      height={32}
-                    />
-                    <span>님은 지금 질문을 받지 않고 있어요...</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center desktop:flex-col window:flex-row window:text-2xl">
-                    <NameComponents
-                      username={userInfo?.name}
-                      width={32}
-                      height={32}
-                    />
-                    <span>님의 {userInfo?.questionBoxName}이에요!</span>
-                  </div>
-                )}
               </div>
-            </div>
-            <form
-              className="w-full flex flex-col items-center"
-              onSubmit={handleSubmit(onSubmit)}
-            >
-              <textarea
-                {...register("question", {
-                  required: "required",
-                })}
-                placeholder="질문 내용을 입력해 주세요"
-                className={`w-[90%] my-2 font-thin textarea ${
-                  errors.question ? "textarea-error" : "textarea-bordered"
-                }`}
-                onKeyDown={onCtrlEnter}
-                disabled={userInfo?.stopNewQuestion === true ? true : false}
-              />
-              {errors.questioner &&
-                errors.questioner.type === "stopAnonQuestion" && (
-                  <div
-                    className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
-                    data-tip={errors.questioner.message}
-                  />
-                )}
-              {errors.questioner &&
-                errors.questioner.type === "notLoggedIn" && (
-                  <div
-                    className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
-                    data-tip={errors.questioner.message}
-                  />
-                )}
-              <div className="w-[90%] flex justify-between">
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-accent"
-                    onClick={() => setValue("questioner", !questioner)}
-                  />
-                  <input type="hidden" {...register("questioner")} />
-                  <span>작성자 공개</span>
+              <form
+                className="w-full flex flex-col items-center"
+                onSubmit={handleSubmit(onSubmit)}
+              >
+                <textarea
+                  {...register("question", {
+                    required: "required",
+                  })}
+                  placeholder="질문 내용을 입력해 주세요"
+                  className={`w-[90%] my-2 font-thin textarea ${
+                    errors.question ? "textarea-error" : "textarea-bordered"
+                  }`}
+                  onKeyDown={onCtrlEnter}
+                  disabled={userInfo?.stopNewQuestion === true ? true : false}
+                />
+                {errors.questioner &&
+                  errors.questioner.type === "stopAnonQuestion" && (
+                    <div
+                      className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
+                      data-tip={errors.questioner.message}
+                    />
+                  )}
+                {errors.questioner &&
+                  errors.questioner.type === "notLoggedIn" && (
+                    <div
+                      className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
+                      data-tip={errors.questioner.message}
+                    />
+                  )}
+                {errors.question &&
+                  errors.question.type === "questionOnlyWhiteSpace" && (
+                    <div
+                      className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
+                      data-tip={errors.question.message}
+                    />
+                  )}
+                <div className="w-[90%] flex justify-between">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="checkbox"
+                      className="toggle toggle-accent"
+                      onClick={() => setValue("questioner", !questioner)}
+                    />
+                    <input type="hidden" {...register("questioner")} />
+                    <span>작성자 공개</span>
+                  </div>
+                  <button type="submit" className="btn btn-primary">
+                    질문하기
+                  </button>
                 </div>
-                <button type="submit" className="btn btn-primary">
-                  질문하기
-                </button>
+              </form>
+            </div>
+            {localHandle === profileHandle && (
+              <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
+                <a className="link" href={shareUrl()} target="_blank">
+                  Misskey에 질문상자 페이지를 공유
+                </a>
               </div>
-            </form>
+            )}
           </div>
           <div className="desktop:ml-2 desktop:w-[50%]">
             {answers !== null ? (
@@ -330,7 +392,6 @@ export default function UserPage() {
               className="btn"
               onClick={() => {
                 document.getElementById("my_modal_2")?.click();
-                reset();
               }}
             >
               닫기

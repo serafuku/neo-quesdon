@@ -56,7 +56,7 @@ export default function Answer({ value }: askProps) {
               </Link>
             </div>
           </div>
-          <div className="chat-header text-blue-500">
+          <div className="chat-header">
             <Link href={`/main/user/${value.answeredPersonHandle}`}>
               <NameComponents
                 username={userInfo?.name}
@@ -65,7 +65,7 @@ export default function Answer({ value }: askProps) {
               />
             </Link>
           </div>
-          <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble bg-green-700">
+          <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble bg-green-600">
             <Link href={`/main/user/${value.answeredPersonHandle}`}>
               {value.answer}
             </Link>
