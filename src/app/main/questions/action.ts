@@ -1,8 +1,10 @@
 "use server";
 
 import type { typedAnswer } from "@/app";
+import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { PrismaClient, question } from "@prisma/client";
 import { createHash } from "crypto";
+import { cookies } from "next/headers";
 
 export async function getQuestion(id: number) {
   const prisma = new PrismaClient();
@@ -18,7 +20,7 @@ export async function getQuestion(id: number) {
 
 export async function postAnswer(
   question: question | null,
-  answer: typedAnswer,
+  answer: typedAnswer
 ) {
   const prisma = new PrismaClient();
 
@@ -62,37 +64,45 @@ export async function postAnswer(
       const baseUrl = process.env.WEB_URL;
       const answerUrl = `${baseUrl}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
 
-    if (answeredUser && server) {
-      const i = createHash("sha256")
-        .update(answeredUser.token + server.appSecret, "utf-8")
-        .digest("hex");
-      const host = answeredUser.hostName;
-      if (answer.nsfwedAnswer === true && answer.questioner === null) {
-        const title =  `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
-        const text =  `Q: ${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`
-        await mkMisskeyNode(i, title, text, host);
-      } else if (answer.nsfwedAnswer === false && answer.questioner !== null) {
-        const title = `Q: ${question.question} #neo-quesdon`;
-        const text = `질문자:${answer.questioner}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-        await mkMisskeyNode(i, title, text, host);
-      } else if (answer.nsfwedAnswer === true && answer.questioner !== null) {
-        const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
-        const text = `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-        await mkMisskeyNode(i, title, text, host);
+      if (answeredUser && server) {
+        const i = createHash("sha256")
+          .update(answeredUser.token + server.appSecret, "utf-8")
+          .digest("hex");
+        const host = answeredUser.hostName;
+        if (answer.nsfwedAnswer === true && answer.questioner === null) {
+          const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
+          const text = `Q: ${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+          await mkMisskeyNode(i, title, text, host);
+        } else if (
+          answer.nsfwedAnswer === false &&
+          answer.questioner !== null
+        ) {
+          const title = `Q: ${question.question} #neo-quesdon`;
+          const text = `질문자:${answer.questioner}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+          await mkMisskeyNode(i, title, text, host);
+        } else if (answer.nsfwedAnswer === true && answer.questioner !== null) {
+          const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
+          const text = `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+          await mkMisskeyNode(i, title, text, host);
+        } else {
+          const title = `Q: ${question.question} #neo-quesdon`;
+          const text = `A: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+          await mkMisskeyNode(i, title, text, host);
+        }
       } else {
-        const title = `Q: ${question.question} #neo-quesdon`;
-        const text = `A: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-        await mkMisskeyNode(i, title, text, host);
+        console.log("user not found");
       }
-    } else {
-      console.log("user not found");
-    }
-      console.log('Created new answer:', answerUrl);
+      console.log("Created new answer:", answerUrl);
     }
   }
 }
 
-async function mkMisskeyNode(i: string, title: string, text: string, hostname: string) {
+async function mkMisskeyNode(
+  i: string,
+  title: string,
+  text: string,
+  hostname: string
+) {
   const res = await fetch(`https://${hostname}/api/notes/create`, {
     method: "POST",
     headers: {
@@ -105,15 +115,24 @@ async function mkMisskeyNode(i: string, title: string, text: string, hostname: s
     }),
   });
   if (!res.ok) {
-    console.warn(`Note create fail! `, res.status, res.statusText)
+    console.warn(`Note create fail! `, res.status, res.statusText);
   }
 }
 export async function deleteQuestion(id: number) {
-  const prisma = new PrismaClient();
+  const cookieStore = await cookies();
+  const jwtToken = cookieStore.get("jwtToken")?.value;
 
-  const deleteQuestion = await prisma.question.delete({
-    where: {
-      id: id,
-    },
-  });
+  try {
+    await verifyToken(jwtToken);
+
+    const prisma = new PrismaClient();
+
+    const deleteQuestion = await prisma.question.delete({
+      where: {
+        id: id,
+      },
+    });
+  } catch (err) {
+    throw new Error(`JWT Token Verification Error: ${err}`);
+  }
 }
