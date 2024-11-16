@@ -1,9 +1,19 @@
 import { fetchNameWithEmojiReqDto, fetchNameWithEmojiResDto } from "@/app/_dto/fetch-name-with-emoji/fetch-name-with-emoji.dto";
+import { validateStrict } from "@/utils/validator/strictValidator";
 import { NextRequest, NextResponse } from "next/server";
+import { sendErrorResponse } from "../../functions/web/errorResponse";
 
 
-export async function POST(req: NextRequest): Promise<NextResponse<fetchNameWithEmojiResDto>> {
-  const { name, misskeyBaseUrl }: fetchNameWithEmojiReqDto = await req.json();
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  let data;
+  const body = await req.json();
+  try {
+    data = await validateStrict(fetchNameWithEmojiReqDto, body);
+  } catch (err) {
+    return sendErrorResponse(400, `${err}`);
+  }
+
+  const { name, misskeyBaseUrl }: fetchNameWithEmojiReqDto = data;
   const usernameIndex: number[] = [];
   const usernameEmojiAddress: string[] = [];
   if (!name) {

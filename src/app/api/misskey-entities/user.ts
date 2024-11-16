@@ -1,4 +1,4 @@
-export type User = {
+export type MiUser = {
   id: string;
   username: string;
   name: string | null;

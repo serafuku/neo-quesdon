@@ -12,8 +12,8 @@ type nodeinfo = {
   software: { name: string; version: string };
 };
 
-export default async function detectInstance(url: string) {
-  const parsedUrl = new URL(`https://${url}`);
+export default async function detectInstance(host: string) {
+  const parsedUrl = new URL(`https://${host}`);
   const nodeInfoMeta: nodeinfoMeta = await fetch(
     `${parsedUrl.origin}/.well-known/nodeinfo`
   ).then((r) => r.json());

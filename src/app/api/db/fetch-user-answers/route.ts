@@ -1,24 +1,33 @@
 import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
+import { validateStrict } from "@/utils/validator/strictValidator";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { sendErrorResponse } from "../../functions/web/errorResponse";
 
 export async function POST(req: NextRequest) {
   try {
-    const body:FetchUserAnswersDto = await req.json();
+    const body = await req.json();
+    let data;
+    try {
+      data = await validateStrict(FetchUserAnswersDto, body);
+    } catch (err) {
+      return sendErrorResponse(400, `${err}`);
+    }
+
     const prisma = new PrismaClient();
-    const query_limit = body.limit ? Math.max(1, Math.min(body.limit, 100)) : 100;
-    const sinceId = body.sinceId;
-    const untilId = body.untilId;
+    const query_limit = data.limit ? Math.max(1, Math.min(data.limit, 100)) : 100;
+    const sinceId = data.sinceId;
+    const untilId = data.untilId;
   
     //내림차순이 기본값
-    const orderBy = (body.sort === 'ASC') ? 'asc' : 'desc';
+    const orderBy = (data.sort === 'ASC') ? 'asc' : 'desc';
 
-    if (!body.answeredPersonHandle) {
+    if (!data.answeredPersonHandle) {
       throw new Error(`answeredPersonHandle is null`);
     }
     const res = await prisma.answer.findMany({
       where: {
-        answeredPersonHandle: body.answeredPersonHandle,
+        answeredPersonHandle: data.answeredPersonHandle,
         id: {
           ...(typeof sinceId === 'string' ? { gt: sinceId } : {}),
           ...(typeof untilId === 'string' ? { lt: untilId } : {}),

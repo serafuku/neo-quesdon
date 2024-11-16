@@ -1,15 +1,14 @@
 import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-
-export const revalidate = 60;
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{handle?: string}> }) {
   const prisma = new PrismaClient();
   const userHandle = (await params).handle;
   try {
     if (!userHandle) { 
-      throw new Error('userHandle empty');
+      return sendApiError(400, 'userHandle empty');
     }
     const profile = await prisma.profile.findUnique({
       where: {
@@ -38,6 +37,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{handl
       }
     });
   } catch (err) {
-    return NextResponse.json({}, {status: 400});
+    return sendApiError(500, 'Error');
   }
 }

@@ -3,80 +3,94 @@ import { PrismaClient } from "@prisma/client";
 import type { user } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
+import { validateStrict } from "@/utils/validator/strictValidator";
+import { sendErrorResponse } from "../../functions/web/errorResponse";
 
 export async function POST(req: NextRequest) {
   const prisma = new PrismaClient();
 
   try {
-    const body: CreateQuestionDto = await req.json();
+    const body = await req.json();
+    let data;
+    try {
+      data = await validateStrict(CreateQuestionDto, body);
+    } catch (errors) {
+      return sendErrorResponse(400, `${errors}`);
+    }
+
     const questionee_user = await prisma.user.findUniqueOrThrow({
       where: {
-        handle: body.questionee,
+        handle: data.questionee,
       },
     });
     const questionee_profile = await prisma.profile.findUniqueOrThrow({
       where: {
         handle: questionee_user?.handle,
-      }
-    })
+      },
+    });
 
-    if (questionee_profile.stopAnonQuestion && !body.questioner) {
-      throw new Error('The user has prohibits anonymous questions.');
+    if (questionee_profile.stopAnonQuestion && !data.questioner) {
+      throw new Error("The user has prohibits anonymous questions.");
     } else if (questionee_profile.stopNewQuestion) {
-      throw new Error('User stops stopNewQuestion');
+      throw new Error("User stops NewQuestion");
     }
 
     // 제시된 questioner 핸들이 JWT토큰의 핸들과 일치하는지 검사
-    if (body.questioner) {
-      const token = req.cookies.get('jwtToken')?.value;
+    if (data.questioner) {
+      const token = req.cookies.get("jwtToken")?.value;
       try {
-        if (typeof token !== 'string') {
-          throw new Error(`Token Error`);
+        if (typeof token !== "string") {
+          throw new Error(`Token is not string!`);
         }
         const tokenPayload = await verifyToken(token);
-        if (tokenPayload.handle.toLowerCase() !== body.questioner.toLowerCase()) {
+        if (
+          tokenPayload.handle.toLowerCase() !== data.questioner.toLowerCase()
+        ) {
           throw new Error(`Token and questioner not match`);
         }
       } catch (err) {
         console.log(`questioner verify ERROR! ${err}`);
-        throw(err);
+        return sendErrorResponse(403, `${err}`);
       }
     }
 
     //질문 생성
     const newQuestion = await prisma.question.create({
       data: {
-        question: body.question,
-        questioner: body.questioner,
-        questioneeHandle: body.questionee,
+        question: data.question,
+        questioner: data.questioner,
+        questioneeHandle: data.questionee,
       },
     });
-  
+
     const userSettings = await prisma.profile.findUnique({
       where: {
-        handle: body.questionee,
+        handle: data.questionee,
       },
     });
 
     if (userSettings && userSettings.stopNotiNewQuestion === true) {
-      return NextResponse.json({ status: 200 });
+      // 알림 전송 스킵
     } else {
-      //알림 전송
+      // 알림 전송
       const url = `${process.env.WEB_URL}/main/questions`;
       setImmediate(() => {
         sendNotify(questionee_user, newQuestion.question, url);
       });
     }
-    
+
     // notify send 기다라지 않고 200반환
-    return NextResponse.json({ status: 200 });
+    return NextResponse.json({}, { status: 200 });
   } catch (err) {
     return NextResponse.json(`Error! ${err}`, { status: 500 });
   }
 }
 
-
-async function sendNotify(questionee: user, question: string, url: string): Promise<void> {
+async function sendNotify(
+  questionee: user,
+  question: string,
+  url: string
+): Promise<void> {
   const notify_host = process.env.NOTI_HOST;
   console.log(`try to send notification to ${questionee.handle}`);
   try {
@@ -92,11 +106,10 @@ async function sendNotify(questionee: user, question: string, url: string): Prom
         text: `${questionee.handle} <네오-퀘스돈> 새로운 질문이에요!\nQ. ${question}\n ${url}`,
       }),
     });
-    if (res.status !== 200){
+    if (res.ok === false) {
       throw new Error(`Note create error`);
     }
-  }
-  catch (error) {
-    console.error('Post-question: fail to send notify: ', error);
+  } catch (error) {
+    console.error("Post-question: fail to send notify: ", error);
   }
 }

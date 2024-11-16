@@ -28,37 +28,52 @@ const misskeyAuth = async ({ misskeyHost }: loginReqDto) => {
   return await res.json();
 };
 
+/**
+ * https://example.com/ 같은 URL 형식으로 온 경우 Host 형식으로 변환
+ * host형식으로 온 경우 그대로 반환
+ * @param urlOrHost 
+ * @returns 
+ */
+function urlToHost(urlOrHost: string) {
+  const re = /\/\/[^/@\s]+(:[0-9]{1,5})?\/?/;
+  const matched_str = urlOrHost.match(re)?.[0];
+  if (matched_str) {
+    console.log(`URL ${urlOrHost} replaced with ${matched_str.replaceAll('/', '')}`);
+    return matched_str.replaceAll('/', '');
+  }
+  return urlOrHost;
+}
+
 export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hosts, setHosts] = useState<hosts>({ protocol: "", host: "" });
-
   const router = useRouter();
-
   const {
     register,
     formState: { errors },
     handleSubmit,
-  } = useForm<FormValue>();
+  } = useForm<FormValue>({defaultValues: {address: ''}});
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     setIsLoading(true);
-    localStorage.setItem("server", e.address);
+    const host = urlToHost(e.address);
+    localStorage.setItem("server", host);
 
     const payload: loginReqDto = {
-      misskeyHost: e.address,
+      misskeyHost: host,
     };
 
-    detectInstance(e.address).then((r) => {
+    detectInstance(host).then((r) => {
       switch (r) {
         case "misskey":
-          localStorage.setItem("server", e.address);
+          localStorage.setItem("server", host);
           misskeyAuth(payload).then((r) => {
             setIsLoading(false);
             router.replace(r.url);
           });
           break;
         case "cherrypick":
-          localStorage.setItem("server", e.address);
+          localStorage.setItem("server", host);
           misskeyAuth(payload).then((r) => {
             setIsLoading(false);
             router.replace(r.url);
@@ -77,7 +92,12 @@ export default function Home() {
   useEffect(() => {
     const protocol = window.location.protocol;
     const host = window.location.host;
-
+    const lastUsedHost = localStorage.getItem('server');
+    const ele = document.getElementById('serverNameInput') as HTMLInputElement;
+    if (lastUsedHost && ele) {
+      ele.value = lastUsedHost;
+      ele.focus();
+    }
     setHosts({ protocol: protocol, host: host });
   }, []);
 
@@ -116,7 +136,7 @@ export default function Home() {
                   data-tip="URL을 입력해주세요"
                 />
               )}
-              <input
+              <input id="serverNameInput"
                 {...register("address", {
                   pattern: /\./,
                   required: "required",

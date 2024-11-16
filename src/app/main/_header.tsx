@@ -9,18 +9,23 @@ const fetchMyProfile = async () => {
   const user_handle = localStorage.getItem("user_handle");
 
   if (user_handle) {
-    const res: userProfileDto = await fetch("/api/db/fetch-my-profile", {
+    const res = await fetch("/api/db/fetch-my-profile", {
       method: "GET",
-    }).then((r) => r.json());
-
-    return res;
+    });
+    if(!res.ok) {
+      if (res.status === 401) {
+        document.getElementById('forceLogoutNoteModal')?.click();
+      }
+      return;
+    }
+    const data = await res.json();
+    return data;
   }
 };
 
 const logout = async () => {
   await fetch("/api/web/logout");
-
-  localStorage.clear();
+  localStorage.removeItem('user_handle');
   window.location.replace("/");
 };
 
@@ -110,6 +115,17 @@ export default function MainHeader() {
             >
               취소
             </button>
+          </div>
+        </div>
+      </div>
+      <input type="checkbox" id="forceLogoutNoteModal" className="modal-toggle" />
+      <div className="modal" role="dialog">
+        <div className="modal-box">
+          <h3 className="py-4 text-2xl">로그인 유효시간이 만료되어서 로그아웃 되었어요!</h3>
+          <div className="modal-action">
+            <label htmlFor="forceLogoutNoteModal" className="btn btn-primary" onClick={logout}>
+              홈으로 돌아가기
+            </label>
           </div>
         </div>
       </div>

@@ -42,7 +42,7 @@ export default function Answer({ value }: askProps) {
       <div className={`${!showNsfw && "blur"} w-full h-full`}>
         <div className="chat chat-start">
           <div className="chat-header">
-            {value.questioner ? value.questioner : "익명의 질문자"}
+            {value.questioner ? <Link href={`/main/user/${value.questioner}`}>{value.questioner}</Link> : "익명의 질문자"}
           </div>
           <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble">
             {value.question}
