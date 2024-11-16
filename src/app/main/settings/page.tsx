@@ -62,86 +62,55 @@ export default function Settings() {
         </div>
       </div>
       <div className="flex flex-col items-center">
-        <span className="text-3xl mb-4">우리만의 비밀설정창</span>
+        <div className="text-3xl flex justify-center m-4 pb-4 border-b w-full window:w-[90%] desktop:w-full">
+          <span>우리만의 비밀설정창</span>
+        </div>
         <div className="w-full window:w-[70%] desktop:w-full">
           {userInfo ? (
             <form onSubmit={handleSubmit(onSubmit)}>
-              <table className="table-fixed border-separate border-spacing-4">
-                <tbody>
-                  <tr>
-                    <td className="font-thin desktop:text-xl">
-                      익명 질문을 받지 않기
-                    </td>
-                    <td>
-                      <input
-                        {...register("stopAnonQuestion")}
-                        type="checkbox"
-                        className="toggle toggle-success"
-                        defaultChecked={userInfo.stopAnonQuestion}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="font-thin desktop:text-xl">
-                      더 이상 질문을 받지 않기
-                    </td>
-                    <td>
-                      <input
-                        {...register("stopAnonQuestion")}
-                        type="checkbox"
-                        className="toggle toggle-success"
-                        defaultChecked={userInfo.stopNewQuestion}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="font-thin desktop:text-xl">
-                      새 질문 DM으로 받지 않기
-                    </td>
-                    <td>
-                      <input
-                        {...register("stopNewQuestion")}
-                        type="checkbox"
-                        className="toggle toggle-success"
-                        defaultChecked={userInfo.stopNotiNewQuestion}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="font-thin desktop:text-xl">
-                      내 답변을 올리지 않기
-                    </td>
-                    <td>
-                      <input
-                        {...register("stopNotiNewQuestion")}
-                        type="checkbox"
-                        className="toggle toggle-success"
-                        defaultChecked={userInfo.stopPostAnswer}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="font-thin desktop:text-xl">
-                      질문함 이름 (10글자 이내)
-                    </td>
-                    <td>
-                      <input
-                        {...register("questionBoxName", {
-                          maxLength: 10,
-                        })}
-                        type="text"
-                        placeholder={userInfo?.questionBoxName}
-                        className={`input input-bordered input-sm max-w-44 min-w-full mr-2 ${
-                          errors.questionBoxName?.type === "maxLength" &&
-                          "input-error"
-                        }`}
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div className="mr-2 flex desktop:justify-end">
+              <div className="grid grid-cols-2 gap-2">
+                <span className="font-thin">익명 질문을 받지 않기</span>
+                <input
+                  {...register("stopAnonQuestion")}
+                  type="checkbox"
+                  className="toggle toggle-success"
+                  defaultChecked={userInfo.stopAnonQuestion}
+                />
+                <span className="font-thin">더 이상 질문을 받지 않기</span>
+                <input
+                  {...register("stopAnonQuestion")}
+                  type="checkbox"
+                  className="toggle toggle-success"
+                  defaultChecked={userInfo.stopNewQuestion}
+                />
+                <span className="font-thin">새 질문 DM으로 받지 않기</span>
+                <input
+                  {...register("stopNewQuestion")}
+                  type="checkbox"
+                  className="toggle toggle-success"
+                  defaultChecked={userInfo.stopNotiNewQuestion}
+                />
+                <span className="font-thin">내 답변을 올리지 않기</span>
+                <input
+                  {...register("stopNotiNewQuestion")}
+                  type="checkbox"
+                  className="toggle toggle-success"
+                  defaultChecked={userInfo.stopPostAnswer}
+                />
+                <span className="font-thin">질문함 이름 (10글자 이내)</span>
+                <input
+                  {...register("questionBoxName", {
+                    maxLength: 10,
+                  })}
+                  type="text"
+                  placeholder={userInfo?.questionBoxName}
+                  className={`input input-bordered input-sm max-w-full min-w-40 ${
+                    errors.questionBoxName?.type === "maxLength" &&
+                    "input-error"
+                  }`}
+                />
+              </div>
+              <div className="flex justify-end mt-2">
                 <button
                   type="submit"
                   className={`btn ${
