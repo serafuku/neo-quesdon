@@ -8,10 +8,18 @@ interface formValue {
 }
 
 interface askProps {
-  value: questions;
+  singleQuestion: questions;
+  multipleQuestions: questions[];
+  setState: React.Dispatch<React.SetStateAction<questions[]>>;
+  id: number;
 }
 
-export default function Question({ value }: askProps) {
+export default function Question({
+  singleQuestion,
+  multipleQuestions,
+  setState,
+  id,
+}: askProps) {
   const {
     register,
     handleSubmit,
@@ -42,7 +50,7 @@ export default function Question({ value }: askProps) {
   const nsfwedAnswer = watch("nsfw");
 
   const onSubmit: SubmitHandler<formValue> = async (e) => {
-    const question = await getQuestion(value.id);
+    const question = await getQuestion(singleQuestion.id);
     const typedAnswer = {
       question: question!.question,
       questioner: question!.questioner,
@@ -50,27 +58,32 @@ export default function Question({ value }: askProps) {
       answeredPersonHandle: question!.questioneeHandle,
       nsfwedAnswer: e.nsfw,
     };
+    const filteredQuestions = multipleQuestions.filter(
+      (el) => el.id !== singleQuestion.id
+    );
 
-    postAnswer(question, typedAnswer).then(() => {
-      document.getElementById("my_modal_1")?.click();
-    });
+    setState(filteredQuestions);
+    postAnswer(question, typedAnswer);
+    document.getElementById("my_modal_1")?.click();
   };
 
   return (
     <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
       <div className="text-2xl chat chat-start">
         <div className="chat-header">
-          {value.questioner ? value.questioner : "익명의 질문자"}
+          {singleQuestion.questioner
+            ? singleQuestion.questioner
+            : "익명의 질문자"}
         </div>
         <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl">
-          {value.question}
+          {singleQuestion.question}
         </div>
         <div className="chat-footer opacity-50">
-          {value.questionedAt.toLocaleString()}
+          {singleQuestion.questionedAt.toLocaleString()}
           <span
             className="text-red-500 font-bold ml-2 cursor-pointer"
             onClick={() =>
-              document.getElementById("question_delete_modal")?.click()
+              document.getElementById(`question_delete_modal_${id}`)?.click()
             }
           >
             삭제

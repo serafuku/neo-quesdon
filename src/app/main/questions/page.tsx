@@ -12,7 +12,7 @@ const fetchQuestions = async () => {
 };
 
 export default function Questions() {
-  const [questions, setQuestions] = useState<questions[]>();
+  const [questions, setQuestions] = useState<questions[]>([]);
 
   useEffect(() => {
     fetchQuestions().then((r) => setQuestions(r));
@@ -30,10 +30,15 @@ export default function Questions() {
             <div>
               {questions.map((el) => (
                 <div key={el.id}>
-                  <Question value={el} />
+                  <Question
+                    singleQuestion={el}
+                    multipleQuestions={questions}
+                    setState={setQuestions}
+                    id={el.id}
+                  />
                   <input
                     type="checkbox"
-                    id="question_delete_modal"
+                    id={`question_delete_modal_${el.id}`}
                     className="modal-toggle"
                   />
                   <div className="modal" role="dialog">
@@ -41,17 +46,23 @@ export default function Questions() {
                       <h3 className="py-4 text-2xl">질문을 지울까요...?</h3>
                       <div className="modal-action">
                         <label
-                          htmlFor="question_delete_modal"
+                          htmlFor={`question_delete_modal_${el.id}`}
                           className="btn btn-error"
                           onClick={() => {
-                            deleteQuestion(el.id).then(() =>
-                              fetchQuestions().then((r) => setQuestions(r))
-                            );
+                            deleteQuestion(el.id);
+                            setQuestions((prevQuestions) => [
+                              ...prevQuestions.filter(
+                                (prev) => prev.id !== el.id
+                              ),
+                            ]);
                           }}
                         >
                           확인
                         </label>
-                        <label htmlFor="question_delete_modal" className="btn">
+                        <label
+                          htmlFor={`question_delete_modal_${el.id}`}
+                          className="btn"
+                        >
                           취소
                         </label>
                       </div>
@@ -72,13 +83,7 @@ export default function Questions() {
         <div className="modal-box">
           <h3 className="py-4 text-2xl">답변했어요!</h3>
           <div className="modal-action">
-            <label
-              htmlFor="my_modal_1"
-              className="btn"
-              onClick={() => {
-                fetchQuestions().then((r) => setQuestions(r));
-              }}
-            >
+            <label htmlFor="my_modal_1" className="btn">
               닫기
             </label>
           </div>
