@@ -4,15 +4,15 @@ import { PrismaClient } from "@prisma/client";
 import { DBpayload } from "./page";
 import { cookies } from "next/headers";
 import { SignJWT } from "jose";
-import { callbackTokenClaimPayload, userInfoPayload } from "..";
-import { User as MiUser } from "../api/misskey-entities/user";
+import { callbackTokenClaimPayload, misskeyAccessKeyApiResponse, userInfoPayload } from "..";
+import { MiUser } from "../api/misskey-entities/user";
 import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
 
 
 export async function login(loginReq: callbackTokenClaimPayload): Promise<userInfoPayload> {
 
   // 미스키 App 인증 API에서 액세스토큰과 MiUser 정보를 받아오기
-  const misskeyApiResponse = await requestMiAccessTokenAndUserInfo(loginReq);
+  const misskeyApiResponse: misskeyAccessKeyApiResponse = await requestMiAccessTokenAndUserInfo(loginReq);
   if (misskeyApiResponse === null) {
     throw new Error(`misskey token get fail!`);
   }

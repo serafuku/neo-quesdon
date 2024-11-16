@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 
 export async function GET(req: NextRequest) {
   const cookie = req.cookies.get("jwtToken");
@@ -17,12 +18,12 @@ export async function GET(req: NextRequest) {
         });
         return NextResponse.json(questions);
       } else {
-        return NextResponse.json({ status: 401, message: "Unauthorized" }, {status: 401});
+        return sendApiError(400, 'Bad Request');
       }
     } else {
-      return NextResponse.json({ status: 400, message: "Bad Request" }, {status: 400});
+      return sendApiError(401, 'Unauthorized');
     }
   } catch (err) {
-    return NextResponse.json(err, {status: 500});
+    return sendApiError(500, `${err}`);
   }
 }

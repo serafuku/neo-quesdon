@@ -60,5 +60,5 @@ model question {
 model server {
     id              Int         @default(autoincrement())   @id
     instances       String      @unique
-    appSecret       String      @unique
+    appSecret       String?
 }

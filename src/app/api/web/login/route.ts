@@ -1,19 +1,31 @@
 import { loginReqDto } from "@/app/_dto/web/login/login.dto";
+import { validateStrict } from "@/utils/validator/strictValidator";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { sendErrorResponse } from "../../functions/web/errorResponse";
+import { MiApiError, MiAuthSession } from "@/app";
 
 export async function POST(req: NextRequest) {
-  const { misskeyHost } = await req.json() as loginReqDto;
+  let data: loginReqDto;
+  const body = await req.json();
+  try {
+    data = await validateStrict(loginReqDto, body);
+  } catch (err) {
+    return sendErrorResponse(400, `${err}`);
+  }
+
+  const { misskeyHost } = data;
   const prisma = new PrismaClient();
 
   try {
-    const checkInstances = await prisma.server.findFirst({
+    const serverInfo = await prisma.server.findFirst({
       where: {
         instances: misskeyHost,
       },
     });
 
-    if (checkInstances === null) {
+    // 인스턴스의 첫 번째 로그인이거나, 앱시크릿이 유효하지 않은 경우
+    if (serverInfo === null || serverInfo.appSecret === null) {
       const payload = {
         name: "Neo-Quesdon",
         description: "새로운 퀘스돈, 네오-퀘스돈입니다.",
@@ -21,51 +33,96 @@ export async function POST(req: NextRequest) {
         callbackUrl: `${process.env.WEB_URL}/misskey-callback`,
       };
 
-      const appSecret = await fetch(`https://${misskeyHost}/api/app/create`, {
+      // Create New App in instance
+      const res = await fetch(`https://${misskeyHost}/api/app/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
-      }).then((r) => r.json());
+      });
+      if (!res.ok) {
+        return sendErrorResponse(
+          500,
+          `Login Error! From Remote: ${await res.text()}`
+        );
+      }
+      const data = await res.json();
+      const appSecret = data.secret;
+      console.log('New Misskey APP created!', data);
 
-      const storeAppSecret = await prisma.server.create({
-        data: {
-          appSecret: appSecret.secret,
+      await prisma.server.upsert({
+        where: {
+          instances: misskeyHost,
+        },
+        update: {
+          appSecret: appSecret,
+        },
+        create: {
+          appSecret: appSecret,
           instances: misskeyHost,
         },
       });
-
-      const misskeyAuthSession = await fetch(
-        `https://${misskeyHost}/api/auth/session/generate`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            appSecret: appSecret.secret,
-          }),
-        }
-      ).then((r) => r.json());
-      console.log(misskeyAuthSession);
+      const authRes = await initiateMisskeyAuthSession(
+        misskeyHost,
+        appSecret
+      );
+      if (!authRes.ok) {
+        return sendErrorResponse(
+          500,
+          `Fail to Create Auth Session: ${await authRes.text()}`
+        );
+      }
+      const misskeyAuthSession = (await authRes.json()) as MiAuthSession;
+      console.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
       return NextResponse.json(misskeyAuthSession);
-    } else if (checkInstances !== null) {
-      const misskeyAuthSession = await fetch(
-        `https://${misskeyHost}/api/auth/session/generate`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            appSecret: checkInstances.appSecret,
-          }),
+    }
+    // 앱 시크릿 존재하는 경우
+    else {
+      const res = await initiateMisskeyAuthSession(
+        misskeyHost,
+        serverInfo.appSecret
+      );
+      if (!res.ok) {
+        const data = (await res.json()) as MiApiError;
+        if (data.error.code === "NO_SUCH_APP") {
+          // 어라라...? 앱 스크릿 무효화
+          console.log(`Misskey response NO_SUCH_APP, delete invalid appSecret from DB`);
+          await prisma.server.update({
+            where: { instances: misskeyHost },
+            data: { appSecret: null },
+          });
         }
-      ).then((r) => r.json());
+        return sendErrorResponse(
+          500,
+          `Fail to Create Misskey Auth Session`
+        );
+      }
+      const misskeyAuthSession = (await res.json()) as MiAuthSession;
       return NextResponse.json(misskeyAuthSession);
     }
   } catch (err) {
-    return NextResponse.json({ error: err }, {status: 500});
+    return sendErrorResponse(500, `login error... ${err}`);
   }
+}
+
+/**
+ * initiate Misskey App Auth Session
+ * @param host misskey host
+ * @param appSecret Misskey AppSecret
+ * @returns Misskey API Response
+ */
+async function initiateMisskeyAuthSession(
+  host: string,
+  appSecret: string
+): Promise<Response> {
+  return await fetch(`https://${host}/api/auth/session/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      appSecret: appSecret,
+    }),
+  });
 }
