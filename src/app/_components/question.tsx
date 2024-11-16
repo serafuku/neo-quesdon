@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SubmitHandler, useForm } from "react-hook-form";
 import type { questions } from "..";
 import { getQuestion, postAnswer } from "../main/questions/action";
@@ -60,8 +61,8 @@ export default function Question({ value }: askProps) {
     <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
       <div className="text-2xl chat chat-start">
         <div className="chat-header">
-          {value.questioner ? value.questioner : "익명의 질문자"}
-        </div>
+          {value.questioner ? <Link href={`/main/user/${value.questioner}`}>{value.questioner}</Link> : "익명의 질문자"}
+        </div>  
         <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl">
           {value.question}
         </div>
