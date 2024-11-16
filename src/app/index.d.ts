@@ -1,5 +1,5 @@
 import type { profile, user } from "@prisma/client";
-import { User } from "./api/misskey-entities/user";
+import { MiUser } from "./api/misskey-entities/user";
 
 export interface callbackTokenClaimPayload {
   //Misskey Access key 를 요청할 misskey의 host (예: serafuku.moe)
@@ -9,9 +9,28 @@ export interface callbackTokenClaimPayload {
   callback_token: string;
 }
 export interface userInfoPayload {
-  user: User;
+  user: MiUser;
 }
 
+interface MiAuthSession {
+  token: string;
+  url: string;
+}
+
+interface MiApiError {
+  error: {
+    message: string;
+    code: string;
+    id: string;
+    kind: "client" | "server";
+  };
+}
+
+/** Misskey 의 /api/auth/session/userkey 에서 돌아오는 형식 */
+export interface misskeyAccessKeyApiResponse {
+  accessToken: string;
+  user: MiUser;
+}
 
 export interface questions {
   id: number;

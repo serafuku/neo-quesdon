@@ -2,6 +2,7 @@ import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 
 export async function GET(req: NextRequest) {
   const prisma = new PrismaClient();
@@ -9,9 +10,15 @@ export async function GET(req: NextRequest) {
 
   try {
     if (!token) {
-      throw new Error("No token");
+      return sendApiError(401, 'No Auth Token');
     }
-    const { handle } = await verifyToken(token);
+    let handle: string;
+    try {
+      handle = (await verifyToken(token)).handle;
+    } catch {
+      return sendApiError(403, 'Token Verify Error');
+    }
+
     const userProfile = await prisma.profile.findUnique({
       where: {
         handle: handle,
