@@ -91,7 +91,7 @@ export default function Question({
         </div>
       </div>
       <div className="text-2xl chat chat-end">
-        <div className="chat-bubble bg-green-700">
+        <div className="chat-bubble bg-green-600">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-2 py-2"
