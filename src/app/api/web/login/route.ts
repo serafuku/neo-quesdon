@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
         );
       }
       const misskeyAuthSession = (await res.json()) as MiAuthSession;
+      console.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
       return NextResponse.json(misskeyAuthSession);
     }
   } catch (err) {
