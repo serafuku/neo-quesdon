@@ -40,12 +40,15 @@ export default function Question({
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      trigger();
+      const isValid = await trigger();
 
-      const value = getValues();
-
-      if (value) {
-        await onSubmit(value);
+      if (isValid === false) {
+        return;
+      } else {
+        const value = getValues();
+        if (value) {
+          await onSubmit(value);
+        }
       }
     }
   };
