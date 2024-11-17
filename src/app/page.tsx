@@ -31,15 +31,17 @@ const misskeyAuth = async ({ misskeyHost }: loginReqDto) => {
 /**
  * https://example.com/ 같은 URL 형식으로 온 경우 Host 형식으로 변환
  * host형식으로 온 경우 그대로 반환
- * @param urlOrHost 
- * @returns 
+ * @param urlOrHost
+ * @returns
  */
 function urlToHost(urlOrHost: string) {
   const re = /\/\/[^/@\s]+(:[0-9]{1,5})?\/?/;
   const matched_str = urlOrHost.match(re)?.[0];
   if (matched_str) {
-    console.log(`URL ${urlOrHost} replaced with ${matched_str.replaceAll('/', '')}`);
-    return matched_str.replaceAll('/', '');
+    console.log(
+      `URL ${urlOrHost} replaced with ${matched_str.replaceAll("/", "")}`
+    );
+    return matched_str.replaceAll("/", "");
   }
   return urlOrHost;
 }
@@ -52,7 +54,7 @@ export default function Home() {
     register,
     formState: { errors },
     handleSubmit,
-  } = useForm<FormValue>({defaultValues: {address: ''}});
+  } = useForm<FormValue>({ defaultValues: { address: "" } });
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     setIsLoading(true);
@@ -92,8 +94,8 @@ export default function Home() {
   useEffect(() => {
     const protocol = window.location.protocol;
     const host = window.location.host;
-    const lastUsedHost = localStorage.getItem('server');
-    const ele = document.getElementById('serverNameInput') as HTMLInputElement;
+    const lastUsedHost = localStorage.getItem("server");
+    const ele = document.getElementById("serverNameInput") as HTMLInputElement;
     if (lastUsedHost && ele) {
       ele.value = lastUsedHost;
       ele.focus();
@@ -136,7 +138,8 @@ export default function Home() {
                   data-tip="URL을 입력해주세요"
                 />
               )}
-              <input id="serverNameInput"
+              <input
+                id="serverNameInput"
                 {...register("address", {
                   pattern: /\./,
                   required: "required",
@@ -152,16 +155,23 @@ export default function Home() {
                   isLoading ? "btn-disabled" : "btn-primary"
                 }`}
               >
-                로그인
-              </button>
-
-              <button
-                className={`btn ${isLoading ? "btn-disabled" : "btn-outline"}`}
-              >
-                <Link href={"/main"}>로그인 없이 즐기기</Link>
+                {isLoading ? (
+                  <div>
+                    <span className="loading loading-spinner" />
+                  </div>
+                ) : (
+                  <div>
+                    <span>로그인</span>
+                  </div>
+                )}
               </button>
             </div>
           </form>
+          <button
+            className={`btn ${isLoading ? "btn-disabled" : "btn-outline"} ml-4`}
+          >
+            <Link href={"/main"}>로그인 없이 즐기기</Link>
+          </button>
         </div>
         <input type="checkbox" id="mastodon_modal" className="modal-toggle" />
         <div className="modal" role="dialog">

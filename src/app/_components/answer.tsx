@@ -25,13 +25,13 @@ export default function Answer({ value, id }: askProps) {
   const { handle } = useParams() as { handle: string };
   const [showNsfw, setShowNsfw] = useState(false);
   const [userInfo, setUserInfo] = useState<userProfileDto>();
-  const [localHandle, setLocalHandle] = useState<string>("");
+  const [localHandle, setLocalHandle] = useState<string | null>();
 
   const profileHandle =
     handle !== undefined ? handle.toString().replace(/(?:%40)/g, "@") : "";
 
   useEffect(() => {
-    setLocalHandle(localStorage.getItem("user_handle") ?? "");
+    setLocalHandle(localStorage.getItem("user_handle"));
   }, [profileHandle]);
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function Answer({ value, id }: askProps) {
               {value.question}
             </div>
           </div>
-          {localHandle === profileHandle && (
+          {localHandle !== null && localHandle === profileHandle && (
             <div className="w-12 flex justify-end">
               <a
                 className="link text-red-800"
