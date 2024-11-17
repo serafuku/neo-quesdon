@@ -2,7 +2,7 @@
 
 import { questions } from "@/app";
 import Question from "@/app/_components/question";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { deleteQuestion } from "./action";
 
 const fetchQuestions = async () => {
@@ -13,10 +13,24 @@ const fetchQuestions = async () => {
 
 export default function Questions() {
   const [questions, setQuestions] = useState<questions[]>([]);
+  const parentDivRef = useRef<HTMLDivElement>(null);
+
+  const onEscape = (e: React.KeyboardEvent) => {
+    const modalState = document.getElementById(
+      "my_modal_1"
+    ) as HTMLInputElement;
+    if (e.key === "Escape") {
+      modalState.checked = false;
+    }
+  };
 
   useEffect(() => {
     fetchQuestions().then((r) => setQuestions(r));
   }, []);
+
+  useEffect(() => {
+    parentDivRef.current?.focus();
+  }, [questions]);
 
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] flex flex-col justify-center">
@@ -82,7 +96,13 @@ export default function Questions() {
         </div>
       )}
       <input type="checkbox" id="my_modal_1" className="modal-toggle" />
-      <div className="modal" role="dialog">
+      <div
+        className="modal"
+        role="dialog"
+        onKeyDown={onEscape}
+        tabIndex={0}
+        ref={parentDivRef}
+      >
         <div className="modal-box">
           <h3 className="py-4 text-2xl">답변했어요!</h3>
           <div className="modal-action">
