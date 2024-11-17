@@ -75,10 +75,14 @@ export default function Question({
     <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
       <div className="text-2xl chat chat-start">
         <div className="chat-header">
-          {singleQuestion.questioner
-            ? <Link href={`/main/user/${singleQuestion.questioner}`}>{singleQuestion.questioner}</Link>
-            : "익명의 질문자"}
-        </div>  
+          {singleQuestion.questioner ? (
+            <Link href={`/main/user/${singleQuestion.questioner}`}>
+              {singleQuestion.questioner}
+            </Link>
+          ) : (
+            "익명의 질문자"
+          )}
+        </div>
         <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl">
           {singleQuestion.question}
         </div>
@@ -102,14 +106,14 @@ export default function Question({
           >
             <textarea
               {...register("answer", { required: "required" })}
-              className={`textarea textarea-sm text-sm window:text-xl desktop:text-2xl bg-transparent ${
+              className={`textarea textarea-sm text-sm h-24 desktop:h-32 window:text-xl desktop:text-2xl bg-transparent ${
                 errors.answer && "textarea-error"
               }`}
               placeholder="답변을 입력하세요..."
               onKeyDown={onCtrlEnter}
             />
-            <div className="w-full flex justify-between items-center">
-              <div className="flex gap-6">
+            <div className="w-full flex flex-col gap-3 desktop:flex-row justify-between items-center">
+              <div className="flex gap-6 mb-2 desktop:mb-0">
                 <div className="flex gap-2 items-center text-xl">
                   <input
                     type="checkbox"
@@ -117,7 +121,7 @@ export default function Question({
                     onClick={() => setValue("nsfw", !nsfwedAnswer)}
                   />
                   <input type="hidden" {...register("nsfw")} />
-                  <span className="text-lg desktop:text-xl">NSFW로 체크</span>
+                  <span className="text-sm desktop:text-xl">NSFW로 체크</span>
                 </div>
                 <select
                   {...register("visibility")}
@@ -129,9 +133,14 @@ export default function Question({
                   <option value="followers">팔로워</option>
                 </select>
               </div>
-              <button type={"submit"} className="btn btn-outline">
-                답변
-              </button>
+              <div className="w-full desktop:w-fit flex justify-center">
+                <button
+                  type={"submit"}
+                  className="btn btn-outline btn-sm h-10 w-16 desktop:btn-md"
+                >
+                  답변
+                </button>
+              </div>
             </div>
           </form>
         </div>
