@@ -75,7 +75,7 @@ export default function UserPage() {
       "my_modal_2"
     ) as HTMLInputElement;
     if (e.key === "Escape") {
-      modalState.click();
+      modalState.checked = false;
     }
   };
 
