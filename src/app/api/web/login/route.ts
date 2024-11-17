@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     return sendErrorResponse(400, `${err}`);
   }
 
-  const { misskeyHost } = data;
+  const misskeyHost = data.misskeyHost.toLowerCase();
   const prisma = new PrismaClient();
 
   try {

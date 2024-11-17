@@ -1,14 +1,18 @@
 import type { profile, user } from "@prisma/client";
 import { MiUser } from "./api/misskey-entities/user";
+import { IsString } from "class-validator";
 
-export interface callbackTokenClaimPayload {
+export class callbackTokenClaimPayload {
   //Misskey Access key 를 요청할 misskey의 host (예: serafuku.moe)
+  @IsString()
   misskeyHost: string;
 
   //callback으로 받은 토큰
+  @IsString()
   callback_token: string;
 }
-export interface userInfoPayload {
+export class userInfoPayload {
+  @IsString()
   user: MiUser;
 }
 interface MiAuthSession {

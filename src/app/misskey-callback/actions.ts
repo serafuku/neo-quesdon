@@ -7,10 +7,18 @@ import { SignJWT } from "jose";
 import { callbackTokenClaimPayload, misskeyAccessKeyApiResponse, userInfoPayload } from "..";
 import { MiUser } from "../api/misskey-entities/user";
 import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
+import { validateStrict } from "@/utils/validator/strictValidator";
 
 
-export async function login(loginReq: callbackTokenClaimPayload): Promise<userInfoPayload> {
-
+export async function login(loginReqestData: callbackTokenClaimPayload): Promise<userInfoPayload> {
+  let loginReq: callbackTokenClaimPayload;
+  try {
+    loginReq = await validateStrict(callbackTokenClaimPayload, loginReqestData);
+  } catch (err) {
+    throw new Error(JSON.stringify(err));
+  }
+  loginReq.misskeyHost = loginReq.misskeyHost.toLowerCase();
+  
   // 미스키 App 인증 API에서 액세스토큰과 MiUser 정보를 받아오기
   const misskeyApiResponse: misskeyAccessKeyApiResponse = await requestMiAccessTokenAndUserInfo(loginReq);
   if (misskeyApiResponse === null) {
