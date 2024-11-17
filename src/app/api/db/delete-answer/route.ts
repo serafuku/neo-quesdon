@@ -34,8 +34,10 @@ export async function POST(req: NextRequest) {
     return sendApiError(403, 'This is Not Your Answer!');    
   }
   try {
+    console.log(`Delete answer... : ${data.id}`);
     await prisma.answer.delete({ where: { id: data.id } });
   } catch (err) {
+    console.log('Error: Delete answer:', err);
     return sendApiError(500, `Error ${JSON.stringify(err)}`);
   }
 }
