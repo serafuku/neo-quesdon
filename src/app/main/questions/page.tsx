@@ -19,7 +19,8 @@ export default function Questions() {
   }, []);
 
   return (
-    <div className="w-[90%] window:w-[80%] desktop:w-[70%] flex justify-center">
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%] flex flex-col justify-center">
+      <h3 className="text-3xl desktop:text-4xl mb-2">미답변 질문들</h3>
       {questions === undefined || null ? (
         <div>
           <span className="loading loading-infinity loading-lg" />
@@ -72,8 +73,10 @@ export default function Questions() {
               ))}
             </div>
           ) : (
-            <div className="w-full flex justify-center">
-              <h1 className="text-3xl">아무것도 없습니다!</h1>
+            <div className="h-fit p-4 glass rounded-box flex flex-col items-center shadow mb-2">
+              <h1 className="text-xl desktop:text-3xl">
+                👍 답변하지 않은 질문이 없어요!
+              </h1>
             </div>
           )}
         </div>
