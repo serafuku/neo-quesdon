@@ -3,7 +3,7 @@ import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
 
 export async function POST(req: NextRequest) {
@@ -24,18 +24,25 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return sendApiError(401, "Unauthorized");
   }
-  const willBeDeletedAnswer = await prisma.answer.findUnique({where: { id: data.id }});
+  const willBeDeletedAnswer = await prisma.answer.findUnique({
+    where: { id: data.id },
+  });
   if (!willBeDeletedAnswer) {
     // 그런 답변이 없음
-    return sendApiError(404, 'Not Found');
+    return sendApiError(404, "Not Found");
   }
   if (willBeDeletedAnswer.answeredPersonHandle !== tokenPayload.handle) {
     // 너의 답변이 아님
-    return sendApiError(403, 'This is Not Your Answer!');    
+    return sendApiError(403, "This is Not Your Answer!");
   }
   try {
     console.log(`Delete answer... : ${data.id}`);
     await prisma.answer.delete({ where: { id: data.id } });
+
+    return NextResponse.json(
+      { message: "Delete Answer Successful" },
+      { status: 200 }
+    );
   } catch (err) {
     console.log('Error: Delete answer:', err);
     return sendApiError(500, `Error ${JSON.stringify(err)}`);
