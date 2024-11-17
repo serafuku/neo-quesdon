@@ -4,10 +4,12 @@ import { PrismaClient } from "@prisma/client";
 import { DBpayload } from "./page";
 import { cookies } from "next/headers";
 import { SignJWT } from "jose";
-import { callbackTokenClaimPayload, misskeyAccessKeyApiResponse, userInfoPayload } from "..";
+import { misskeyAccessKeyApiResponse } from "..";
 import { MiUser } from "../api/misskey-entities/user";
 import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
 import { validateStrict } from "@/utils/validator/strictValidator";
+import { callbackTokenClaimPayload } from "../_dto/misskey-callback/callback-token-claim.dto";
+import { userInfoPayload } from "../_dto/misskey-callback/user-info.dto";
 
 
 export async function login(loginReqestData: callbackTokenClaimPayload): Promise<userInfoPayload> {
