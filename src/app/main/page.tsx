@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Question from "../_components/answer";
 import Answer from "../_components/answer";
 import { FaExclamationCircle } from "react-icons/fa";
 import { answer } from "@prisma/client";
@@ -78,7 +77,7 @@ export default function MainBody() {
             <div className="flex flex-col">
               {answers.map((r) => (
                 <div key={r.id}>
-                  <Answer value={r} />
+                  <Answer id={r.id} value={r} />
                 </div>
               ))}
               <div

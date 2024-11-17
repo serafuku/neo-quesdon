@@ -4,7 +4,7 @@ import NameComponents from "@/app/_components/NameComponents";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import Question from "@/app/_components/answer";
+import Answer from "@/app/_components/answer";
 import { FaUserSlash } from "react-icons/fa";
 import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
@@ -94,6 +94,16 @@ export default function UserPage() {
       );
     }
   };
+
+  const handleDeleteAnswer = async (id: string) => {
+    await fetch("/api/db/delete-answer", {
+      method: "POST",
+      body: JSON.stringify({ id: id }),
+    });
+    const filteredAnswer = answers.filter((el) => el.id !== id);
+    setAnswers(filteredAnswer);
+  };
+
   const mkQuestionCreateApi = async (
     q: CreateQuestionDto
   ): Promise<Response> => {
@@ -351,7 +361,34 @@ export default function UserPage() {
                   <div className="flex flex-col">
                     {answers.map((el) => (
                       <div key={el.id}>
-                        <Question value={el} />
+                        <Answer value={el} id={el.id} />
+                        <input
+                          type="checkbox"
+                          id={`answer_delete_modal_${el.id}`}
+                          className="modal-toggle"
+                        />
+                        <div className="modal" role="dialog">
+                          <div className="modal-box">
+                            <h3 className="py-4 text-2xl">
+                              답변을 지울까요...?
+                            </h3>
+                            <div className="modal-action">
+                              <label
+                                htmlFor={`answer_delete_modal_${el.id}`}
+                                className="btn btn-error"
+                                onClick={() => handleDeleteAnswer(el.id)}
+                              >
+                                확인
+                              </label>
+                              <label
+                                htmlFor={`answer_delete_modal_${el.id}`}
+                                className="btn"
+                              >
+                                취소
+                              </label>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ))}
                     <div

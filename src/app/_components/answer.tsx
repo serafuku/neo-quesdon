@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import NameComponents from "./NameComponents";
 import { AnswerDto } from "../_dto/Answers.dto";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
+import { useParams } from "next/navigation";
 
 interface askProps {
   value: AnswerDto;
+  id: string;
 }
 
 export async function fetchProfile(handle: string) {
@@ -19,9 +21,18 @@ export async function fetchProfile(handle: string) {
   }
 }
 
-export default function Answer({ value }: askProps) {
+export default function Answer({ value, id }: askProps) {
+  const { handle } = useParams() as { handle: string };
   const [showNsfw, setShowNsfw] = useState(false);
   const [userInfo, setUserInfo] = useState<userProfileDto>();
+  const [localHandle, setLocalHandle] = useState<string>("");
+
+  const profileHandle =
+    handle !== undefined ? handle.toString().replace(/(?:%40)/g, "@") : "";
+
+  useEffect(() => {
+    setLocalHandle(localStorage.getItem("user_handle") ?? "");
+  }, [profileHandle]);
 
   useEffect(() => {
     fetchProfile(value.answeredPersonHandle).then((r) => setUserInfo(r));
@@ -40,13 +51,33 @@ export default function Answer({ value }: askProps) {
       )}
 
       <div className={`${!showNsfw && "blur"} w-full h-full`}>
-        <div className="chat chat-start">
-          <div className="chat-header">
-            {value.questioner ? <Link href={`/main/user/${value.questioner}`}>{value.questioner}</Link> : "익명의 질문자"}
+        <div className="chat chat-start flex justify-between">
+          <div className="w-full">
+            <div className="chat-header">
+              {value.questioner ? (
+                <Link href={`/main/user/${value.questioner}`}>
+                  {value.questioner}
+                </Link>
+              ) : (
+                "익명의 질문자"
+              )}
+            </div>
+            <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble">
+              {value.question}
+            </div>
           </div>
-          <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble">
-            {value.question}
-          </div>
+          {localHandle === profileHandle && (
+            <div className="w-12 flex justify-end">
+              <a
+                className="link text-red-800"
+                onClick={() =>
+                  document.getElementById(`answer_delete_modal_${id}`)?.click()
+                }
+              >
+                삭제
+              </a>
+            </div>
+          )}
         </div>
         <div className="chat chat-end">
           <div className="chat-image avatar">
