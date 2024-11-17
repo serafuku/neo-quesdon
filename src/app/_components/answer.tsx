@@ -51,7 +51,7 @@ export default function Answer({ value, id }: askProps) {
       )}
 
       <div className={`${!showNsfw && "blur"} w-full h-full`}>
-        <div className="chat chat-start flex justify-between">
+        <div className="chat chat-start flex ml-2 desktop:ml-0 justify-between">
           <div className="w-full">
             <div className="chat-header">
               {value.questioner ? (
