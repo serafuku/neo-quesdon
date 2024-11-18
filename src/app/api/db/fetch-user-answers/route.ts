@@ -15,12 +15,14 @@ export async function POST(req: NextRequest) {
     }
 
     const prisma = new PrismaClient();
-    const query_limit = data.limit ? Math.max(1, Math.min(data.limit, 100)) : 100;
+    const query_limit = data.limit
+      ? Math.max(1, Math.min(data.limit, 100))
+      : 100;
     const sinceId = data.sinceId;
     const untilId = data.untilId;
-  
+
     //내림차순이 기본값
-    const orderBy = (data.sort === 'ASC') ? 'asc' : 'desc';
+    const orderBy = data.sort === "ASC" ? "asc" : "desc";
 
     if (!data.answeredPersonHandle) {
       throw new Error(`answeredPersonHandle is null`);
@@ -29,18 +31,33 @@ export async function POST(req: NextRequest) {
       where: {
         answeredPersonHandle: data.answeredPersonHandle,
         id: {
-          ...(typeof sinceId === 'string' ? { gt: sinceId } : {}),
-          ...(typeof untilId === 'string' ? { lt: untilId } : {}),
+          ...(typeof sinceId === "string" ? { gt: sinceId } : {}),
+          ...(typeof untilId === "string" ? { lt: untilId } : {}),
         },
       },
       orderBy: {
-        id: orderBy
-      }, 
-      take: query_limit
+        id: orderBy,
       },
-    );
+      take: query_limit,
+    });
 
-    return NextResponse.json(res);
+    const answerCount = await prisma.profile.findMany({
+      where: {
+        handle: data.answeredPersonHandle,
+      },
+      select: {
+        _count: {
+          select: {
+            answer: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      answers: res,
+      count: answerCount[0]._count.answer,
+    });
   } catch (err) {
     console.log(err);
   }

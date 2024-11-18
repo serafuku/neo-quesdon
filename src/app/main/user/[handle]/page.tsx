@@ -16,6 +16,11 @@ type FormValue = {
   questioner: boolean;
 };
 
+type ResponseType = {
+  answers: AnswerDto[];
+  count: number;
+};
+
 async function fetchProfile(handle: string) {
   const profile = await fetch(`/api/db/fetch-profile/${handle}`);
   if (profile && profile.ok) {
@@ -30,6 +35,7 @@ export default function UserPage() {
   const [userInfo, setUserInfo] = useState<userProfileDto>();
   const [localHandle, setLocalHandle] = useState<string>("");
   const [answers, setAnswers] = useState<AnswerDto[]>([]);
+  const [count, setCount] = useState<number>(0);
   const [untilId, setUntilId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
@@ -81,7 +87,7 @@ export default function UserPage() {
 
   const fetchUserAnswers = async (
     q: FetchUserAnswersDto
-  ): Promise<AnswerDto[]> => {
+  ): Promise<ResponseType> => {
     const res = await fetch("/api/db/fetch-user-answers", {
       method: "POST",
       body: JSON.stringify(q),
@@ -102,6 +108,7 @@ export default function UserPage() {
     });
     const filteredAnswer = answers.filter((el) => el.id !== id);
     setAnswers(filteredAnswer);
+    setCount((prevCount) => prevCount - 1);
   };
 
   const mkQuestionCreateApi = async (
@@ -199,13 +206,14 @@ export default function UserPage() {
         answeredPersonHandle: userInfo.handle,
         sort: "DESC",
         limit: 20,
-      }).then((r: AnswerDto[]) => {
-        if (r.length === 0) {
+      }).then(({ answers, count }: ResponseType) => {
+        if (answers.length === 0) {
           setLoading(false);
           return;
         }
-        setAnswers(r);
-        setUntilId(r[r.length - 1].id);
+        setAnswers(answers);
+        setCount(count);
+        setUntilId(answers[answers.length - 1].id);
       });
     }
   }, [profileHandle, userInfo]);
@@ -220,12 +228,12 @@ export default function UserPage() {
             untilId: untilId,
             answeredPersonHandle: profileHandle,
           }).then((r) => {
-            if (r.length === 0) {
+            if (r.answers.length === 0) {
               setLoading(false);
               return;
             }
-            setAnswers((prev_answers) => [...prev_answers, ...r]);
-            setUntilId(r[r.length - 1].id);
+            setAnswers((prev_answers) => [...prev_answers, ...r.answers]);
+            setUntilId(r.answers[r.answers.length - 1].id);
           });
         }
       },
@@ -355,6 +363,10 @@ export default function UserPage() {
             )}
           </div>
           <div className="desktop:ml-2 desktop:w-[50%]">
+            <div className="flex items-center gap-2 my-2 text-2xl">
+              <span>답변</span>
+              <span className="badge badge-ghost">{count}</span>
+            </div>
             {answers !== null ? (
               <div>
                 {answers.length > 0 ? (
