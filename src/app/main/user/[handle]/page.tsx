@@ -34,8 +34,8 @@ export default function UserPage() {
   const { handle } = useParams() as { handle: string };
   const [userInfo, setUserInfo] = useState<userProfileDto>();
   const [localHandle, setLocalHandle] = useState<string>("");
-  const [answers, setAnswers] = useState<AnswerDto[]>([]);
-  const [count, setCount] = useState<number>(0);
+  const [answers, setAnswers] = useState<AnswerDto[] | null>(null);
+  const [count, setCount] = useState<number | null>(0);
   const [untilId, setUntilId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
@@ -106,9 +106,11 @@ export default function UserPage() {
       method: "POST",
       body: JSON.stringify({ id: id }),
     });
-    const filteredAnswer = answers.filter((el) => el.id !== id);
-    setAnswers(filteredAnswer);
-    setCount((prevCount) => prevCount - 1);
+    if (answers && count) {
+      const filteredAnswer = answers.filter((el) => el.id !== id);
+      setAnswers(filteredAnswer);
+      setCount((prevCount) => (prevCount ? prevCount - 1 : null));
+    }
   };
 
   const mkQuestionCreateApi = async (
@@ -209,6 +211,7 @@ export default function UserPage() {
       }).then(({ answers, count }: ResponseType) => {
         if (answers.length === 0) {
           setLoading(false);
+          setAnswers([]);
           return;
         }
         setAnswers(answers);
@@ -221,7 +224,7 @@ export default function UserPage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting && untilId !== null) {
+        if (e.isIntersecting && untilId !== null && answers !== null) {
           fetchUserAnswers({
             sort: "DESC",
             limit: 20,
@@ -232,7 +235,9 @@ export default function UserPage() {
               setLoading(false);
               return;
             }
-            setAnswers((prev_answers) => [...prev_answers, ...r.answers]);
+            setAnswers((prev_answers) =>
+              prev_answers ? [...prev_answers, ...r.answers] : null
+            );
             setUntilId(r.answers[r.answers.length - 1].id);
           });
         }
@@ -363,12 +368,12 @@ export default function UserPage() {
             )}
           </div>
           <div className="desktop:ml-2 desktop:w-[50%]">
-            <div className="flex items-center gap-2 my-2 text-2xl">
-              <span>답변</span>
-              <span className="badge badge-ghost">{count}</span>
-            </div>
             {answers !== null ? (
               <div>
+                <div className="flex items-center gap-2 my-2 text-2xl">
+                  <span>답변</span>
+                  <span className="badge badge-ghost">{count}</span>
+                </div>
                 {answers.length > 0 ? (
                   <div className="flex flex-col">
                     {answers.map((el) => (
@@ -425,7 +430,7 @@ export default function UserPage() {
                 )}
               </div>
             ) : (
-              <div>
+              <div className="w-full flex justify-center">
                 <span className="loading loading-spinner loading-lg" />
               </div>
             )}

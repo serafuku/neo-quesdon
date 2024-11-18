@@ -22,7 +22,7 @@ async function fetchAllAnswers(req: FetchAllAnswersDto) {
   }
 }
 export default function MainBody() {
-  const [answers, setAnswers] = useState<answer[]>([]);
+  const [answers, setAnswers] = useState<answer[] | null>(null);
   const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
   const [untilId, setUntilId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -31,6 +31,7 @@ export default function MainBody() {
     fetchAllAnswers({ sort: "DESC", limit: 25 }).then((r) => {
       if (r.length === 0) {
         setLoading(false);
+        setAnswers([]);
         return;
       }
       setAnswers(r);
@@ -48,7 +49,9 @@ export default function MainBody() {
                 setLoading(false);
                 return;
               }
-              setAnswers((prev_answers) => [...prev_answers, ...r]);
+              setAnswers((prev_answers) =>
+                prev_answers ? [...prev_answers, ...r] : null
+              );
               setUntilId(r[r.length - 1].id);
             }
           );
@@ -67,7 +70,7 @@ export default function MainBody() {
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%]">
       <h3 className="text-3xl desktop:text-4xl mb-2">최근 올라온 답변들</h3>
-      {answers === undefined ? (
+      {answers === null ? (
         <div className="flex justify-center">
           <span className="loading loading-spinner loading-lg" />
         </div>

@@ -12,7 +12,7 @@ interface formValue {
 interface askProps {
   singleQuestion: questions;
   multipleQuestions: questions[];
-  setState: React.Dispatch<React.SetStateAction<questions[]>>;
+  setState: React.Dispatch<React.SetStateAction<questions[] | null>>;
   id: number;
 }
 
