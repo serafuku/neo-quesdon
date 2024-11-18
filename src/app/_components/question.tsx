@@ -12,7 +12,7 @@ interface formValue {
 interface askProps {
   singleQuestion: questions;
   multipleQuestions: questions[];
-  setState: React.Dispatch<React.SetStateAction<questions[]>>;
+  setState: React.Dispatch<React.SetStateAction<questions[] | null>>;
   id: number;
 }
 
@@ -29,6 +29,7 @@ export default function Question({
     getValues,
     setValue,
     watch,
+    setError,
     formState: { errors },
   } = useForm<formValue>({
     defaultValues: {
@@ -40,12 +41,15 @@ export default function Question({
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      trigger();
+      const isValid = await trigger();
 
-      const value = getValues();
-
-      if (value) {
-        await onSubmit(value);
+      if (isValid === false) {
+        return;
+      } else {
+        const value = getValues();
+        if (value) {
+          await onSubmit(value);
+        }
       }
     }
   };
@@ -53,6 +57,16 @@ export default function Question({
   const nsfwedAnswer = watch("nsfw");
 
   const onSubmit: SubmitHandler<formValue> = async (e) => {
+    const detectWhiteSpaces = new RegExp(/^\s+$/);
+
+    if (detectWhiteSpaces.test(e.answer) === true) {
+      setError("answer", {
+        type: "answerOnlyWhiteSpace",
+        message: "답변에 아무말 안 하시게요...?",
+      });
+      return;
+    }
+
     const question = await getQuestion(singleQuestion.id);
     const typedAnswer: typedAnswer = {
       question: question!.question,
@@ -104,6 +118,12 @@ export default function Question({
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-2 py-2"
           >
+            {errors.answer && errors.answer.type === "answerOnlyWhiteSpace" && (
+              <div
+                className="tooltip tooltip-open tooltip-error transition-opacity"
+                data-tip={errors.answer.message}
+              />
+            )}
             <textarea
               {...register("answer", { required: "required" })}
               className={`textarea textarea-sm text-sm h-24 desktop:h-32 window:text-xl desktop:text-2xl bg-transparent ${
@@ -112,6 +132,7 @@ export default function Question({
               placeholder="답변을 입력하세요..."
               onKeyDown={onCtrlEnter}
             />
+
             <div className="w-full flex flex-col gap-3 desktop:flex-row justify-between items-center">
               <div className="flex gap-6 mb-2 desktop:mb-0">
                 <div className="flex gap-2 items-center text-xl">

@@ -120,58 +120,62 @@ export default function Home() {
             Quesdon
           </span>
         </div>
-        <div className="flex">
+        <div className="flex flex-col desktop:flex-row items-center">
           <form
-            className="flex flex-col desktop:flex-row items-center"
+            className="flex flex-col desktop:flex-row"
             onSubmit={handleSubmit(onSubmit)}
+            id="urlInputForm"
           >
-            <div className="flex flex-col">
-              {errors.address && errors.address.type === "pattern" && (
-                <div
-                  className="tooltip tooltip-open tooltip-error transition-opacity"
-                  data-tip="올바른 URL을 입력해주세요"
-                />
-              )}
-              {errors.address && errors.address.message === "required" && (
-                <div
-                  className="tooltip tooltip-open tooltip-error transition-opacity"
-                  data-tip="URL을 입력해주세요"
-                />
-              )}
-              <input
-                id="serverNameInput"
-                {...register("address", {
-                  pattern: /\./,
-                  required: "required",
-                })}
-                placeholder="serafuku.moe"
-                className="input input-bordered text-lg desktop:text-3xl mb-4 desktop:mb-0"
+            {errors.address && errors.address.type === "pattern" && (
+              <div
+                className="tooltip tooltip-open tooltip-error transition-opacity"
+                data-tip="올바른 URL을 입력해주세요"
               />
-            </div>
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                className={`btn ml-4 ${
-                  isLoading ? "btn-disabled" : "btn-primary"
-                }`}
-              >
-                {isLoading ? (
-                  <div>
-                    <span className="loading loading-spinner" />
-                  </div>
-                ) : (
-                  <div>
-                    <span>로그인</span>
-                  </div>
-                )}
-              </button>
-            </div>
+            )}
+            {errors.address && errors.address.message === "required" && (
+              <div
+                className="tooltip tooltip-open tooltip-error transition-opacity"
+                data-tip="URL을 입력해주세요"
+              />
+            )}
+            <input
+              id="serverNameInput"
+              {...register("address", {
+                pattern: /\./,
+                required: "required",
+              })}
+              placeholder="serafuku.moe"
+              className="input input-bordered text-lg desktop:text-3xl mb-4 desktop:mb-0"
+            />
           </form>
-          <button
-            className={`btn ${isLoading ? "btn-disabled" : "btn-outline"} ml-4`}
-          >
-            <Link href={"/main"}>로그인 없이 즐기기</Link>
-          </button>
+          <div className="flex flex-row items-center">
+            <button
+              type="submit"
+              className={`btn ml-4 ${
+                isLoading ? "btn-disabled" : "btn-primary"
+              }`}
+              form="urlInputForm"
+            >
+              {isLoading ? (
+                <div>
+                  <span className="loading loading-spinner" />
+                </div>
+              ) : (
+                <div>
+                  <span>로그인</span>
+                </div>
+              )}
+            </button>
+            <button
+              type="button"
+              className={`btn ml-4 ${
+                isLoading ? "btn-disabled" : "btn-outline"
+              }`}
+              onClick={() => (window.location.href = "/main")}
+            >
+              로그인 없이 즐기기
+            </button>
+          </div>
         </div>
         <input type="checkbox" id="mastodon_modal" className="modal-toggle" />
         <div className="modal" role="dialog">

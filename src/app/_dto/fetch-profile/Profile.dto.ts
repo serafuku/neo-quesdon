@@ -1,6 +1,7 @@
 export interface userProfileDto {
   handle: string;
   name: string[];
+  questions: number;
   stopNewQuestion: boolean;
   stopAnonQuestion: boolean;
   stopNotiNewQuestion: boolean;
