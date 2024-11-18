@@ -10,13 +10,13 @@ export async function GET(req: NextRequest) {
 
   try {
     if (!token) {
-      return sendApiError(401, 'No Auth Token');
+      return sendApiError(401, "No Auth Token");
     }
     let handle: string;
     try {
       handle = (await verifyToken(token)).handle;
     } catch {
-      return sendApiError(401, 'Token Verify Error');
+      return sendApiError(401, "Token Verify Error");
     }
 
     const userProfile = await prisma.profile.findUnique({
@@ -27,6 +27,19 @@ export async function GET(req: NextRequest) {
     if (!userProfile) {
       return NextResponse.json({ message: `User not found` }, { status: 404 });
     }
+
+    const questionCount = await prisma.profile.findMany({
+      where: {
+        handle: handle,
+      },
+      select: {
+        _count: {
+          select: {
+            questions: true,
+          },
+        },
+      },
+    });
     const res: userProfileDto = {
       handle: userProfile.handle,
       name: userProfile.name,
@@ -36,6 +49,7 @@ export async function GET(req: NextRequest) {
       questionBoxName: userProfile.questionBoxName,
       stopNotiNewQuestion: userProfile.stopNotiNewQuestion,
       stopPostAnswer: userProfile.stopPostAnswer,
+      questions: questionCount[0]._count.questions,
     };
 
     return NextResponse.json(res);

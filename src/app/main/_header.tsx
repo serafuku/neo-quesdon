@@ -12,9 +12,9 @@ const fetchMyProfile = async () => {
     const res = await fetch("/api/db/fetch-my-profile", {
       method: "GET",
     });
-    if(!res.ok) {
+    if (!res.ok) {
       if (res.status === 401) {
-        document.getElementById('forceLogoutNoteModal')?.click();
+        document.getElementById("forceLogoutNoteModal")?.click();
       }
       return;
     }
@@ -25,7 +25,7 @@ const fetchMyProfile = async () => {
 
 const logout = async () => {
   await fetch("/api/web/logout");
-  localStorage.removeItem('user_handle');
+  localStorage.removeItem("user_handle");
   window.location.replace("/");
 };
 
@@ -34,7 +34,7 @@ export default function MainHeader() {
 
   useEffect(() => {
     fetchMyProfile().then((r) => setUser(r));
-  }, [fetchMyProfile]);
+  }, []);
 
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] navbar bg-base-100 shadow rounded-box my-4">
@@ -47,7 +47,9 @@ export default function MainHeader() {
         <div
           tabIndex={0}
           role="button"
-          className="btn btn-ghost btn-circle avatar"
+          className={`btn btn-ghost btn-circle avatar ${
+            user?.questions && user?.questions > 0 && "online"
+          }`}
         >
           <div className="w-10 rounded-full">
             {user?.avatarUrl ? (
@@ -118,12 +120,22 @@ export default function MainHeader() {
           </div>
         </div>
       </div>
-      <input type="checkbox" id="forceLogoutNoteModal" className="modal-toggle" />
+      <input
+        type="checkbox"
+        id="forceLogoutNoteModal"
+        className="modal-toggle"
+      />
       <div className="modal" role="dialog">
         <div className="modal-box">
-          <h3 className="py-4 text-2xl">로그인 유효시간이 만료되어서 로그아웃 되었어요!</h3>
+          <h3 className="py-4 text-2xl">
+            로그인 유효시간이 만료되어서 로그아웃 되었어요!
+          </h3>
           <div className="modal-action">
-            <label htmlFor="forceLogoutNoteModal" className="btn btn-primary" onClick={logout}>
+            <label
+              htmlFor="forceLogoutNoteModal"
+              className="btn btn-primary"
+              onClick={logout}
+            >
               홈으로 돌아가기
             </label>
           </div>
