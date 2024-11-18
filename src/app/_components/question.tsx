@@ -101,7 +101,7 @@ export default function Question({
           {singleQuestion.question}
         </div>
         <div className="chat-footer opacity-50">
-          {singleQuestion.questionedAt.toLocaleString()}
+          {new Date(singleQuestion.questionedAt).toLocaleString('ko-KR', {hour12: false})}
           <span
             className="text-red-500 font-bold ml-2 cursor-pointer"
             onClick={() =>

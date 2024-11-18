@@ -42,6 +42,7 @@ export async function GET(
       },
     });
   } catch (err) {
+    console.log(err);
     return sendApiError(500, "Error");
   }
 }
