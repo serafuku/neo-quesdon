@@ -3,12 +3,15 @@ import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{handle?: string}> }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ handle?: string }> }
+) {
   const prisma = new PrismaClient();
   const userHandle = (await params).handle;
   try {
-    if (!userHandle) { 
-      return sendApiError(400, 'userHandle empty');
+    if (!userHandle) {
+      return sendApiError(400, "userHandle empty");
     }
     const profile = await prisma.profile.findUnique({
       where: {
@@ -16,7 +19,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{handl
       },
     });
     if (!profile) {
-      return NextResponse.json({ message: `profile ${profile} not found`}, {status: 404});
+      return NextResponse.json(
+        { message: `profile ${profile} not found` },
+        { status: 404 }
+      );
     }
     const resBody: userProfileDto = {
       handle: profile.handle,
@@ -27,16 +33,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{handl
       questionBoxName: profile.questionBoxName,
       stopNotiNewQuestion: profile.stopNotiNewQuestion,
       stopPostAnswer: profile.stopPostAnswer,
-    }
-
+    };
 
     return NextResponse.json(resBody, {
       status: 200,
       headers: {
-        'Cache-Control': 'public, max-age=10',
-      }
+        "Cache-Control": "public, max-age=10",
+      },
     });
   } catch (err) {
-    return sendApiError(500, 'Error');
+    return sendApiError(500, "Error");
   }
 }

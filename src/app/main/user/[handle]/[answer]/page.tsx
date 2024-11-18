@@ -16,7 +16,7 @@ export default function SingleAnswer() {
 
   return (
     <div className="flex w-[90%] window:w-[80%] desktop:w-[70%]">
-      {answerBody && <Answer value={answerBody} />}
+      {answerBody && <Answer value={answerBody} id={answerBody.id} />}
     </div>
   );
 }
