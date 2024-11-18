@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       }
       const data = await res.json();
       const appSecret = data.secret;
-      console.log('New Misskey APP created!', data);
+      console.log("New Misskey APP created!", data);
 
       await prisma.server.upsert({
         where: {
@@ -63,10 +63,7 @@ export async function POST(req: NextRequest) {
           instances: misskeyHost,
         },
       });
-      const authRes = await initiateMisskeyAuthSession(
-        misskeyHost,
-        appSecret
-      );
+      const authRes = await initiateMisskeyAuthSession(misskeyHost, appSecret);
       if (!authRes.ok) {
         return sendErrorResponse(
           500,
@@ -87,16 +84,15 @@ export async function POST(req: NextRequest) {
         const data = (await res.json()) as MiApiError;
         if (data.error.code === "NO_SUCH_APP") {
           // 어라라...? 앱 스크릿 무효화
-          console.log(`Misskey response NO_SUCH_APP, delete invalid appSecret from DB`);
+          console.log(
+            `Misskey response NO_SUCH_APP, delete invalid appSecret from DB`
+          );
           await prisma.server.update({
             where: { instances: misskeyHost },
             data: { appSecret: null },
           });
         }
-        return sendErrorResponse(
-          500,
-          `Fail to Create Misskey Auth Session`
-        );
+        return sendErrorResponse(500, `Fail to Create Misskey Auth Session`);
       }
       const misskeyAuthSession = (await res.json()) as MiAuthSession;
       console.log(`New Misskey Auth Session Created: `, misskeyAuthSession);

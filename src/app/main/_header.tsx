@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa";
-import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
+import { userProfileWithCountDto } from "../_dto/fetch-profile/Profile.dto";
 
 const fetchMyProfile = async () => {
   const user_handle = localStorage.getItem("user_handle");
@@ -30,7 +30,7 @@ const logout = async () => {
 };
 
 export default function MainHeader() {
-  const [user, setUser] = useState<userProfileDto>();
+  const [user, setUser] = useState<userProfileWithCountDto>();
 
   useEffect(() => {
     fetchMyProfile().then((r) => setUser(r));
