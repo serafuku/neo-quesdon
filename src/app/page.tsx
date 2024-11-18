@@ -148,7 +148,7 @@ export default function Home() {
               className="input input-bordered text-lg desktop:text-3xl mb-4 desktop:mb-0"
             />
           </form>
-          <div>
+          <div className="flex flex-row items-center">
             <button
               type="submit"
               className={`btn ml-4 ${
