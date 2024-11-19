@@ -8,28 +8,33 @@ import { misskeyAccessKeyApiResponse } from "..";
 import { MiUser } from "../api/misskey-entities/user";
 import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
 import { validateStrict } from "@/utils/validator/strictValidator";
-import { callbackTokenClaimPayload } from "../_dto/misskey-callback/callback-token-claim.dto";
-import { userInfoPayload } from "../_dto/misskey-callback/user-info.dto";
+import { misskeyCallbackTokenClaimPayload } from "../_dto/misskey-callback/callback-token-claim.dto";
+import { misskeyUserInfoPayload } from "../_dto/misskey-callback/user-info.dto";
 
-
-export async function login(loginReqestData: callbackTokenClaimPayload): Promise<userInfoPayload> {
-  let loginReq: callbackTokenClaimPayload;
+export async function login(
+  loginReqestData: misskeyCallbackTokenClaimPayload
+): Promise<misskeyUserInfoPayload> {
+  let loginReq: misskeyCallbackTokenClaimPayload;
   try {
-    loginReq = await validateStrict(callbackTokenClaimPayload, loginReqestData);
+    loginReq = await validateStrict(
+      misskeyCallbackTokenClaimPayload,
+      loginReqestData
+    );
   } catch (err) {
     throw new Error(JSON.stringify(err));
   }
   loginReq.misskeyHost = loginReq.misskeyHost.toLowerCase();
-  
+
   // 미스키 App 인증 API에서 액세스토큰과 MiUser 정보를 받아오기
-  const misskeyApiResponse: misskeyAccessKeyApiResponse = await requestMiAccessTokenAndUserInfo(loginReq);
+  const misskeyApiResponse: misskeyAccessKeyApiResponse =
+    await requestMiAccessTokenAndUserInfo(loginReq);
   if (misskeyApiResponse === null) {
     throw new Error(`misskey token get fail!`);
   }
 
   const user: MiUser = misskeyApiResponse.user;
   const miAccessToken = misskeyApiResponse.accessToken;
-  if (typeof user !== 'object' || typeof miAccessToken !== 'string') {
+  if (typeof user !== "object" || typeof miAccessToken !== "string") {
     throw new Error(`fail to get Misskey User/Token`);
   }
 
@@ -37,9 +42,10 @@ export async function login(loginReqestData: callbackTokenClaimPayload): Promise
 
   let nameWithEmoji = await fetchNameWithEmoji({
     name: user.name ?? user.username,
-    misskeyBaseUrl: `https://${loginReq.misskeyHost}`,
+    baseUrl: loginReq.misskeyHost,
+    emojis: null,
   });
-  
+
   if (nameWithEmoji.length === 0) {
     nameWithEmoji = [`${user.username}`];
   }
@@ -51,13 +57,13 @@ export async function login(loginReqestData: callbackTokenClaimPayload): Promise
     hostName: loginReq.misskeyHost,
     handle: user_handle,
     name: nameWithEmoji,
-    avatarUrl: user.avatarUrl ?? '',
+    avatarUrl: user.avatarUrl ?? "",
     accessToken: miAccessToken,
     userId: user.id,
   };
   try {
     await pushDB(dbPayload);
-  } catch(err) {
+  } catch (err) {
     console.error(`Fail to push user to DB`, err);
     throw err;
   }
@@ -80,21 +86,21 @@ export async function login(loginReqestData: callbackTokenClaimPayload): Promise
     throw err;
   }
 
-
   //유저 정보 프론트로 반환
   return { user: user };
 }
 
-
 /**
- * 미스키에서 유저가 권한을 승인한 후, 콜백으로 받은 (App인증 방식) 토큰을 사용해서 
- * 미스키에서 accessToken과 유저 정보를 받아옴. 
+ * 미스키에서 유저가 권한을 승인한 후, 콜백으로 받은 (App인증 방식) 토큰을 사용해서
+ * 미스키에서 accessToken과 유저 정보를 받아옴.
  *  참고: https://misskey-hub.net/ko/docs/for-developers/api/token/app/
- * 인증 성공시 미스키의 /api/auth/session/userkey 응답 바디를 반환, 실패시 null 반환. 
+ * 인증 성공시 미스키의 /api/auth/session/userkey 응답 바디를 반환, 실패시 null 반환.
  * @param payload callbackTokenClaimPayload
  * @returns misskey appAuth API response body, or null when failed
  */
-async function requestMiAccessTokenAndUserInfo(payload: callbackTokenClaimPayload) {
+async function requestMiAccessTokenAndUserInfo(
+  payload: misskeyCallbackTokenClaimPayload
+) {
   const prisma = new PrismaClient();
 
   const checkInstances = await prisma.server.findFirst({
@@ -121,14 +127,17 @@ async function requestMiAccessTokenAndUserInfo(payload: callbackTokenClaimPayloa
       const resBody = await res.json();
       return resBody;
     } else {
-      console.error(`Fail to get Misskey Access token`, res.status, res.statusText);
+      console.error(
+        `Fail to get Misskey Access token`,
+        res.status,
+        res.statusText
+      );
       return null;
     }
   } else {
     return null;
   }
 }
-
 
 async function generateJwt(hostname: string, handle: string) {
   const alg = "HS256";

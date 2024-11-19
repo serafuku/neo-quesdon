@@ -4,23 +4,39 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import detectInstance from "./api/functions/web/detectInstance";
-import Link from "next/link";
 import { loginReqDto } from "./_dto/web/login/login.dto";
 
 interface FormValue {
   address: string;
 }
 
-interface hosts {
-  protocol: string;
-  host: string;
-}
-
-const misskeyAuth = async ({ misskeyHost }: loginReqDto) => {
+/**
+ * 미스키 전용 Auth Function
+ * @param loginReqDto
+ * @returns
+ */
+const misskeyAuth = async ({ host }: loginReqDto) => {
   const body: loginReqDto = {
-    misskeyHost: misskeyHost,
+    host: host,
   };
-  const res = await fetch(`/api/web/login`, {
+  const res = await fetch(`/api/web/misskey-login`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+  return await res.json();
+};
+
+/**
+ * 마스토돈 전용 Auth Function
+ * @param loginReqDto
+ * @returns
+ */
+const mastodonAuth = async ({ host }: loginReqDto) => {
+  const body: loginReqDto = {
+    host: host,
+  };
+  const res = await fetch(`/api/web/mastodon-login`, {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -48,7 +64,6 @@ function urlToHost(urlOrHost: string) {
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [hosts, setHosts] = useState<hosts>({ protocol: "", host: "" });
   const router = useRouter();
   const {
     register,
@@ -61,12 +76,11 @@ export default function Home() {
     const host = urlToHost(e.address);
     localStorage.setItem("server", host);
 
-    const payload: loginReqDto = {
-      misskeyHost: host,
-    };
-
-    detectInstance(host).then((r) => {
-      switch (r) {
+    detectInstance(host).then((type) => {
+      const payload: loginReqDto = {
+        host: host,
+      };
+      switch (type) {
         case "misskey":
           localStorage.setItem("server", host);
           misskeyAuth(payload).then((r) => {
@@ -82,8 +96,11 @@ export default function Home() {
           });
           break;
         case "mastodon":
-          document.getElementById("mastodon_modal")?.click();
-          setIsLoading(false);
+          localStorage.setItem("server", host);
+          mastodonAuth(payload).then((r) => {
+            router.replace(r);
+            console.log(r);
+          });
           break;
         default:
           console.log("아무것도 없는뎁쇼?");
@@ -92,15 +109,12 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const protocol = window.location.protocol;
-    const host = window.location.host;
     const lastUsedHost = localStorage.getItem("server");
     const ele = document.getElementById("serverNameInput") as HTMLInputElement;
     if (lastUsedHost && ele) {
       ele.value = lastUsedHost;
       ele.focus();
     }
-    setHosts({ protocol: protocol, host: host });
   }, []);
 
   return (

@@ -1,23 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { mastodonCallbackTokenClaimPayload } from "../_dto/mastodon-callback/callback-token-claim.dto";
+import { login } from "./action";
 import { useRouter } from "next/navigation";
-import { login } from "./actions";
-import { MiUser as MiUser } from "../api/misskey-entities/user";
-import { misskeyCallbackTokenClaimPayload } from "../_dto/misskey-callback/callback-token-claim.dto";
-import { misskeyUserInfoPayload } from "../_dto/misskey-callback/user-info.dto";
-
-export type DBpayload = {
-  account: string;
-  accountLower: string;
-  hostName: string;
-  handle: string;
-  name: string[];
-  avatarUrl: string;
-  accessToken: string;
-  userId: string;
-};
 
 export default function CallbackPage() {
   const [id, setId] = useState<number>(0);
@@ -25,10 +12,10 @@ export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const server = localStorage.getItem("server");
-
     const url = new URL(window.location.href);
     const params = new URLSearchParams(url.search);
+
+    const server = localStorage.getItem("server");
 
     const randomNumber = Math.ceil(Math.random() * 3);
     setId(randomNumber);
@@ -36,16 +23,21 @@ export default function CallbackPage() {
     const fn = async () => {
       try {
         if (server) {
-          const callback_token = params.get("token");
-          if (callback_token === null) {
-            throw new Error("callback token is null?");
+          const code = params.get("code");
+          const state = params.get("state");
+          if (code === null) {
+            throw new Error("User code is null?");
           }
-          const payload: misskeyCallbackTokenClaimPayload = {
-            misskeyHost: server,
-            callback_token: callback_token,
+          if (state === null) {
+            throw new Error("login state is null?");
+          }
+          const payload: mastodonCallbackTokenClaimPayload = {
+            mastodonHost: server,
+            callback_code: code,
+            state: state,
           };
 
-          let res: misskeyUserInfoPayload;
+          let res;
           try {
             res = await login(payload);
           } catch (err) {
@@ -53,9 +45,9 @@ export default function CallbackPage() {
             throw err;
           }
 
-          const user: MiUser = res.user;
+          const user = res.user;
 
-          const handle = `@${user.username}@${server}`;
+          const handle = `@${user.profile.username}@${server}`;
           localStorage.setItem("user_handle", handle);
 
           router.replace("/main");
@@ -69,9 +61,8 @@ export default function CallbackPage() {
         );
       }
     };
-
     fn();
-  }, [router]);
+  }, []);
 
   return (
     <div className="w-full h-[100vh] flex flex-col gap-2 justify-center items-center text-3xl">

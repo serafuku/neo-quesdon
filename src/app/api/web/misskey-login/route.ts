@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     return sendErrorResponse(400, `${err}`);
   }
 
-  const misskeyHost = data.misskeyHost.toLowerCase();
+  const misskeyHost = data.host.toLowerCase();
   const prisma = new PrismaClient();
 
   try {
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       const payload = {
         name: "Neo-Quesdon",
         description: "새로운 퀘스돈, 네오-퀘스돈입니다.",
-        permission: ["write:notes", "read:follower"],
+        permission: ["write:notes"],
         callbackUrl: `${process.env.WEB_URL}/misskey-callback`,
       };
 
