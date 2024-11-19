@@ -10,6 +10,7 @@ import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
 import { AnswerDto } from "@/app/_dto/Answers.dto";
 import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
+import josa from "@/app/api/functions/josa";
 
 type FormValue = {
   question: string;
@@ -125,7 +126,11 @@ export default function UserPage() {
 
   const shareUrl = () => {
     const server = localStorage.getItem("server");
-    const text = `저의 ${userInfo?.questionBoxName}이에요! #neo-quesdon ${location.origin}/main/user/${userInfo?.handle}`;
+    const text = `저의 ${josa(
+      userInfo?.questionBoxName,
+      "이에요!",
+      "예요!"
+    )} #neo-quesdon ${location.origin}/main/user/${userInfo?.handle}`;
     return `https://${server}/share?text=${encodeURIComponent(text)}`;
   };
 
@@ -302,7 +307,10 @@ export default function UserPage() {
                         width={32}
                         height={32}
                       />
-                      <span>님의 {userInfo?.questionBoxName}이에요!</span>
+                      <span>
+                        님의{" "}
+                        {josa(userInfo?.questionBoxName, "이에요!", "예요!")}
+                      </span>
                     </div>
                   )}
                 </div>
