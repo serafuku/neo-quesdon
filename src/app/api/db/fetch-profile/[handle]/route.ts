@@ -1,4 +1,7 @@
-import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
+import {
+  userProfileDto,
+  userProfileWithHostnameDto,
+} from "@/app/_dto/fetch-profile/Profile.dto";
 import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -17,6 +20,21 @@ export async function GET(
       where: {
         handle: userHandle,
       },
+      select: {
+        user: {
+          select: {
+            hostName: true,
+          },
+        },
+        handle: true,
+        name: true,
+        stopNewQuestion: true,
+        stopAnonQuestion: true,
+        avatarUrl: true,
+        questionBoxName: true,
+        stopNotiNewQuestion: true,
+        stopPostAnswer: true,
+      },
     });
     if (!profile) {
       return NextResponse.json(
@@ -24,7 +42,7 @@ export async function GET(
         { status: 404 }
       );
     }
-    const resBody: userProfileDto = {
+    const resBody: userProfileWithHostnameDto = {
       handle: profile.handle,
       name: profile.name,
       stopNewQuestion: profile.stopNewQuestion,
@@ -33,6 +51,7 @@ export async function GET(
       questionBoxName: profile.questionBoxName,
       stopNotiNewQuestion: profile.stopNotiNewQuestion,
       stopPostAnswer: profile.stopPostAnswer,
+      hostname: profile.user.hostName,
     };
 
     return NextResponse.json(resBody, {

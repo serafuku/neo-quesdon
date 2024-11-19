@@ -12,3 +12,7 @@ export interface userProfileDto {
 export interface userProfileWithCountDto extends userProfileDto {
   questions: number | null;
 }
+
+export interface userProfileWithHostnameDto extends userProfileDto {
+  hostname: string;
+}

@@ -6,10 +6,12 @@ import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import Answer from "@/app/_components/answer";
 import { FaUserSlash } from "react-icons/fa";
-import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
+import { userProfileWithHostnameDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
 import { AnswerDto } from "@/app/_dto/Answers.dto";
 import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
+import josa from "@/app/api/functions/josa";
+import Link from "next/link";
 
 type FormValue = {
   question: string;
@@ -24,7 +26,7 @@ type ResponseType = {
 async function fetchProfile(handle: string) {
   const profile = await fetch(`/api/db/fetch-profile/${handle}`);
   if (profile && profile.ok) {
-    return profile.json() as unknown as userProfileDto;
+    return profile.json() as unknown as userProfileWithHostnameDto;
   } else {
     return undefined;
   }
@@ -32,7 +34,7 @@ async function fetchProfile(handle: string) {
 
 export default function UserPage() {
   const { handle } = useParams() as { handle: string };
-  const [userInfo, setUserInfo] = useState<userProfileDto>();
+  const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto>();
   const [localHandle, setLocalHandle] = useState<string>("");
   const [answers, setAnswers] = useState<AnswerDto[] | null>(null);
   const [count, setCount] = useState<number | null>(0);
@@ -125,7 +127,11 @@ export default function UserPage() {
 
   const shareUrl = () => {
     const server = localStorage.getItem("server");
-    const text = `저의 ${userInfo?.questionBoxName}이에요! #neo-quesdon ${location.origin}/main/user/${userInfo?.handle}`;
+    const text = `저의 ${josa(
+      userProfile?.questionBoxName,
+      "이에요!",
+      "예요!"
+    )} #neo-quesdon ${location.origin}/main/user/${userProfile?.handle}`;
     return `https://${server}/share?text=${encodeURIComponent(text)}`;
   };
 
@@ -165,7 +171,7 @@ export default function UserPage() {
     }
     // 작성자 비공개
     else {
-      if (userInfo?.stopAnonQuestion === true) {
+      if (userProfile?.stopAnonQuestion === true) {
         setError("questioner", {
           type: "stopAnonQuestion",
           message: "익명 질문은 받지 않고 있어요...",
@@ -197,15 +203,15 @@ export default function UserPage() {
 
   useEffect(() => {
     fetchProfile(profileHandle).then((r) => {
-      setUserInfo(r);
+      setUserProfile(r);
     });
     setLocalHandle(localStorage.getItem("user_handle") ?? "");
   }, [profileHandle]);
 
   useEffect(() => {
-    if (userInfo) {
+    if (userProfile) {
       fetchUserAnswers({
-        answeredPersonHandle: userInfo.handle,
+        answeredPersonHandle: userProfile.handle,
         sort: "DESC",
         limit: 20,
       }).then(({ answers, count }: ResponseType) => {
@@ -219,7 +225,7 @@ export default function UserPage() {
         setUntilId(answers[answers.length - 1].id);
       });
     }
-  }, [profileHandle, userInfo]);
+  }, [profileHandle, userProfile]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -257,7 +263,7 @@ export default function UserPage() {
       className="w-[90%] window:w-[80%] desktop:w-[70%]"
       onKeyDown={onEscape}
     >
-      {userInfo === null ? (
+      {userProfile === null ? (
         <div className="w-full flex flex-col justify-center items-center glass text-4xl rounded-box shadow p-2">
           <FaUserSlash />
           <span>그런 사용자는 없어요!</span>
@@ -267,16 +273,20 @@ export default function UserPage() {
           <div className="w-full h-fit desktop:sticky top-2 desktop:w-[50%] flex flex-col">
             <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
               <div className="flex flex-col items-center gap-2 py-2">
-                {userInfo && userInfo.avatarUrl ? (
-                  <div className="flex w-full justify-center">
-                    <img
-                      src={userInfo.avatarUrl}
-                      alt="User Avatar"
-                      className="w-24 h-24 object-cover rounded-full"
-                    />
-                    {userInfo.stopAnonQuestion && (
-                      <div className="chat chat-start absolute left-[21rem] w-full">
-                        <div className="chat-bubble bg-base-100 text-slate-700">
+                {userProfile && userProfile.avatarUrl ? (
+                  <div className="flex w-full h-24">
+                    <Link
+                      href={`https://${userProfile.hostname}/${userProfile.handle}`}
+                    >
+                      <img
+                        src={userProfile.avatarUrl}
+                        alt="User Avatar"
+                        className={`w-24 h-24 object-cover absolute left-[calc(50%-3rem)] rounded-full`}
+                      />
+                    </Link>
+                    {userProfile.stopAnonQuestion && (
+                      <div className="chat chat-start w-32 window:w-full desktop:w-full relative left-[68%] window:left-[60%] deskstop:left-[57%]">
+                        <div className="chat-bubble text-sm flex items-center bg-base-100 text-slate-700">
                           작성자 공개 질문만 받아요!
                         </div>
                       </div>
@@ -286,10 +296,10 @@ export default function UserPage() {
                   <div className="skeleton h-24 w-24 rounded-full" />
                 )}
                 <div className="flex items-center text-xl">
-                  {userInfo?.stopNewQuestion ? (
+                  {userProfile?.stopNewQuestion ? (
                     <div className="flex flex-col items-center desktop:flex-row">
                       <NameComponents
-                        username={userInfo?.name}
+                        username={userProfile.name}
                         width={32}
                         height={32}
                       />
@@ -298,11 +308,14 @@ export default function UserPage() {
                   ) : (
                     <div className="flex flex-col items-center desktop:flex-row window:flex-row window:text-2xl">
                       <NameComponents
-                        username={userInfo?.name}
+                        username={userProfile?.name}
                         width={32}
                         height={32}
                       />
-                      <span>님의 {userInfo?.questionBoxName}이에요!</span>
+                      <span>
+                        님의{" "}
+                        {josa(userProfile?.questionBoxName, "이에요!", "예요!")}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -320,7 +333,9 @@ export default function UserPage() {
                     errors.question ? "textarea-error" : "textarea-bordered"
                   }`}
                   onKeyDown={onCtrlEnter}
-                  disabled={userInfo?.stopNewQuestion === true ? true : false}
+                  disabled={
+                    userProfile?.stopNewQuestion === true ? true : false
+                  }
                 />
                 {errors.questioner &&
                   errors.questioner.type === "stopAnonQuestion" && (
