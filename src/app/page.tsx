@@ -54,6 +54,7 @@ export default function Home() {
     register,
     formState: { errors },
     handleSubmit,
+    setValue: setFormValue
   } = useForm<FormValue>({ defaultValues: { address: "" } });
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
@@ -97,11 +98,11 @@ export default function Home() {
     const lastUsedHost = localStorage.getItem("server");
     const ele = document.getElementById("serverNameInput") as HTMLInputElement;
     if (lastUsedHost && ele) {
-      ele.value = lastUsedHost;
+      setFormValue('address', lastUsedHost);
       ele.focus();
     }
     setHosts({ protocol: protocol, host: host });
-  }, []);
+  }, [ setFormValue ]);
 
   return (
     <div className="w-screen h-screen absolute flex items-center justify-center p-8">
