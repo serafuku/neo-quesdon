@@ -1,6 +1,7 @@
 "use server";
 
-import type { MkNoteAnswers, typedAnswer } from "@/app";
+import type { mastodonTootAnswers, MkNoteAnswers, typedAnswer } from "@/app";
+import detectInstance from "@/app/api/functions/web/detectInstance";
 import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { PrismaClient, question } from "@prisma/client";
 import { createHash } from "crypto";
@@ -59,40 +60,89 @@ export async function postAnswer(
       },
     });
 
-    //답변 올리는 부분
-    if (userSettings && !userSettings.stopPostAnswer) {
-      const baseUrl = process.env.WEB_URL;
-      const answerUrl = `${baseUrl}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
+    if (server) {
+      const instanceType = await detectInstance(server.instances);
 
-      if (answeredUser && server) {
-        const i = createHash("sha256")
-          .update(answeredUser.token + server.appSecret, "utf-8")
-          .digest("hex");
-        const host = answeredUser.hostName;
-        if (answer.nsfwedAnswer === true && answer.questioner === null) {
-          const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
-          const text = `Q: ${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNote(i, title, text, host, answer.visibility);
-        } else if (
-          answer.nsfwedAnswer === false &&
-          answer.questioner !== null
-        ) {
-          const title = `Q: ${question.question} #neo-quesdon`;
-          const text = `질문자:${answer.questioner}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNote(i, title, text, host, answer.visibility);
-        } else if (answer.nsfwedAnswer === true && answer.questioner !== null) {
-          const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
-          const text = `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNote(i, title, text, host, answer.visibility);
+      console.log(instanceType);
+
+      //답변 올리는 부분
+      if (userSettings && !userSettings.stopPostAnswer) {
+        const baseUrl = process.env.WEB_URL;
+        const answerUrl = `${baseUrl}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
+
+        if (answeredUser && server) {
+          const i = createHash("sha256")
+            .update(answeredUser.token + server.appSecret, "utf-8")
+            .digest("hex");
+          const host = answeredUser.hostName;
+          if (answer.nsfwedAnswer === true && answer.questioner === null) {
+            const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
+            const text = `Q: ${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+            if (instanceType === "misskey" || instanceType === "cherrypick") {
+              await mkMisskeyNote(i, title, text, host, answer.visibility);
+            } else {
+              await mastodonToot(
+                answeredUser.token,
+                title,
+                text,
+                host,
+                answer.visibility
+              );
+            }
+          } else if (
+            answer.nsfwedAnswer === false &&
+            answer.questioner !== null
+          ) {
+            const title = `Q: ${question.question} #neo-quesdon`;
+            const text = `질문자:${answer.questioner}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+            if (instanceType === "misskey" || instanceType === "cherrypick") {
+              await mkMisskeyNote(i, title, text, host, answer.visibility);
+            } else {
+              await mastodonToot(
+                answeredUser.token,
+                title,
+                text,
+                host,
+                answer.visibility
+              );
+            }
+          } else if (
+            answer.nsfwedAnswer === true &&
+            answer.questioner !== null
+          ) {
+            const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
+            const text = `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+            if (instanceType === "misskey" || instanceType === "cherrypick") {
+              await mkMisskeyNote(i, title, text, host, answer.visibility);
+            } else {
+              await mastodonToot(
+                answeredUser.token,
+                title,
+                text,
+                host,
+                answer.visibility
+              );
+            }
+          } else {
+            const title = `Q: ${question.question} #neo-quesdon`;
+            const text = `A: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
+            if (instanceType === "misskey" || instanceType === "cherrypick") {
+              await mkMisskeyNote(i, title, text, host, answer.visibility);
+            } else {
+              await mastodonToot(
+                answeredUser.token,
+                title,
+                text,
+                host,
+                answer.visibility
+              );
+            }
+          }
         } else {
-          const title = `Q: ${question.question} #neo-quesdon`;
-          const text = `A: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNote(i, title, text, host, answer.visibility);
+          console.log("user not found");
         }
-      } else {
-        console.log("user not found");
+        console.log("Created new answer:", answerUrl);
       }
-      console.log("Created new answer:", answerUrl);
     }
   }
 }
@@ -121,6 +171,51 @@ async function mkMisskeyNote(
     console.warn(`Note create fail! `, res.status, res.statusText);
   }
 }
+
+async function mastodonToot(
+  i: string,
+  title: string,
+  text: string,
+  hostname: string,
+  visibility: "public" | "home" | "followers"
+) {
+  let newVisibility: "public" | "unlisted" | "private";
+  switch (visibility) {
+    case "public":
+      newVisibility = "public";
+      break;
+    case "home":
+      newVisibility = "unlisted";
+      break;
+    case "followers":
+      newVisibility = "private";
+    default:
+      newVisibility = "public";
+      break;
+  }
+  const newAnswerToot: mastodonTootAnswers = {
+    spoiler_text: title,
+    status: text,
+    visibility: newVisibility,
+  };
+  try {
+    const res = await fetch(`https://${hostname}/api/v1/statuses`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${i}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newAnswerToot),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP Error! status:${res.status}`);
+    }
+  } catch (err) {
+    console.warn(`Toot Create Fail!`, err);
+  }
+}
+
 export async function deleteQuestion(id: number) {
   const cookieStore = await cookies();
   const jwtToken = cookieStore.get("jwtToken")?.value;
