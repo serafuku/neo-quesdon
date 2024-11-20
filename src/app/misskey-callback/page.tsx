@@ -7,16 +7,17 @@ import { login } from "./actions";
 import { MiUser as MiUser } from "../api/misskey-entities/user";
 import { misskeyCallbackTokenClaimPayload } from "../_dto/misskey-callback/callback-token-claim.dto";
 import { misskeyUserInfoPayload } from "../_dto/misskey-callback/user-info.dto";
+import type { profile, user } from "@prisma/client";
 
 export type DBpayload = {
-  account: string;
-  accountLower: string;
-  hostName: string;
-  handle: string;
-  name: string[];
-  avatarUrl: string;
-  accessToken: string;
-  userId: string;
+  account: user['account'];
+  accountLower: user['accountLower'];
+  hostName: user['hostName'];
+  handle: user['handle'];
+  name: profile['name'];
+  avatarUrl: profile['avatarUrl'];
+  accessToken: user['token'];
+  userId: user['userId'];
 };
 
 export default function CallbackPage() {

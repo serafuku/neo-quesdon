@@ -155,18 +155,15 @@ export default function UserPage() {
         });
         return;
       }
-
-      document.getElementById("my_modal_2")?.click();
-
       const req: CreateQuestionDto = {
         question: e.question,
         questioner: user_handle,
         questionee: profileHandle,
       };
+      reset();
       const res = await mkQuestionCreateApi(req);
-
       if (res.status === 200) {
-        reset();
+        (document.getElementById("my_modal_2") as HTMLInputElement).checked = true;
       }
     }
     // 작성자 비공개
@@ -186,7 +183,7 @@ export default function UserPage() {
           return;
         }
 
-        document.getElementById("my_modal_2")?.click();
+        (document.getElementById("my_modal_2") as HTMLInputElement).checked = true;
 
         const req: CreateQuestionDto = {
           question: e.question,
@@ -284,7 +281,7 @@ export default function UserPage() {
                         className={`w-24 h-24 object-cover absolute left-[calc(50%-3rem)] rounded-full`}
                       />
                     </Link>
-                    {userProfile.stopAnonQuestion && (
+                    {(userProfile.stopAnonQuestion && !userProfile.stopNewQuestion) && (
                       <div className="chat chat-start w-32 window:w-full desktop:w-full relative left-[68%] window:left-[60%] deskstop:left-[57%]">
                         <div className="chat-bubble text-sm flex items-center bg-base-100 text-slate-700">
                           작성자 공개 질문만 받아요!
@@ -377,7 +374,7 @@ export default function UserPage() {
             {localHandle === profileHandle && (
               <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
                 <a className="link" href={shareUrl()} target="_blank">
-                  Misskey에 질문상자 페이지를 공유
+                  {userProfile?.instanceType} 에 질문상자 페이지를 공유
                 </a>
               </div>
             )}
@@ -460,7 +457,7 @@ export default function UserPage() {
             <button
               className="btn"
               onClick={() => {
-                document.getElementById("my_modal_2")?.click();
+                (document.getElementById("my_modal_2") as HTMLInputElement).checked = false;
               }}
             >
               닫기
