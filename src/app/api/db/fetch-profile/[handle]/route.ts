@@ -42,6 +42,7 @@ export async function GET(
         { status: 404 }
       );
     }
+    const { instanceType } = await prisma.server.findUniqueOrThrow({where: {instances: profile.user.hostName}});
     const resBody: userProfileWithHostnameDto = {
       handle: profile.handle,
       name: profile.name,
@@ -52,6 +53,7 @@ export async function GET(
       stopNotiNewQuestion: profile.stopNotiNewQuestion,
       stopPostAnswer: profile.stopPostAnswer,
       hostname: profile.user.hostName,
+      instanceType: instanceType,
     };
 
     return NextResponse.json(resBody, {

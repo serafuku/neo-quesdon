@@ -1,4 +1,4 @@
-import { userProfileWithCountDto } from "@/app/_dto/fetch-profile/Profile.dto";
+import { userProfileMeDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
@@ -20,6 +20,11 @@ export async function GET(req: NextRequest) {
     }
 
     const userProfile = await prisma.profile.findUnique({
+      include: {
+          user: {
+            select: {hostName: true}
+          },
+      },
       where: {
         handle: handle,
       },
@@ -27,6 +32,8 @@ export async function GET(req: NextRequest) {
     if (!userProfile) {
       return NextResponse.json({ message: `User not found` }, { status: 404 });
     }
+    const host = userProfile.user.hostName;
+    const { instanceType } = await prisma.server.findUniqueOrThrow({where: {instances: host}, select: {instanceType: true}});
 
     const questionCount = await prisma.profile.findUnique({
       where: {
@@ -40,7 +47,7 @@ export async function GET(req: NextRequest) {
         },
       },
     });
-    const res: userProfileWithCountDto = {
+    const res: userProfileMeDto = {
       handle: userProfile.handle,
       name: userProfile.name,
       stopNewQuestion: userProfile.stopNewQuestion,
@@ -50,6 +57,7 @@ export async function GET(req: NextRequest) {
       stopNotiNewQuestion: userProfile.stopNotiNewQuestion,
       stopPostAnswer: userProfile.stopPostAnswer,
       questions: questionCount ? questionCount._count.questions : null,
+      instanceType: instanceType,
     };
 
     return NextResponse.json(res);
