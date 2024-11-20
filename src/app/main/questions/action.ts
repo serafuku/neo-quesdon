@@ -1,7 +1,8 @@
 "use server";
 
-import type { MkNoteAnswers, typedAnswer } from "@/app";
+import type { mastodonTootAnswers, MkNoteAnswers, typedAnswer } from "@/app";
 import { verifyToken } from "@/app/api/functions/web/verify-jwt";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 import { PrismaClient, question } from "@prisma/client";
 import { createHash } from "crypto";
 import { cookies } from "next/headers";
@@ -19,80 +20,140 @@ export async function getQuestion(id: number) {
 }
 
 export async function postAnswer(
-  question: question | null,
+  questionId: question["id"] | null,
   answer: typedAnswer
 ) {
   const prisma = new PrismaClient();
+  const cookieStore = await cookies();
+  const jwtToken = cookieStore.get('jwtToken')?.value;
+  let tokenPayload;
+  // JWT 토큰 검증
+  try {
+    tokenPayload = await verifyToken(jwtToken);
+  } catch (err) {
+    return sendApiError(401, "Unauthorized");
+  }
 
-  if (question !== null) {
-    const postWithAnswer = await prisma.answer.create({
-      data: {
-        question: question.question,
-        questioner: question.questioner,
-        answer: answer.answer,
-        answeredPersonHandle: question.questioneeHandle,
-        nsfwedAnswer: answer.nsfwedAnswer,
-      },
+
+  if (questionId !== null) {
+    // 트랜잭션으로 All or Nothing 처리
+    const [question, postWithAnswer] = await prisma.$transaction(async (tx) => {
+      const q = await tx.question.findUniqueOrThrow({ where: { id: questionId } });
+      if (q.questioneeHandle !== tokenPayload.handle) {
+        throw new Error(`This question is not for you`);
+      }
+      const a = await tx.answer.create({
+        data: {
+          question: q.question,
+          questioner: q.questioner,
+          answer: answer.answer,
+          answeredPersonHandle: tokenPayload.handle,
+          nsfwedAnswer: answer.nsfwedAnswer,
+        },
+      });
+      await tx.question.delete({
+        where: {
+          id: q.id,
+        },
+      });
+
+      return [q, a];
     });
-
-    const deleteQuestion = await prisma.question.delete({
+    const answeredUser = await prisma.user.findUniqueOrThrow({
       where: {
-        id: question.id,
+        handle: tokenPayload.handle,
       },
     });
 
-    const answeredUser = await prisma.user.findUnique({
+    const server = await prisma.server.findUniqueOrThrow({
       where: {
-        handle: question.questioneeHandle,
+        instances: answeredUser.hostName,
       },
     });
 
-    const server = await prisma.server.findUnique({
-      where: {
-        instances: answeredUser?.hostName,
-      },
-    });
+    const instanceType = server.instanceType;
 
-    const userSettings = await prisma.profile.findUnique({
-      where: {
-        handle: question.questioneeHandle,
-      },
-    });
-
+    const baseUrl = process.env.WEB_URL;
+    const answerUrl = `${baseUrl}/main/user/${answeredUser.handle}/${postWithAnswer.id}`;
+    console.log("Created new answer:", answerUrl);
     //답변 올리는 부분
-    if (userSettings && !userSettings.stopPostAnswer) {
-      const baseUrl = process.env.WEB_URL;
-      const answerUrl = `${baseUrl}/main/user/${answer.answeredPersonHandle}/${postWithAnswer.id}`;
-
+    const userSettings = await prisma.profile.findUniqueOrThrow({
+      where: {
+        handle: tokenPayload.handle,
+      },
+    });
+    if (!userSettings.stopPostAnswer) {
       if (answeredUser && server) {
         const i = createHash("sha256")
           .update(answeredUser.token + server.appSecret, "utf-8")
           .digest("hex");
         const host = answeredUser.hostName;
-        if (answer.nsfwedAnswer === true && answer.questioner === null) {
-          const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
-          const text = `Q: ${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNote(i, title, text, host, answer.visibility);
+        if (answer.nsfwedAnswer === true && question.questioner === null) {
+          const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo_quesdon`;
+          const text = `Q: ${question.question}\nA: ${answer.answer}\n#neo_quesdon ${answerUrl}`;
+          if (instanceType === "misskey" || instanceType === "cherrypick") {
+            await mkMisskeyNote(i, title, text, host, answer.visibility);
+          } else {
+            await mastodonToot(
+              answeredUser.token,
+              title,
+              text,
+              host,
+              answer.visibility
+            );
+          }
         } else if (
           answer.nsfwedAnswer === false &&
-          answer.questioner !== null
+          question.questioner !== null
         ) {
-          const title = `Q: ${question.question} #neo-quesdon`;
-          const text = `질문자:${answer.questioner}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNote(i, title, text, host, answer.visibility);
-        } else if (answer.nsfwedAnswer === true && answer.questioner !== null) {
-          const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo-quesdon`;
-          const text = `질문자:${answer.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNote(i, title, text, host, answer.visibility);
+          const title = `Q: ${question.question} #neo_quesdon`;
+          const text = `질문자:${question.questioner}\nA: ${answer.answer}\n#neo_quesdon ${answerUrl}`;
+          if (instanceType === "misskey" || instanceType === "cherrypick") {
+            await mkMisskeyNote(i, title, text, host, answer.visibility);
+          } else {
+            await mastodonToot(
+              answeredUser.token,
+              title,
+              text,
+              host,
+              answer.visibility
+            );
+          }
+        } else if (
+          answer.nsfwedAnswer === true &&
+          question.questioner !== null
+        ) {
+          const title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo_quesdon`;
+          const text = `질문자:${question.questioner}\nQ:${question.question}\nA: ${answer.answer}\n#neo_quesdon ${answerUrl}`;
+          if (instanceType === "misskey" || instanceType === "cherrypick") {
+            await mkMisskeyNote(i, title, text, host, answer.visibility);
+          } else {
+            await mastodonToot(
+              answeredUser.token,
+              title,
+              text,
+              host,
+              answer.visibility
+            );
+          }
         } else {
-          const title = `Q: ${question.question} #neo-quesdon`;
-          const text = `A: ${answer.answer}\n#neo-quesdon ${answerUrl}`;
-          await mkMisskeyNote(i, title, text, host, answer.visibility);
+          const title = `Q: ${question.question} #neo_quesdon`;
+          const text = `A: ${answer.answer}\n#neo_quesdon ${answerUrl}`;
+          if (instanceType === "misskey" || instanceType === "cherrypick") {
+            await mkMisskeyNote(i, title, text, host, answer.visibility);
+          } else {
+            await mastodonToot(
+              answeredUser.token,
+              title,
+              text,
+              host,
+              answer.visibility
+            );
+          }
         }
       } else {
         console.log("user not found");
       }
-      console.log("Created new answer:", answerUrl);
     }
   }
 }
@@ -104,6 +165,11 @@ async function mkMisskeyNote(
   hostname: string,
   visibility: "public" | "home" | "followers"
 ) {
+  // 미스키 CW길이제한 처리
+  if (title.length > 100) {
+    title = title.substring(0, 90) + '.....'
+  }
+
   const newAnswerNote: MkNoteAnswers = {
     cw: title,
     text: text,
@@ -121,20 +187,69 @@ async function mkMisskeyNote(
     console.warn(`Note create fail! `, res.status, res.statusText);
   }
 }
+
+async function mastodonToot(
+  i: string,
+  title: string,
+  text: string,
+  hostname: string,
+  visibility: "public" | "home" | "followers"
+) {
+  let newVisibility: "public" | "unlisted" | "private";
+  switch (visibility) {
+    case "public":
+      newVisibility = "public";
+      break;
+    case "home":
+      newVisibility = "unlisted";
+      break;
+    case "followers":
+      newVisibility = "private";
+      break;
+    default:
+      newVisibility = "public";
+      break;
+  }
+  const newAnswerToot: mastodonTootAnswers = {
+    spoiler_text: title,
+    status: text,
+    visibility: newVisibility,
+  };
+  try {
+    const res = await fetch(`https://${hostname}/api/v1/statuses`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${i}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newAnswerToot),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP Error! status:${res.status}`);
+    }
+  } catch (err) {
+    console.warn(`Toot Create Fail!`, err);
+  }
+}
+
 export async function deleteQuestion(id: number) {
   const cookieStore = await cookies();
   const jwtToken = cookieStore.get("jwtToken")?.value;
-
   try {
-    await verifyToken(jwtToken);
-
+    const tokenPayload = await verifyToken(jwtToken);
     const prisma = new PrismaClient();
-
-    const deleteQuestion = await prisma.question.delete({
-      where: {
-        id: id,
-      },
-    });
+    await prisma.$transaction(async (tr) => {
+      const q = await tr.question.findUniqueOrThrow({where: {id: id}});
+      if (q.questioneeHandle !== tokenPayload.handle) {
+        throw new Error(`You Can't delete this question`);
+      }
+      await tr.question.delete({
+        where: {
+          id: id,
+        },
+      });
+    })
   } catch (err) {
     throw new Error(`JWT Token Verification Error: ${err}`);
   }

@@ -31,10 +31,7 @@ export interface questions {
 }
 
 export interface typedAnswer {
-  question: string;
-  questioner: string | null;
   answer: string;
-  answeredPersonHandle: string;
   nsfwedAnswer: boolean;
   visibility: "public" | "home" | "followers";
 }
@@ -43,6 +40,12 @@ export interface MkNoteAnswers {
   cw: string;
   text: string;
   visibility: "public" | "home" | "followers";
+}
+
+export interface mastodonTootAnswers {
+  spoiler_text: string;
+  status: string;
+  visibility: "public" | "unlisted" | "private";
 }
 
 export interface postQuestion {

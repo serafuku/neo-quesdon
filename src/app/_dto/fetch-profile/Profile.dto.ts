@@ -1,3 +1,4 @@
+import { $Enums } from "@prisma/client";
 export interface userProfileDto {
   handle: string;
   name: string[];
@@ -9,10 +10,12 @@ export interface userProfileDto {
   questionBoxName: string;
 }
 
-export interface userProfileWithCountDto extends userProfileDto {
+export interface userProfileMeDto extends userProfileDto {
   questions: number | null;
+  instanceType: $Enums.InstanceType;
 }
 
 export interface userProfileWithHostnameDto extends userProfileDto {
   hostname: string;
+  instanceType: $Enums.InstanceType;
 }

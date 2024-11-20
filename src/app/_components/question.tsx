@@ -67,21 +67,18 @@ export default function Question({
       return;
     }
 
-    const question = await getQuestion(singleQuestion.id);
+    const questionId = singleQuestion.id;
     const typedAnswer: typedAnswer = {
-      question: question!.question,
-      questioner: question!.questioner,
       answer: e.answer,
-      answeredPersonHandle: question!.questioneeHandle,
       nsfwedAnswer: e.nsfw,
       visibility: e.visibility,
     };
     const filteredQuestions = multipleQuestions.filter(
-      (el) => el.id !== singleQuestion.id
+      (el) => el.id !== questionId
     );
 
     setState(filteredQuestions);
-    postAnswer(question, typedAnswer);
+    postAnswer(questionId, typedAnswer);
     document.getElementById("my_modal_1")?.click();
   };
 

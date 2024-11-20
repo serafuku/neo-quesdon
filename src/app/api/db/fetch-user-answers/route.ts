@@ -35,6 +35,9 @@ export async function POST(req: NextRequest) {
           ...(typeof untilId === "string" ? { lt: untilId } : {}),
         },
       },
+      include: {
+        answeredPerson: true,
+      },
       orderBy: {
         id: orderBy,
       },

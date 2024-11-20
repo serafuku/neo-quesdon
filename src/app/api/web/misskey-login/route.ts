@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
 import { MiApiError, MiAuthSession } from "@/app";
+import detectInstance from "../../functions/web/detectInstance";
 
 export async function POST(req: NextRequest) {
   let data: loginReqDto;
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
     return sendErrorResponse(400, `${err}`);
   }
 
-  const misskeyHost = data.misskeyHost.toLowerCase();
+  const misskeyHost = data.host.toLowerCase();
   const prisma = new PrismaClient();
 
   try {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
       const payload = {
         name: "Neo-Quesdon",
         description: "새로운 퀘스돈, 네오-퀘스돈입니다.",
-        permission: ["write:notes", "read:follower"],
+        permission: ["write:notes"],
         callbackUrl: `${process.env.WEB_URL}/misskey-callback`,
       };
 
@@ -50,17 +51,19 @@ export async function POST(req: NextRequest) {
       const data = await res.json();
       const appSecret = data.secret;
       console.log("New Misskey APP created!", data);
-
+      const detectedInstanceType = await detectInstance(misskeyHost) === 'cherrypick' ? 'cherrypick' : 'misskey';
       await prisma.server.upsert({
         where: {
           instances: misskeyHost,
         },
         update: {
           appSecret: appSecret,
+          instanceType: detectedInstanceType,
         },
         create: {
           appSecret: appSecret,
           instances: misskeyHost,
+          instanceType: detectedInstanceType,
         },
       });
       const authRes = await initiateMisskeyAuthSession(misskeyHost, appSecret);

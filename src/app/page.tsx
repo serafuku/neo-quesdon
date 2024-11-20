@@ -4,27 +4,43 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import detectInstance from "./api/functions/web/detectInstance";
-import Link from "next/link";
 import { loginReqDto } from "./_dto/web/login/login.dto";
 
 interface FormValue {
   address: string;
 }
 
-interface hosts {
-  protocol: string;
-  host: string;
-}
-
-const misskeyAuth = async ({ misskeyHost }: loginReqDto) => {
+/**
+ * 미스키 전용 Auth Function
+ * @param loginReqDto
+ * @returns
+ */
+const misskeyAuth = async ({ host }: loginReqDto) => {
   const body: loginReqDto = {
-    misskeyHost: misskeyHost,
+    host: host,
   };
-  const res = await fetch(`/api/web/login`, {
+  const res = await fetch(`/api/web/misskey-login`, {
     method: "POST",
     body: JSON.stringify(body),
   });
+  if (!res.ok) { throw new Error(`Misskey login Error! ${res.status}, ${await res.text()}`); }
+  return await res.json();
+};
 
+/**
+ * 마스토돈 전용 Auth Function
+ * @param loginReqDto
+ * @returns
+ */
+const mastodonAuth = async ({ host }: loginReqDto) => {
+  const body: loginReqDto = {
+    host: host,
+  };
+  const res = await fetch(`/api/web/mastodon-login`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) { throw new Error(`Mastodon login Error! ${res.status}, ${await res.text()}`); }
   return await res.json();
 };
 
@@ -48,7 +64,6 @@ function urlToHost(urlOrHost: string) {
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [hosts, setHosts] = useState<hosts>({ protocol: "", host: "" });
   const router = useRouter();
   const {
     register,
@@ -62,17 +77,18 @@ export default function Home() {
     const host = urlToHost(e.address);
     localStorage.setItem("server", host);
 
-    const payload: loginReqDto = {
-      misskeyHost: host,
-    };
-
-    detectInstance(host).then((r) => {
-      switch (r) {
+    detectInstance(host).then((type) => {
+      const payload: loginReqDto = {
+        host: host,
+      };
+      switch (type) {
         case "misskey":
           localStorage.setItem("server", host);
           misskeyAuth(payload).then((r) => {
             setIsLoading(false);
             router.replace(r.url);
+          }).catch((err) => {
+            window.alert(err);
           });
           break;
         case "cherrypick":
@@ -80,11 +96,17 @@ export default function Home() {
           misskeyAuth(payload).then((r) => {
             setIsLoading(false);
             router.replace(r.url);
+          }).catch((err) => {
+            window.alert(err);
           });
           break;
         case "mastodon":
-          document.getElementById("mastodon_modal")?.click();
-          setIsLoading(false);
+          localStorage.setItem("server", host);
+          mastodonAuth(payload).then((r) => {
+            router.replace(r);
+          }).catch((err) => {
+            window.alert(err);
+          });
           break;
         default:
           console.log("아무것도 없는뎁쇼?");
@@ -93,15 +115,12 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const protocol = window.location.protocol;
-    const host = window.location.host;
     const lastUsedHost = localStorage.getItem("server");
     const ele = document.getElementById("serverNameInput") as HTMLInputElement;
     if (lastUsedHost && ele) {
       setFormValue('address', lastUsedHost);
       ele.focus();
     }
-    setHosts({ protocol: protocol, host: host });
   }, [ setFormValue ]);
 
   return (
@@ -117,7 +136,7 @@ export default function Home() {
             </h1>
           </div>
           <span className="font-thin tracking-wider text-base desktop:text-lg">
-            &quot;아직은&quot; Misskey / CherryPick에서만 사용할 수 있는 새로운
+            Misskey / CherryPick / Mastodon 에서 사용할 수 있는 새로운
             Quesdon
           </span>
         </div>
@@ -176,30 +195,6 @@ export default function Home() {
             >
               로그인 없이 즐기기
             </button>
-          </div>
-        </div>
-        <input type="checkbox" id="mastodon_modal" className="modal-toggle" />
-        <div className="modal" role="dialog">
-          <div className="modal-box">
-            <h3 className="text-lg font-bold">준비중!</h3>
-            <p className="py-4">
-              마스토돈 로그인은 준비중이에요.
-              <br />{" "}
-              <a
-                className="link link-primary"
-                href="https://serafuku.moe/@Yozumina"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                @Yozumina@serafuku.moe
-              </a>
-              를 쪼아주세요!
-            </p>
-            <div className="modal-action">
-              <label htmlFor="mastodon_modal" className="btn">
-                알겠어요
-              </label>
-            </div>
           </div>
         </div>
       </main>

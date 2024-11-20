@@ -1,0 +1,191 @@
+"use server";
+
+import { validateStrict } from "@/utils/validator/strictValidator";
+import { mastodonCallbackTokenClaimPayload } from "../_dto/mastodon-callback/callback-token-claim.dto";
+import { PrismaClient } from "@prisma/client";
+import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
+import { DBpayload } from "../misskey-callback/page";
+import { cookies } from "next/headers";
+import { SignJWT } from "jose";
+
+const prisma = new PrismaClient();
+
+export async function login(
+  loginReqestData: mastodonCallbackTokenClaimPayload
+) {
+  //Class Validator로 들어온 로그인 정보 검증
+  let loginReq: mastodonCallbackTokenClaimPayload;
+  try {
+    loginReq = await validateStrict(
+      mastodonCallbackTokenClaimPayload,
+      loginReqestData
+    );
+  } catch (err) {
+    throw new Error(JSON.stringify(err));
+  }
+  loginReq.mastodonHost = loginReq.mastodonHost.toLowerCase();
+
+  const serverInfo = await prisma.server.findFirst({
+    where: {
+      instances: loginReq.mastodonHost,
+    },
+  });
+
+  if (serverInfo?.client_id && serverInfo?.client_secret) {
+    const mastodonApiResponse = await requestMastodonAccessCodeAndUserInfo(
+      loginReq,
+      serverInfo.client_id,
+      serverInfo.client_secret
+    );
+
+    const user_handle = `@${mastodonApiResponse.profile.username}@${loginReq.mastodonHost}`;
+
+    let nameWithEmoji = await fetchNameWithEmoji({
+      name:
+        mastodonApiResponse.profile.display_name ??
+        mastodonApiResponse.profile.username,
+      baseUrl: loginReq.mastodonHost,
+      emojis: mastodonApiResponse.profile.emojis,
+    });
+
+    if (nameWithEmoji.length === 0) {
+      nameWithEmoji = [`${mastodonApiResponse.profile.username}`];
+    }
+
+    const dbPayload: DBpayload = {
+      account: mastodonApiResponse.profile.username,
+      accountLower: mastodonApiResponse.profile.username.toLowerCase(),
+      hostName: loginReq.mastodonHost,
+      handle: user_handle,
+      name: nameWithEmoji,
+      avatarUrl: mastodonApiResponse.profile.avatar ?? "",
+      accessToken: mastodonApiResponse.token,
+      userId: mastodonApiResponse.profile.id,
+    };
+
+    try {
+      await pushDB(dbPayload);
+    } catch (err) {
+      console.error("Fail to push user to DB", err);
+      throw err;
+    }
+
+    try {
+      //프론트 쿠키스토어에 쿠키 저장
+      const cookieStore = await cookies();
+      const jwtToken = await generateJwt(loginReq.mastodonHost, user_handle);
+      console.log(`Send JWT to Frontend... ${jwtToken}`);
+      cookieStore.set("jwtToken", jwtToken, {
+        expires: Date.now() + 1000 * 60 * 60 * 6,
+        httpOnly: true,
+      });
+      cookieStore.set("server", loginReq.mastodonHost, {
+        expires: Date.now() + 1000 * 60 * 60 * 6,
+        httpOnly: true,
+      });
+    } catch (err) {
+      console.error("Make JWT or Set cookie Failed! ", err);
+      throw err;
+    }
+
+    return { user: mastodonApiResponse };
+  } else {
+    throw new Error("there is no server");
+  }
+}
+
+/**
+ * 마스토돈에서 유저 Token을 요청하는 함수
+ * @param payload
+ */
+async function requestMastodonAccessCodeAndUserInfo(
+  payload: mastodonCallbackTokenClaimPayload,
+  client_id: string,
+  client_secret: string
+) {
+  const checkInstances = await prisma.server.findFirst({
+    where: {
+      instances: payload.mastodonHost,
+    },
+  });
+
+  if (checkInstances) {
+    const res = await fetch(`https://${payload.mastodonHost}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "authorization_code",
+        redirect_uri: `${process.env.WEB_URL}/mastodon-callback`,
+        client_id: client_id,
+        client_secret: client_secret,
+        code: payload.callback_code,
+        state: payload.state,
+      }),
+    }).then((r) => r.json());
+
+    const myProfile = await fetch(
+      `https://${payload.mastodonHost}/api/v1/accounts/verify_credentials`,
+      {
+        headers: { Authorization: `Bearer ${res.access_token}` },
+      }
+    ).then((r) => r.json());
+
+    return { profile: myProfile, token: res.access_token };
+  } else {
+    throw new Error("there is no instances");
+  }
+}
+
+async function generateJwt(hostname: string, handle: string) {
+  const alg = "HS256";
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+
+  const webUrl = process.env.WEB_URL;
+  const jwtToken = await new SignJWT({
+    server: hostname,
+    handle: handle,
+  })
+    .setProtectedHeader({ alg })
+    .setIssuedAt()
+    .setIssuer(`${webUrl}`)
+    .setAudience("urn:example:audience")
+    .setExpirationTime("6h")
+    .sign(secret);
+  return jwtToken;
+}
+
+async function pushDB(payload: DBpayload) {
+  const prisma = new PrismaClient();
+  await prisma.user.upsert({
+    where: {
+      handle: payload.handle,
+    },
+    update: {
+      name: payload.name,
+      token: payload.accessToken,
+      profile: {
+        update: {
+          account: payload.account,
+          avatarUrl: payload.avatarUrl,
+          name: payload.name,
+        },
+      },
+    },
+    create: {
+      account: payload.account,
+      accountLower: payload.accountLower,
+      hostName: payload.hostName,
+      handle: payload.handle,
+      name: payload.name,
+      token: payload.accessToken,
+      userId: payload.userId,
+      profile: {
+        create: {
+          account: payload.account,
+          avatarUrl: payload.avatarUrl,
+          name: payload.name,
+        },
+      },
+    },
+  });
+}

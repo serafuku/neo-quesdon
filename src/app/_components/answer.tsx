@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import NameComponents from "./NameComponents";
-import { AnswerDto } from "../_dto/Answers.dto";
+import { AnswerDto, AnswerWithProfileDto } from "../_dto/Answers.dto";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 import { useParams } from "next/navigation";
 
@@ -12,8 +12,11 @@ interface askProps {
   id: string;
 }
 
-export async function fetchProfile(handle: string) {
-  const profile = await fetch(`/api/db/fetch-profile/${handle}`);
+export async function fetchProfile(value: AnswerWithProfileDto) {
+  if (value.answeredPerson) {
+    return value.answeredPerson;
+  }
+  const profile = await fetch(`/api/db/fetch-profile/${value.answeredPersonHandle}`);
   if (profile && profile.ok) {
     return profile.json() as unknown as userProfileDto;
   } else {
@@ -35,9 +38,9 @@ export default function Answer({ value, id }: askProps) {
   }, [profileHandle]);
 
   useEffect(() => {
-    fetchProfile(value.answeredPersonHandle).then((r) => setUserInfo(r));
+    fetchProfile(value).then((r) => setUserInfo(r));
     setShowNsfw(!value.nsfwedAnswer);
-  }, [value.answeredPersonHandle, value.nsfwedAnswer]);
+  }, [value]);
 
   return (
     <div className="w-full glass rounded-box px-2 desktop:px-8 py-4 mb-2 shadow">
