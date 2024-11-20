@@ -131,7 +131,7 @@ export default function UserPage() {
       userProfile?.questionBoxName,
       "이에요!",
       "예요!"
-    )} #neo-quesdon ${location.origin}/main/user/${userProfile?.handle}`;
+    )} #neo_quesdon ${location.origin}/main/user/${userProfile?.handle}`;
     return `https://${server}/share?text=${encodeURIComponent(text)}`;
   };
 
