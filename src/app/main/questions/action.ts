@@ -42,7 +42,7 @@ export async function postAnswer(
       if (q.questioneeHandle !== tokenPayload.handle) {
         throw new Error(`This question is not for you`);
       }
-      const a = await prisma.answer.create({
+      const a = await tx.answer.create({
         data: {
           question: q.question,
           questioner: q.questioner,
@@ -51,7 +51,7 @@ export async function postAnswer(
           nsfwedAnswer: answer.nsfwedAnswer,
         },
       });
-      await prisma.question.delete({
+      await tx.question.delete({
         where: {
           id: q.id,
         },
@@ -244,7 +244,7 @@ export async function deleteQuestion(id: number) {
       if (q.questioneeHandle !== tokenPayload.handle) {
         throw new Error(`You Can't delete this question`);
       }
-      await prisma.question.delete({
+      await tr.question.delete({
         where: {
           id: id,
         },
