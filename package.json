@@ -9,13 +9,15 @@
     "start:local": "source config/local_env.env && next start",
     "start:docker": "prisma migrate deploy && node server.js",
     "lint": "next lint",
-    "prisma": "source config/local_dev.env && prisma migrate dev"
+    "prisma": "source config/local_dev.env && prisma migrate dev",
+    "prisma:studio": "dotenv -e config/local_dev.env -- npx prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "daisyui": "^4.12.14",
+    "dotenv-cli": "^7.4.2",
     "jose": "^5.9.6",
     "next": "15.0.3",
     "pg": "^8.13.1",

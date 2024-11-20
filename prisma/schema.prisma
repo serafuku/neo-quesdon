@@ -61,4 +61,6 @@ model server {
     id              Int         @default(autoincrement())   @id
     instances       String      @unique
     appSecret       String?
+    client_id       String?
+    client_secret   String?
 }

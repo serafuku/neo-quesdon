@@ -45,6 +45,12 @@ export interface MkNoteAnswers {
   visibility: "public" | "home" | "followers";
 }
 
+export interface mastodonTootAnswers {
+  spoiler_text: string;
+  status: string;
+  visibility: "public" | "unlisted" | "private";
+}
+
 export interface postQuestion {
   question: string;
   questioner: string;
