@@ -253,7 +253,7 @@ export default function UserPage() {
     return () => {
       if (mounted) observer.unobserve(mounted);
     };
-  }, [mounted, untilId]);
+  }, [answers, mounted, profileHandle, untilId]);
 
   return (
     <div

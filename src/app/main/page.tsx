@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import Answer from "../_components/answer";
 import { FaExclamationCircle } from "react-icons/fa";
 import { answer } from "@prisma/client";
-import { FetchAllAnswersDto } from "../_dto/fetch-all-answers/fetch-all-answers.dto";
+import { FetchAllAnswersReqDto } from "../_dto/fetch-all-answers/fetch-all-answers.dto";
 
-async function fetchAllAnswers(req: FetchAllAnswersDto) {
+async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
   const res = await fetch("/api/db/fetch-all-answers", {
     method: "POST",
     headers: {

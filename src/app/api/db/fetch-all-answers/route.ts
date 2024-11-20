@@ -1,4 +1,5 @@
-import { FetchAllAnswersDto } from "@/app/_dto/fetch-all-answers/fetch-all-answers.dto";
+import { AnswerDto } from "@/app/_dto/Answers.dto";
+import { FetchAllAnswersReqDto } from "@/app/_dto/fetch-all-answers/fetch-all-answers.dto";
 import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { PrismaClient } from "@prisma/client";
@@ -8,7 +9,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   let data;
   try {
-    data = await validateStrict(FetchAllAnswersDto, body);
+    data = await validateStrict(FetchAllAnswersReqDto, body);
   } catch (err) {
     return sendApiError(400, `${err}`);
   }
@@ -23,18 +24,22 @@ export async function POST(req: NextRequest) {
   //내림차순이 기본값
   const orderBy = (data.sort === 'ASC') ? 'asc' : 'desc';
 
-  const questions = await prisma.answer.findMany({
+  const answersWithProfile = await prisma.answer.findMany({
     where: {
       id: {
         ...(typeof sinceId === 'string' ? { gt: sinceId } : {}),
         ...(typeof untilId === 'string' ? { lt: untilId } : {}),
       },
     },
+    include: {
+      answeredPerson: true,
+    },
     orderBy: {
       id: orderBy
     }, 
     take: query_limit
   });
+  
 
-  return NextResponse.json(questions);
+  return NextResponse.json(answersWithProfile as unknown as AnswerDto);
 }
