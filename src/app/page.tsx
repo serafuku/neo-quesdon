@@ -23,7 +23,7 @@ const misskeyAuth = async ({ host }: loginReqDto) => {
     method: "POST",
     body: JSON.stringify(body),
   });
-
+  if (!res.ok) { throw new Error(`Misskey login Error! ${res.status}, ${await res.text()}`); }
   return await res.json();
 };
 
@@ -40,7 +40,7 @@ const mastodonAuth = async ({ host }: loginReqDto) => {
     method: "POST",
     body: JSON.stringify(body),
   });
-
+  if (!res.ok) { throw new Error(`Mastodon login Error! ${res.status}, ${await res.text()}`); }
   return await res.json();
 };
 
@@ -87,6 +87,8 @@ export default function Home() {
           misskeyAuth(payload).then((r) => {
             setIsLoading(false);
             router.replace(r.url);
+          }).catch((err) => {
+            window.alert(err);
           });
           break;
         case "cherrypick":
@@ -94,13 +96,16 @@ export default function Home() {
           misskeyAuth(payload).then((r) => {
             setIsLoading(false);
             router.replace(r.url);
+          }).catch((err) => {
+            window.alert(err);
           });
           break;
         case "mastodon":
           localStorage.setItem("server", host);
           mastodonAuth(payload).then((r) => {
             router.replace(r);
-            console.log(r);
+          }).catch((err) => {
+            window.alert(err);
           });
           break;
         default:
@@ -131,7 +136,7 @@ export default function Home() {
             </h1>
           </div>
           <span className="font-thin tracking-wider text-base desktop:text-lg">
-            &quot;아직은&quot; Misskey / CherryPick에서만 사용할 수 있는 새로운
+            Misskey / CherryPick / Mastodon 에서 사용할 수 있는 새로운
             Quesdon
           </span>
         </div>
@@ -190,30 +195,6 @@ export default function Home() {
             >
               로그인 없이 즐기기
             </button>
-          </div>
-        </div>
-        <input type="checkbox" id="mastodon_modal" className="modal-toggle" />
-        <div className="modal" role="dialog">
-          <div className="modal-box">
-            <h3 className="text-lg font-bold">준비중!</h3>
-            <p className="py-4">
-              마스토돈 로그인은 준비중이에요.
-              <br />{" "}
-              <a
-                className="link link-primary"
-                href="https://serafuku.moe/@Yozumina"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                @Yozumina@serafuku.moe
-              </a>
-              를 쪼아주세요!
-            </p>
-            <div className="modal-action">
-              <label htmlFor="mastodon_modal" className="btn">
-                알겠어요
-              </label>
-            </div>
           </div>
         </div>
       </main>
