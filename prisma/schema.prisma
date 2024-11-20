@@ -8,6 +8,11 @@ datasource db {
   url = env("DATABASE_URL") // uses connection pooling
 }
 
+enum InstanceType {
+  mastodon
+  misskey
+  cherrypick
+}
 model user {
     id              Int      @default(autoincrement())    @id
     account         String
@@ -59,7 +64,8 @@ model question {
 
 model server {
     id              Int         @default(autoincrement())   @id
-    instances       String      @unique
+    instances       String      @unique         /// Server 의 Hostname
+    instanceType    InstanceType @default(misskey)
     appSecret       String?     /// Misskey App인증의 Secret Key
     client_id       String?     /// Mastodon OAuth2 client ID
     client_secret   String?     /// Mastodon OAuth2 client secret
