@@ -374,7 +374,7 @@ export default function UserPage() {
             {localHandle === profileHandle && (
               <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
                 <a className="link" href={shareUrl()} target="_blank">
-                  {userProfile?.instanceType} 에 질문상자 페이지를 공유
+                  {userProfile?.instanceType}에 질문상자 페이지를 공유
                 </a>
               </div>
             )}
