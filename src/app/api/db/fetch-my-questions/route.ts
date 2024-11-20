@@ -15,6 +15,9 @@ export async function GET(req: NextRequest) {
           where: {
             questioneeHandle: jwt.handle,
           },
+          orderBy: {
+            id: 'desc',
+          }
         });
         return NextResponse.json(questions);
       } else {
