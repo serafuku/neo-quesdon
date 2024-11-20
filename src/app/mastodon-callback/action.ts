@@ -25,8 +25,6 @@ export async function login(
   }
   loginReq.mastodonHost = loginReq.mastodonHost.toLowerCase();
 
-  console.log(loginReq.mastodonHost);
-
   const serverInfo = await prisma.server.findFirst({
     where: {
       instances: loginReq.mastodonHost,

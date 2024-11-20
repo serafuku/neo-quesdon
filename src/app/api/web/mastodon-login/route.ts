@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    //인스턴스의 첫번째 로그인인 경우
-    if (!serverInfo) {
+    //인스턴스의 첫번째 로그인이거나, client_id/client_secret 가 null인 경우
+    if (!serverInfo || !serverInfo.client_id || !serverInfo.client_secret) {
       const res = await fetch(`https://${mastodonHost}/api/v1/apps`, {
         method: "POST",
         headers: {
@@ -36,47 +36,56 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           client_name: "Neo-Quesdon",
           redirect_uris: `${process.env.WEB_URL}/mastodon-callback`,
-          scopes: "read write",
+          scopes: "read:accounts read:blocks read:follows write:statuses",
           website: `${process.env.WEB_URL}`,
         }),
       }).then((r) => r.json());
 
       if (!res.id) {
-        return sendErrorResponse(500, `login error!`);
+        return sendErrorResponse(500, `Mastodon Response: ${JSON.stringify(res)}`);
       }
+      console.log('New Mastodon OAuth2 App Created:', res);
 
       await prisma.server.upsert({
         where: {
           instances: mastodonHost,
         },
         update: {
+          client_id: res.client_id,
           client_secret: res.client_secret,
+          instanceType: 'mastodon',
         },
         create: {
           instances: mastodonHost,
           client_id: res.client_id,
           client_secret: res.client_secret,
+          instanceType: 'mastodon',
         },
       });
-      const shit = await initiateMastodonAuthSession(
+      const session = await initiateMastodonAuthSession(
         mastodonHost,
         res.client_id
       );
-      return NextResponse.json(shit);
+      return NextResponse.json(session);
 
-      // 클라이언트 시크릿이 존재하는 경우
-    } else if (serverInfo.client_id && serverInfo.client_secret) {
-      const shit = await initiateMastodonAuthSession(
+    } else {
+      const session = await initiateMastodonAuthSession(
         mastodonHost,
         serverInfo.client_id
       );
-      return NextResponse.json(shit);
+      return NextResponse.json(session);
     }
   } catch (err) {
     return sendErrorResponse(500, `login error... ${err}`);
   }
 }
 
+/**
+ * 
+ * @param hostname Mastodon Hostname
+ * @param client_id OAuth2 Client ID
+ * @returns Mastodon Authorize URL
+ */
 async function initiateMastodonAuthSession(
   hostname: string,
   client_id: string
@@ -84,9 +93,9 @@ async function initiateMastodonAuthSession(
   const loginState = `${uuid()}_${client_id}`;
 
   const params: { [key: string]: string } = {
-    client_id: client_id,
-    scope: "read+write",
-    redirect_uri: `${process.env.WEB_URL}/mastodon-callback`,
+    client_id: encodeURIComponent(client_id),
+    scope: "read:accounts+read:blocks+read:follows+write:statuses",
+    redirect_uri: encodeURIComponent(`${process.env.WEB_URL}/mastodon-callback`),
     response_type: "code",
     state: loginState,
   };
@@ -94,6 +103,6 @@ async function initiateMastodonAuthSession(
   const url = `https://${hostname}/oauth/authorize?${Object.entries(params)
     .map((v) => v.join("="))
     .join("&")}`;
-
+  console.log('Created New Mastodon OAuth2 authorize URL:', url);
   return url;
 }
