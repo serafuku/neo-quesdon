@@ -162,8 +162,10 @@ export default function UserPage() {
       };
       reset();
       const res = await mkQuestionCreateApi(req);
-      if (res.status === 200) {
+      if (res.ok) {
         (document.getElementById("my_modal_2") as HTMLInputElement).checked = true;
+      } else {
+        window.alert(`Error!! ${await res.text()}`);
       }
     }
     // 작성자 비공개
