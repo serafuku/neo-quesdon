@@ -14,8 +14,6 @@ export async function POST(req: NextRequest) {
     return sendApiError(400, `${err}`);
   }
 
-
-
   const query_limit = data.limit ? Math.max(1, Math.min(data.limit, 100)) : 100;
   const prisma = new PrismaClient();
   const sinceId = data.sinceId;

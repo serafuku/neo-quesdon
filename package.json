@@ -18,6 +18,7 @@
     "class-validator": "^0.14.1",
     "daisyui": "^4.12.14",
     "dotenv-cli": "^7.4.2",
+    "ioredis": "^5.4.1",
     "jose": "^5.9.6",
     "next": "15.0.3",
     "pg": "^8.13.1",
