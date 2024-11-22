@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import {
+  Dispatch,
+  RefObject,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 import NameComponents from "./NameComponents";
 import { AnswerDto } from "../_dto/Answers.dto";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
@@ -10,6 +16,8 @@ import { useParams } from "next/navigation";
 interface askProps {
   value: AnswerDto;
   id: string;
+  ref: RefObject<HTMLDialogElement>;
+  idState: Dispatch<SetStateAction<string>>;
 }
 
 export async function fetchProfile(handle: string) {
@@ -21,7 +29,7 @@ export async function fetchProfile(handle: string) {
   }
 }
 
-export default function Answer({ value, id }: askProps) {
+export default function Answer({ value, idState, ref }: askProps) {
   const { handle } = useParams() as { handle: string };
   const [showNsfw, setShowNsfw] = useState(false);
   const [userInfo, setUserInfo] = useState<userProfileDto>();
@@ -70,9 +78,10 @@ export default function Answer({ value, id }: askProps) {
             <div className="w-12 flex justify-end">
               <a
                 className="link text-red-800 dark:text-red-500"
-                onClick={() =>
-                  document.getElementById(`answer_delete_modal_${id}`)?.click()
-                }
+                onClick={() => {
+                  ref.current?.showModal();
+                  idState(value.id);
+                }}
               >
                 삭제
               </a>

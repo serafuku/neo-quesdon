@@ -2,7 +2,7 @@
 
 import NameComponents from "@/app/_components/NameComponents";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import Answer from "@/app/_components/answer";
 import { FaUserSlash } from "react-icons/fa";
@@ -12,6 +12,8 @@ import { AnswerDto } from "@/app/_dto/Answers.dto";
 import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
 import josa from "@/app/api/functions/josa";
 import Link from "next/link";
+import DialogModalOneButton from "@/app/_components/modalOneButton";
+import DialogModalTwoButton from "@/app/_components/modalTwoButton";
 
 type FormValue = {
   question: string;
@@ -41,6 +43,9 @@ export default function UserPage() {
   const [untilId, setUntilId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
+  const [id, setId] = useState<string>("");
+  const questionSuccessModalRef = useRef<HTMLDialogElement>(null);
+  const answerDeleteModalRef = useRef<HTMLDialogElement>(null);
 
   const profileHandle = handle.toString().replace(/(?:%40)/g, "@");
 
@@ -71,19 +76,11 @@ export default function UserPage() {
         return;
       } else {
         const value = getValues();
-        if (value) {
+        if (value && !questionSuccessModalRef.current?.open) {
           await onSubmit(value);
         }
       }
-    }
-  };
-
-  const onEscape = (e: React.KeyboardEvent) => {
-    const modalState = document.getElementById(
-      "my_modal_2"
-    ) as HTMLInputElement;
-    if (e.key === "Escape") {
-      modalState.checked = false;
+      questionSuccessModalRef.current?.showModal();
     }
   };
 
@@ -156,7 +153,11 @@ export default function UserPage() {
         return;
       }
 
-      document.getElementById("my_modal_2")?.click();
+      if (questionSuccessModalRef.current) {
+        questionSuccessModalRef.current.showModal();
+      } else {
+        alert("오류에요!!!");
+      }
 
       const req: CreateQuestionDto = {
         question: e.question,
@@ -186,7 +187,11 @@ export default function UserPage() {
           return;
         }
 
-        document.getElementById("my_modal_2")?.click();
+        if (questionSuccessModalRef.current) {
+          questionSuccessModalRef.current.showModal();
+        } else {
+          alert("오류에요!!!");
+        }
 
         const req: CreateQuestionDto = {
           question: e.question,
@@ -259,10 +264,7 @@ export default function UserPage() {
   }, [mounted, untilId]);
 
   return (
-    <div
-      className="w-[90%] window:w-[80%] desktop:w-[70%]"
-      onKeyDown={onEscape}
-    >
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%]">
       {userProfile === null ? (
         <div className="w-full flex flex-col justify-center items-center glass text-4xl rounded-box shadow p-2">
           <FaUserSlash />
@@ -393,34 +395,12 @@ export default function UserPage() {
                   <div className="flex flex-col">
                     {answers.map((el) => (
                       <div key={el.id}>
-                        <Answer value={el} id={el.id} />
-                        <input
-                          type="checkbox"
-                          id={`answer_delete_modal_${el.id}`}
-                          className="modal-toggle"
+                        <Answer
+                          value={el}
+                          id={el.id}
+                          idState={setId}
+                          ref={answerDeleteModalRef}
                         />
-                        <div className="modal" role="dialog">
-                          <div className="modal-box">
-                            <h3 className="py-4 text-2xl">
-                              답변을 지울까요...?
-                            </h3>
-                            <div className="modal-action">
-                              <label
-                                htmlFor={`answer_delete_modal_${el.id}`}
-                                className="btn btn-error"
-                                onClick={() => handleDeleteAnswer(el.id)}
-                              >
-                                확인
-                              </label>
-                              <label
-                                htmlFor={`answer_delete_modal_${el.id}`}
-                                className="btn"
-                              >
-                                취소
-                              </label>
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     ))}
                     <div
@@ -452,22 +432,20 @@ export default function UserPage() {
           </div>
         </div>
       )}
-      <input type="checkbox" id="my_modal_2" className="modal-toggle" />
-      <div className="modal" role="dialog">
-        <div className="modal-box">
-          <h3 className="py-4 text-2xl">질문했어요!</h3>
-          <div className="modal-action">
-            <button
-              className="btn"
-              onClick={() => {
-                document.getElementById("my_modal_2")?.click();
-              }}
-            >
-              닫기
-            </button>
-          </div>
-        </div>
-      </div>
+      <DialogModalOneButton
+        title={"성공!"}
+        body={"질문했어요!"}
+        buttonText={"닫기"}
+        ref={questionSuccessModalRef}
+      />
+      <DialogModalTwoButton
+        title={"답변 지우기"}
+        body={"답변을 지울까요...?"}
+        confirmButtonText={"확인"}
+        cancelButtonText={"취소"}
+        ref={answerDeleteModalRef}
+        onClick={() => handleDeleteAnswer(id)}
+      />
     </div>
   );
 }

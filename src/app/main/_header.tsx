@@ -1,27 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FaUser } from "react-icons/fa";
 import { userProfileWithCountDto } from "../_dto/fetch-profile/Profile.dto";
-
-const fetchMyProfile = async () => {
-  const user_handle = localStorage.getItem("user_handle");
-
-  if (user_handle) {
-    const res = await fetch("/api/db/fetch-my-profile", {
-      method: "GET",
-    });
-    if (!res.ok) {
-      if (res.status === 401) {
-        document.getElementById("forceLogoutNoteModal")?.click();
-      }
-      return;
-    }
-    const data = await res.json();
-    return data;
-  }
-};
+import DialogModalTwoButton from "../_components/modalTwoButton";
+import DialogModalOneButton from "../_components/modalOneButton";
 
 const logout = async () => {
   await fetch("/api/web/logout");
@@ -31,6 +15,26 @@ const logout = async () => {
 
 export default function MainHeader() {
   const [user, setUser] = useState<userProfileWithCountDto>();
+  const logoutModalRef = useRef<HTMLDialogElement>(null);
+  const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
+
+  const fetchMyProfile = async () => {
+    const user_handle = localStorage.getItem("user_handle");
+
+    if (user_handle) {
+      const res = await fetch("/api/db/fetch-my-profile", {
+        method: "GET",
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          forcedLogoutModalRef.current?.showModal();
+        }
+        return;
+      }
+      const data = await res.json();
+      return data;
+    }
+  };
 
   useEffect(() => {
     fetchMyProfile().then((r) => setUser(r));
@@ -87,39 +91,21 @@ export default function MainHeader() {
               <li>
                 <Link href={"/main/settings"}>설정</Link>
               </li>
-              <li
-                onClick={() => document.getElementById("logout_modal")?.click()}
-              >
+              <li onClick={() => logoutModalRef.current?.showModal()}>
                 <a>로그아웃</a>
               </li>
             </ul>
           </div>
         )}
       </div>
-      <input type="checkbox" id="logout_modal" className="modal-toggle" />
-      <div className="modal" role="dialog">
-        <div className="modal-box">
-          <h3 className="text-lg font-bold">로그아웃</h3>
-          <p className="py-4">정말로 로그아웃 하시겠어요?</p>
-          <div className="modal-action">
-            <button
-              className="btn btn-error"
-              onClick={() => {
-                document.getElementById("logout_modal")?.click();
-                logout();
-              }}
-            >
-              로그아웃
-            </button>
-            <button
-              onClick={() => document.getElementById("logout_modal")?.click()}
-              className="btn"
-            >
-              취소
-            </button>
-          </div>
-        </div>
-      </div>
+      <DialogModalTwoButton
+        title={"로그아웃"}
+        body={"정말로 로그아웃 하시겠어요?"}
+        confirmButtonText={"로그아웃"}
+        cancelButtonText={"취소"}
+        ref={logoutModalRef}
+        onClick={logout}
+      />
       <input
         type="checkbox"
         id="forceLogoutNoteModal"
@@ -141,6 +127,12 @@ export default function MainHeader() {
           </div>
         </div>
       </div>
+      <DialogModalOneButton
+        title={"자동 로그아웃"}
+        body={"로그인 유효시간이 만료되어서 로그아웃 되었어요!"}
+        buttonText={"확인"}
+        ref={forcedLogoutModalRef}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SubmitHandler, useForm } from "react-hook-form";
 import type { questions, typedAnswer } from "..";
 import { getQuestion, postAnswer } from "../main/questions/action";
+import { RefObject } from "react";
 
 interface formValue {
   answer: string;
@@ -13,14 +14,18 @@ interface askProps {
   singleQuestion: questions;
   multipleQuestions: questions[];
   setState: React.Dispatch<React.SetStateAction<questions[] | null>>;
-  id: number;
+  setId: React.Dispatch<React.SetStateAction<number>>;
+  deleteRef: RefObject<HTMLDialogElement>;
+  answerRef: RefObject<HTMLDialogElement>;
 }
 
 export default function Question({
   singleQuestion,
   multipleQuestions,
   setState,
-  id,
+  setId,
+  deleteRef,
+  answerRef,
 }: askProps) {
   const {
     register,
@@ -82,7 +87,7 @@ export default function Question({
 
     setState(filteredQuestions);
     postAnswer(question, typedAnswer);
-    document.getElementById("my_modal_1")?.click();
+    answerRef.current?.showModal();
   };
 
   return (
@@ -104,9 +109,10 @@ export default function Question({
           {singleQuestion.questionedAt.toLocaleString()}
           <span
             className="text-red-500 font-bold ml-2 cursor-pointer"
-            onClick={() =>
-              document.getElementById(`question_delete_modal_${id}`)?.click()
-            }
+            onClick={() => {
+              deleteRef.current?.showModal();
+              setId(singleQuestion.id);
+            }}
           >
             삭제
           </span>
@@ -126,6 +132,7 @@ export default function Question({
             )}
             <textarea
               {...register("answer", { required: "required" })}
+              tabIndex={0}
               className={`textarea textarea-sm text-sm h-24 desktop:h-32 window:text-xl desktop:text-2xl bg-transparent ${
                 errors.answer && "textarea-error"
               }`}
