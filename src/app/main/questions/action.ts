@@ -3,12 +3,13 @@
 import type { mastodonTootAnswers, MkNoteAnswers, typedAnswer } from "@/app";
 import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
-import { PrismaClient, question } from "@prisma/client";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { question } from "@prisma/client";
 import { createHash } from "crypto";
 import { cookies } from "next/headers";
 
 export async function getQuestion(id: number) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
 
   const findWithId = await prisma.question.findUnique({
     where: {
@@ -23,7 +24,7 @@ export async function postAnswer(
   questionId: question["id"] | null,
   answer: typedAnswer
 ) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
   const cookieStore = await cookies();
   const jwtToken = cookieStore.get('jwtToken')?.value;
   let tokenPayload;
@@ -234,11 +235,11 @@ async function mastodonToot(
 }
 
 export async function deleteQuestion(id: number) {
+  const prisma = GetPrismaClient.getClient();
   const cookieStore = await cookies();
   const jwtToken = cookieStore.get("jwtToken")?.value;
   try {
     const tokenPayload = await verifyToken(jwtToken);
-    const prisma = new PrismaClient();
     await prisma.$transaction(async (tr) => {
       const q = await tr.question.findUniqueOrThrow({where: {id: id}});
       if (q.questioneeHandle !== tokenPayload.handle) {

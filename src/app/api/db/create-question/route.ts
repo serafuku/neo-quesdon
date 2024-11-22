@@ -1,14 +1,13 @@
 import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
-import { PrismaClient } from "@prisma/client";
 import type { user } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 
 export async function POST(req: NextRequest) {
-  const prisma = new PrismaClient();
-
+  const prisma = GetPrismaClient.getClient();
   try {
     const body = await req.json();
     let data;

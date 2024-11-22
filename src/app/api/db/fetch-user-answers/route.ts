@@ -1,10 +1,11 @@
 import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
 import { validateStrict } from "@/utils/validator/strictValidator";
-import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 
 export async function POST(req: NextRequest) {
+  const prisma = GetPrismaClient.getClient();
   try {
     const body = await req.json();
     let data;
@@ -14,7 +15,6 @@ export async function POST(req: NextRequest) {
       return sendErrorResponse(400, `${err}`);
     }
 
-    const prisma = new PrismaClient();
     const query_limit = data.limit
       ? Math.max(1, Math.min(data.limit, 100))
       : 100;

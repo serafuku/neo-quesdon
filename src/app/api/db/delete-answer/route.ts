@@ -1,10 +1,10 @@
 import { DeleteAnswerDto } from "@/app/_dto/delete-answer/delete-answer.dto";
 import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 import { validateStrict } from "@/utils/validator/strictValidator";
-import { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return sendApiError(400, `Bad Request ${err}`);
   }
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
   const cookieStore = await cookies();
   const token = cookieStore.get("jwtToken")?.value;
   let tokenPayload;

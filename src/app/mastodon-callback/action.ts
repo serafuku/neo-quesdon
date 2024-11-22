@@ -2,17 +2,18 @@
 
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { mastodonCallbackTokenClaimPayload } from "../_dto/mastodon-callback/callback-token-claim.dto";
-import { PrismaClient } from "@prisma/client";
 import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
 import { DBpayload } from "../misskey-callback/page";
 import { cookies } from "next/headers";
 import { SignJWT } from "jose";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 
-const prisma = new PrismaClient();
 
 export async function login(
   loginReqestData: mastodonCallbackTokenClaimPayload
 ) {
+  const prisma = GetPrismaClient.getClient();
+
   //Class Validator로 들어온 로그인 정보 검증
   let loginReq: mastodonCallbackTokenClaimPayload;
   try {
@@ -103,6 +104,8 @@ async function requestMastodonAccessCodeAndUserInfo(
   client_id: string,
   client_secret: string
 ) {
+  const prisma = GetPrismaClient.getClient();
+
   const checkInstances = await prisma.server.findFirst({
     where: {
       instances: payload.mastodonHost,
@@ -155,7 +158,8 @@ async function generateJwt(hostname: string, handle: string) {
 }
 
 async function pushDB(payload: DBpayload) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
+
   await prisma.user.upsert({
     where: {
       handle: payload.handle,

@@ -1,11 +1,11 @@
 import { userProfileMeDto } from "@/app/_dto/fetch-profile/Profile.dto";
-import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
 import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 
 export async function GET(req: NextRequest) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
   const token = req.cookies.get("jwtToken")?.value;
 
   try {

@@ -3,14 +3,14 @@ import {
   userProfileWithHostnameDto,
 } from "@/app/_dto/fetch-profile/Profile.dto";
 import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
-import { PrismaClient } from "@prisma/client";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ handle?: string }> }
 ) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
   const userHandle = (await params).handle;
   try {
     if (!userHandle) {

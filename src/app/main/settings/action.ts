@@ -1,13 +1,12 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
 import { jwtVerify, JWTVerifyResult } from "jose";
 import { cookies } from "next/headers";
 import { FormValue } from "./page";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 
 export async function fetchUser() {
-  const prisma = new PrismaClient();
-
+  const prisma = GetPrismaClient.getClient();
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const cookieStore = await cookies();
   const jwtToken = cookieStore.get("jwtToken");
@@ -36,7 +35,7 @@ export async function fetchUser() {
 }
 
 export async function updateSetting(handle: string, payload: FormValue) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
 
   try {
     const updateUser = prisma.profile

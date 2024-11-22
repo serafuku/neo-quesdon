@@ -1,6 +1,5 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
 import { DBpayload } from "./page";
 import { cookies } from "next/headers";
 import { SignJWT } from "jose";
@@ -10,6 +9,7 @@ import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { misskeyCallbackTokenClaimPayload } from "../_dto/misskey-callback/callback-token-claim.dto";
 import { misskeyUserInfoPayload } from "../_dto/misskey-callback/user-info.dto";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 
 export async function login(
   loginReqestData: misskeyCallbackTokenClaimPayload
@@ -101,7 +101,7 @@ export async function login(
 async function requestMiAccessTokenAndUserInfo(
   payload: misskeyCallbackTokenClaimPayload
 ) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
 
   const checkInstances = await prisma.server.findFirst({
     where: {
@@ -158,7 +158,8 @@ async function generateJwt(hostname: string, handle: string) {
 }
 
 async function pushDB(payload: DBpayload) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
+
   await prisma.user.upsert({
     where: {
       handle: payload.handle,

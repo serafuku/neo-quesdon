@@ -2,12 +2,14 @@ import { loginReqDto } from "@/app/_dto/web/login/login.dto";
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
-import { PrismaClient } from "@prisma/client";
 import { v4 as uuid } from "uuid";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+
 
 export async function POST(req: NextRequest) {
   let data: loginReqDto;
   const body = await req.json();
+  const prisma = GetPrismaClient.getClient();
 
   //일단은 미스키와 같은 Validate를 거침
   try {
@@ -17,7 +19,6 @@ export async function POST(req: NextRequest) {
   }
 
   const mastodonHost = data.host.toLowerCase();
-  const prisma = new PrismaClient();
 
   try {
     const serverInfo = await prisma.server.findFirst({

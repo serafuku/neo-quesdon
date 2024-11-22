@@ -1,12 +1,13 @@
 import { loginReqDto } from "@/app/_dto/web/login/login.dto";
 import { validateStrict } from "@/utils/validator/strictValidator";
-import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
 import { MiApiError, MiAuthSession } from "@/app";
 import detectInstance from "../../functions/web/detectInstance";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 
 export async function POST(req: NextRequest) {
+  const prisma = GetPrismaClient.getClient();
   let data: loginReqDto;
   const body = await req.json();
   try {
@@ -16,7 +17,6 @@ export async function POST(req: NextRequest) {
   }
 
   const misskeyHost = data.host.toLowerCase();
-  const prisma = new PrismaClient();
 
   try {
     const serverInfo = await prisma.server.findFirst({
