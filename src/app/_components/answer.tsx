@@ -105,7 +105,7 @@ export default function Answer({ value, idState, ref }: askProps) {
               />
             </Link>
           </div>
-          <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble chat-bubble-success text-slate-800">
+          <div className="flex items-center text-sm break-all window:text-xl desktop:text-2xl chat-bubble chat-bubble-success text-slate-800">
             <Link href={`/main/user/${value.answeredPersonHandle}`}>
               {value.answer}
             </Link>
