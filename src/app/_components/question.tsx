@@ -97,7 +97,7 @@ export default function Question({
             "익명의 질문자"
           )}
         </div>
-        <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl">
+        <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl text-slate-200">
           {singleQuestion.question}
         </div>
         <div className="chat-footer opacity-50">
@@ -113,7 +113,7 @@ export default function Question({
         </div>
       </div>
       <div className="text-2xl chat chat-end">
-        <div className="chat-bubble bg-green-600">
+        <div className="chat-bubble chat-bubble-success text-slate-800">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-2 py-2"

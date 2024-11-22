@@ -329,7 +329,7 @@ export default function UserPage() {
                     required: "required",
                   })}
                   placeholder="질문 내용을 입력해 주세요"
-                  className={`w-[90%] my-2 font-thin textarea ${
+                  className={`w-[90%] my-2 font-thin leading-loose textarea ${
                     errors.question ? "textarea-error" : "textarea-bordered"
                   }`}
                   onKeyDown={onCtrlEnter}

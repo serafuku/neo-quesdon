@@ -62,14 +62,14 @@ export default function Answer({ value, id }: askProps) {
                 "익명의 질문자"
               )}
             </div>
-            <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble">
+            <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble text-slate-200">
               {value.question}
             </div>
           </div>
           {localHandle !== null && localHandle === profileHandle && (
             <div className="w-12 flex justify-end">
               <a
-                className="link text-red-800"
+                className="link text-red-800 dark:text-red-500"
                 onClick={() =>
                   document.getElementById(`answer_delete_modal_${id}`)?.click()
                 }
@@ -96,7 +96,7 @@ export default function Answer({ value, id }: askProps) {
               />
             </Link>
           </div>
-          <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble bg-green-600">
+          <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble chat-bubble-success text-slate-800">
             <Link href={`/main/user/${value.answeredPersonHandle}`}>
               {value.answer}
             </Link>
