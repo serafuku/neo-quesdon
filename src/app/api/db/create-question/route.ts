@@ -5,6 +5,8 @@ import { verifyToken } from "../../functions/web/verify-jwt";
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
+const logger = new Logger('create-question');
 
 export async function POST(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
           throw new Error(`Token and questioner not match`);
         }
       } catch (err) {
-        console.log(`questioner verify ERROR! ${err}`);
+        logger.log(`questioner verify ERROR! ${err}`);
         return sendErrorResponse(403, `${err}`);
       }
     }
@@ -91,7 +93,7 @@ async function sendNotify(
   url: string
 ): Promise<void> {
   const notify_host = process.env.NOTI_HOST;
-  console.log(`try to send notification to ${questionee.handle}`);
+  logger.log(`try to send notification to ${questionee.handle}`);
   try {
     const res = await fetch(`https://${notify_host}/api/notes/create`, {
       method: "POST",
@@ -109,6 +111,6 @@ async function sendNotify(
       throw new Error(`Note create error`);
     }
   } catch (error) {
-    console.error("Post-question: fail to send notify: ", error);
+    logger.error("Post-question: fail to send notify: ", error);
   }
 }

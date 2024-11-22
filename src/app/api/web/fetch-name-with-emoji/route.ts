@@ -3,7 +3,9 @@ import { validateStrict } from "@/utils/validator/strictValidator";
 import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
 import detectInstance from "../../functions/web/detectInstance";
+import { Logger } from "@/utils/logger/Logger";
 
+const logger = new Logger('fetch-name-with-emoji');
 export async function POST(req: NextRequest) {
   let data;
   const body: fetchNameWithEmojiReqDto = await req.json();
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ nameWithEmoji: nameArray });
       } catch (err) {
-        console.log(err);
+        logger.error(err);
         return NextResponse.json(
           { error: "Internal Server Error" },
           { status: 500 }
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ nameWithEmoji: nameArray });
       } catch (err) {
-        console.log(err);
+        logger.error(err);
         return NextResponse.json(
           { error: "Internal Server Error" },
           { status: 500 }
@@ -121,7 +123,7 @@ export async function POST(req: NextRequest) {
       }
 
     default:
-      console.log("there is no matching instance type");
+      logger.warn("there is no matching instance type");
 
       break;
   }

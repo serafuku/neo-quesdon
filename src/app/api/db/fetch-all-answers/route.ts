@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const ipHash = getIpHash(ip);
   const limited = await limiter.limit(`fetch-all-answers-${ipHash}`, {
     bucket_time: 600,
-    req_limit: 300,
+    req_limit: 600,
   });
   if (limited) {
     return sendApiError(429, '요청 제한에 도달했습니다!');

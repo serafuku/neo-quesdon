@@ -5,7 +5,9 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
 
+const logger = new Logger('delete-answer');
 export async function POST(req: NextRequest) {
   const body = await req.json();
   let data: DeleteAnswerDto;
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
     return sendApiError(403, "This is Not Your Answer!");
   }
   try {
-    console.log(`Delete answer... : ${data.id}`);
+    logger.log(`Delete answer... : ${data.id}`);
     await prisma.answer.delete({ where: { id: data.id } });
 
     return NextResponse.json(
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (err) {
-    console.log('Error: Delete answer:', err);
+    logger.error('Error: Delete answer:', err);
     return sendApiError(500, `Error ${JSON.stringify(err)}`);
   }
 }

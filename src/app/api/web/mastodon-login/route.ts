@@ -4,8 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
 import { v4 as uuid } from "uuid";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
 
-
+const logger = new Logger('mastodon-login');
 export async function POST(req: NextRequest) {
   let data: loginReqDto;
   const body = await req.json();
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
       if (!res.id) {
         return sendErrorResponse(500, `Mastodon Response: ${JSON.stringify(res)}`);
       }
-      console.log('New Mastodon OAuth2 App Created:', res);
+      logger.log('New Mastodon OAuth2 App Created:', res);
 
       await prisma.server.upsert({
         where: {
@@ -104,6 +105,6 @@ async function initiateMastodonAuthSession(
   const url = `https://${hostname}/oauth/authorize?${Object.entries(params)
     .map((v) => v.join("="))
     .join("&")}`;
-  console.log('Created New Mastodon OAuth2 authorize URL:', url);
+  logger.log('Created New Mastodon OAuth2 authorize URL:', url);
   return url;
 }

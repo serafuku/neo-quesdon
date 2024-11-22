@@ -4,6 +4,7 @@ import type { mastodonTootAnswers, MkNoteAnswers, typedAnswer } from "@/app";
 import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
 import { question } from "@prisma/client";
 import { createHash } from "crypto";
 import { cookies } from "next/headers";
@@ -24,6 +25,7 @@ export async function postAnswer(
   questionId: question["id"] | null,
   answer: typedAnswer
 ) {
+  const postLogger = new Logger('postAnswer');
   const prisma = GetPrismaClient.getClient();
   const cookieStore = await cookies();
   const jwtToken = cookieStore.get('jwtToken')?.value;
@@ -76,7 +78,7 @@ export async function postAnswer(
 
     const baseUrl = process.env.WEB_URL;
     const answerUrl = `${baseUrl}/main/user/${answeredUser.handle}/${postWithAnswer.id}`;
-    console.log("Created new answer:", answerUrl);
+    postLogger.log("Created new answer:", answerUrl);
     //답변 올리는 부분
     const userSettings = await prisma.profile.findUniqueOrThrow({
       where: {
@@ -153,7 +155,7 @@ export async function postAnswer(
           }
         }
       } else {
-        console.log("user not found");
+        postLogger.error("user not found");
       }
     }
   }
@@ -166,6 +168,7 @@ async function mkMisskeyNote(
   hostname: string,
   visibility: "public" | "home" | "followers"
 ) {
+  const NoteLogger = new Logger('mkMisskeyNote');
   // 미스키 CW길이제한 처리
   if (title.length > 100) {
     title = title.substring(0, 90) + '.....'
@@ -185,7 +188,7 @@ async function mkMisskeyNote(
     body: JSON.stringify(newAnswerNote),
   });
   if (!res.ok) {
-    console.warn(`Note create fail! `, res.status, res.statusText);
+    NoteLogger.warn(`Note create fail! `, res.status, res.statusText);
   }
 }
 
@@ -196,6 +199,7 @@ async function mastodonToot(
   hostname: string,
   visibility: "public" | "home" | "followers"
 ) {
+  const tootLogger = new Logger('mastodonToot');
   let newVisibility: "public" | "unlisted" | "private";
   switch (visibility) {
     case "public":
@@ -230,7 +234,7 @@ async function mastodonToot(
       throw new Error(`HTTP Error! status:${res.status}`);
     }
   } catch (err) {
-    console.warn(`Toot Create Fail!`, err);
+    tootLogger.warn(`Toot Create Fail!`, err);
   }
 }
 

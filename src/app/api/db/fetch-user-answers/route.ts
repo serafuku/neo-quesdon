@@ -3,7 +3,9 @@ import { validateStrict } from "@/utils/validator/strictValidator";
 import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
 
+const logger = new Logger('fetch-user-profile');
 export async function POST(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
   try {
@@ -62,6 +64,6 @@ export async function POST(req: NextRequest) {
       count: answerCount[0]._count.answer,
     });
   } catch (err) {
-    console.log(err);
+    logger.log(err);
   }
 }

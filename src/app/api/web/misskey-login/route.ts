@@ -5,7 +5,9 @@ import { sendErrorResponse } from "../../functions/web/errorResponse";
 import { MiApiError, MiAuthSession } from "@/app";
 import detectInstance from "../../functions/web/detectInstance";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
 
+const logger = new Logger('misskey-login');
 export async function POST(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
   let data: loginReqDto;
@@ -50,7 +52,7 @@ export async function POST(req: NextRequest) {
       }
       const data = await res.json();
       const appSecret = data.secret;
-      console.log("New Misskey APP created!", data);
+      logger.log("New Misskey APP created!", data);
       const detectedInstanceType = await detectInstance(misskeyHost) === 'cherrypick' ? 'cherrypick' : 'misskey';
       await prisma.server.upsert({
         where: {
@@ -74,7 +76,7 @@ export async function POST(req: NextRequest) {
         );
       }
       const misskeyAuthSession = (await authRes.json()) as MiAuthSession;
-      console.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
+      logger.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
       return NextResponse.json(misskeyAuthSession);
     }
     // 앱 시크릿 존재하는 경우
@@ -87,7 +89,7 @@ export async function POST(req: NextRequest) {
         const data = (await res.json()) as MiApiError;
         if (data.error.code === "NO_SUCH_APP") {
           // 어라라...? 앱 스크릿 무효화
-          console.log(
+          logger.warn(
             `Misskey response NO_SUCH_APP, delete invalid appSecret from DB`
           );
           await prisma.server.update({
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
         return sendErrorResponse(500, `Fail to Create Misskey Auth Session`);
       }
       const misskeyAuthSession = (await res.json()) as MiAuthSession;
-      console.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
+      logger.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
       return NextResponse.json(misskeyAuthSession);
     }
   } catch (err) {

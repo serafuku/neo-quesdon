@@ -4,38 +4,31 @@ import { jwtVerify, JWTVerifyResult } from "jose";
 import { cookies } from "next/headers";
 import { FormValue } from "./page";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
+import { verifyToken } from "@/app/api/functions/web/verify-jwt";
 
 export async function fetchUser() {
+  const logger = new Logger('fetchUser');
   const prisma = GetPrismaClient.getClient();
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const cookieStore = await cookies();
-  const jwtToken = cookieStore.get("jwtToken");
-  
+  const jwtToken = cookieStore.get("jwtToken")?.value;
 
   try {
-    if (jwtToken) {
-      const { payload } = (await jwtVerify(jwtToken.value, secret, {
-        issuer: `${process.env.WEB_URL}`,
-        audience: "urn:example:audience",
-      })) as JWTVerifyResult<{ handle: string; server: string }>;
-
-      const user = await prisma.profile.findUnique({
-        where: {
-          handle: payload.handle,
-        },
-      });
-
-      return user;
-    } else {
-      throw new Error("jwtToken parsing error");
-    }
+    const payload = await verifyToken(jwtToken);
+    const user = await prisma.profile.findUnique({
+      where: {
+        handle: payload.handle,
+      },
+    });
+    return user;
   } catch (err) {
-    console.log(err);
+    logger.error(err);
   }
 }
 
 export async function updateSetting(handle: string, payload: FormValue) {
   const prisma = GetPrismaClient.getClient();
+  const logger = new Logger('updateSetting');
 
   try {
     const updateUser = prisma.profile
@@ -53,8 +46,8 @@ export async function updateSetting(handle: string, payload: FormValue) {
           }`,
         },
       })
-      .catch((err) => console.log(err));
+      .catch((err) => logger.log(err));
   } catch (err) {
-    console.log(err);
+    logger.log(err);
   }
 }

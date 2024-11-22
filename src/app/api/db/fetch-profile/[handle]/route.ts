@@ -4,8 +4,10 @@ import {
 } from "@/app/_dto/fetch-profile/Profile.dto";
 import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
 import { NextRequest, NextResponse } from "next/server";
 
+const logger = new Logger('fetch-profile/handle')
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ handle?: string }> }
@@ -63,7 +65,7 @@ export async function GET(
       },
     });
   } catch (err) {
-    console.log(err);
+    logger.error(err);
     return sendApiError(500, "Error");
   }
 }
