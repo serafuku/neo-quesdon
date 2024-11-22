@@ -109,6 +109,7 @@ export default function Home() {
           });
           break;
         default:
+          window.alert('인스턴스 타입 감지에 실패했어요!');
           console.log("아무것도 없는뎁쇼?");
       }
     });

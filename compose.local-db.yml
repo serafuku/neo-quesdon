@@ -8,5 +8,14 @@ services:
       - 127.0.0.1:5432:5432
     volumes:
       - ./local_db_data:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    restart: always
+    env_file:
+      - ./config/local_dev.env
+    ports:
+      - 127.0.0.1:6379:6379
+    volumes:
+      - ./local_redis_data:/data
 
 

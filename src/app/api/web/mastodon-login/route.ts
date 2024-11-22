@@ -2,22 +2,37 @@ import { loginReqDto } from "@/app/_dto/web/login/login.dto";
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
-import { PrismaClient } from "@prisma/client";
 import { v4 as uuid } from "uuid";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
+import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { getIpHash } from "@/utils/getIp/get-ip-hash";
+import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 
+const logger = new Logger('mastodon-login');
 export async function POST(req: NextRequest) {
   let data: loginReqDto;
-  const body = await req.json();
+  const prisma = GetPrismaClient.getClient();
 
   //일단은 미스키와 같은 Validate를 거침
   try {
-    data = await validateStrict(loginReqDto, body);
+    data = await validateStrict(loginReqDto, await req.json());
   } catch (err) {
     return sendErrorResponse(400, `${err}`);
   }
 
+  const limiter = RateLimiterService.getLimiter();
+  const ipHash = getIpHash(getIpFromRequest(req));
+  const limited = await limiter.limit(`mastodon-login-${ipHash}`, {
+    bucket_time: 600,
+    req_limit: 300,
+  });
+  if (limited) {
+    return sendApiError(429, '요청 제한에 도달했습니다!');
+  }
+  
   const mastodonHost = data.host.toLowerCase();
-  const prisma = new PrismaClient();
 
   try {
     const serverInfo = await prisma.server.findFirst({
@@ -44,7 +59,7 @@ export async function POST(req: NextRequest) {
       if (!res.id) {
         return sendErrorResponse(500, `Mastodon Response: ${JSON.stringify(res)}`);
       }
-      console.log('New Mastodon OAuth2 App Created:', res);
+      logger.log('New Mastodon OAuth2 App Created:', res);
 
       await prisma.server.upsert({
         where: {
@@ -103,6 +118,6 @@ async function initiateMastodonAuthSession(
   const url = `https://${hostname}/oauth/authorize?${Object.entries(params)
     .map((v) => v.join("="))
     .join("&")}`;
-  console.log('Created New Mastodon OAuth2 authorize URL:', url);
+  logger.log('Created New Mastodon OAuth2 authorize URL:', url);
   return url;
 }

@@ -1,11 +1,12 @@
 import { userProfileMeDto } from "@/app/_dto/fetch-profile/Profile.dto";
-import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
 import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
 
 export async function GET(req: NextRequest) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
   const token = req.cookies.get("jwtToken")?.value;
 
   try {
@@ -17,6 +18,14 @@ export async function GET(req: NextRequest) {
       handle = (await verifyToken(token)).handle;
     } catch {
       return sendApiError(401, "Token Verify Error");
+    }
+    const limiter = RateLimiterService.getLimiter();
+    const limited = await limiter.limit(`fetch-my-profile-${handle}`, {
+      bucket_time: 600,
+      req_limit: 300,
+    });
+    if (limited) {
+      return sendApiError(429, '요청 제한에 도달했습니다!');
     }
 
     const userProfile = await prisma.profile.findUnique({
