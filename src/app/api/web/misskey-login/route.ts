@@ -6,16 +6,29 @@ import { MiApiError, MiAuthSession } from "@/app";
 import detectInstance from "../../functions/web/detectInstance";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 import { Logger } from "@/utils/logger/Logger";
+import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { getIpHash } from "@/utils/getIp/get-ip-hash";
+import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 
 const logger = new Logger('misskey-login');
 export async function POST(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
   let data: loginReqDto;
-  const body = await req.json();
   try {
-    data = await validateStrict(loginReqDto, body);
+    data = await validateStrict(loginReqDto, await req.json());
   } catch (err) {
     return sendErrorResponse(400, `${err}`);
+  }
+
+  const limiter = RateLimiterService.getLimiter();
+  const ipHash = getIpHash(getIpFromRequest(req));
+  const limited = await limiter.limit(`misskey-login-${ipHash}`, {
+    bucket_time: 600,
+    req_limit: 60,
+  });
+  if (limited) {
+    return sendApiError(429, '요청 제한에 도달했습니다!');
   }
 
   const misskeyHost = data.host.toLowerCase();

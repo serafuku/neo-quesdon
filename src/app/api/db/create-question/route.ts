@@ -6,15 +6,41 @@ import { validateStrict } from "@/utils/validator/strictValidator";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 import { Logger } from "@/utils/logger/Logger";
+import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
+import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
+import { getIpHash } from "@/utils/getIp/get-ip-hash";
 const logger = new Logger('create-question');
 
 export async function POST(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
+  const token = req.cookies.get("jwtToken")?.value;
+  const tokenPayload = await verifyToken(token).then((payload) => payload).catch(()=> {});
+  if (tokenPayload) {
+    const limiter = RateLimiterService.getLimiter();
+    const limited = await limiter.limit(`create-question-${tokenPayload.handle}`, {
+      bucket_time: 100,
+      req_limit: 10,
+    });
+    if (limited) {
+      return sendApiError(429, '요청 제한에 도달했습니다!');
+    }
+  } else {
+    const limiter = RateLimiterService.getLimiter();
+    const ipHash = getIpHash(getIpFromRequest(req));
+    const limited = await limiter.limit(`create-question-${ipHash}`, {
+      bucket_time: 100,
+      req_limit: 10,
+    });
+    if (limited) {
+      return sendApiError(429, '요청 제한에 도달했습니다!');
+    }
+  }
+
   try {
-    const body = await req.json();
     let data;
     try {
-      data = await validateStrict(CreateQuestionDto, body);
+      data = await validateStrict(CreateQuestionDto, await req.json());
     } catch (errors) {
       return sendErrorResponse(400, `${errors}`);
     }
@@ -38,19 +64,17 @@ export async function POST(req: NextRequest) {
 
     // 제시된 questioner 핸들이 JWT토큰의 핸들과 일치하는지 검사
     if (data.questioner) {
-      const token = req.cookies.get("jwtToken")?.value;
       try {
-        if (typeof token !== "string") {
-          throw new Error(`Token is not string!`);
+        if (!tokenPayload) {
+          throw new Error(`No Auth Token`);
         }
-        const tokenPayload = await verifyToken(token);
         if (
           tokenPayload.handle.toLowerCase() !== data.questioner.toLowerCase()
         ) {
           throw new Error(`Token and questioner not match`);
         }
       } catch (err) {
-        logger.log(`questioner verify ERROR! ${err}`);
+        logger.warn(`questioner verify ERROR! ${err}`);
         return sendErrorResponse(403, `${err}`);
       }
     }

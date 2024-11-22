@@ -8,9 +8,8 @@ import { Logger } from "@/utils/logger/Logger";
 const logger = new Logger('fetch-name-with-emoji');
 export async function POST(req: NextRequest) {
   let data;
-  const body: fetchNameWithEmojiReqDto = await req.json();
   try {
-    data = await validateStrict(fetchNameWithEmojiReqDto, body);
+    data = await validateStrict(fetchNameWithEmojiReqDto, await req.json());
   } catch (err) {
     return sendErrorResponse(400, `${err}`);
   }
@@ -31,9 +30,9 @@ export async function POST(req: NextRequest) {
   switch (instanceType) {
     case "mastodon":
       try {
-        if (emojiInUsername && body.emojis) {
+        if (emojiInUsername && data.emojis) {
           for (let i = 0; i < emojiInUsername.length; i++) {
-            usernameEmojiAddress.push(body.emojis[i].url);
+            usernameEmojiAddress.push(data.emojis[i].url);
           }
 
           for (const el in nameArray) {

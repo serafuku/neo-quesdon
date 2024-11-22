@@ -10,9 +10,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
-  const ip = getIpFromRequest(req);
+
   const limiter = RateLimiterService.getLimiter();
-  const ipHash = getIpHash(ip);
+  const ipHash = getIpHash(getIpFromRequest(req));
   const limited = await limiter.limit(`fetch-all-answers-${ipHash}`, {
     bucket_time: 600,
     req_limit: 600,

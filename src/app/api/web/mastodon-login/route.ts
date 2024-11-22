@@ -5,20 +5,33 @@ import { sendErrorResponse } from "../../functions/web/errorResponse";
 import { v4 as uuid } from "uuid";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 import { Logger } from "@/utils/logger/Logger";
+import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { getIpHash } from "@/utils/getIp/get-ip-hash";
+import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 
 const logger = new Logger('mastodon-login');
 export async function POST(req: NextRequest) {
   let data: loginReqDto;
-  const body = await req.json();
   const prisma = GetPrismaClient.getClient();
 
   //일단은 미스키와 같은 Validate를 거침
   try {
-    data = await validateStrict(loginReqDto, body);
+    data = await validateStrict(loginReqDto, await req.json());
   } catch (err) {
     return sendErrorResponse(400, `${err}`);
   }
 
+  const limiter = RateLimiterService.getLimiter();
+  const ipHash = getIpHash(getIpFromRequest(req));
+  const limited = await limiter.limit(`mastodon-login-${ipHash}`, {
+    bucket_time: 600,
+    req_limit: 300,
+  });
+  if (limited) {
+    return sendApiError(429, '요청 제한에 도달했습니다!');
+  }
+  
   const mastodonHost = data.host.toLowerCase();
 
   try {

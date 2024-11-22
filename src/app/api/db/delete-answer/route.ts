@@ -6,13 +6,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
 import { Logger } from "@/utils/logger/Logger";
+import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
 
 const logger = new Logger('delete-answer');
 export async function POST(req: NextRequest) {
-  const body = await req.json();
   let data: DeleteAnswerDto;
   try {
-    data = await validateStrict(DeleteAnswerDto, body);
+    data = await validateStrict(DeleteAnswerDto, await req.json());
   } catch (err) {
     return sendApiError(400, `Bad Request ${err}`);
   }
@@ -23,9 +23,19 @@ export async function POST(req: NextRequest) {
   // JWT 토큰 검증
   try {
     tokenPayload = await verifyToken(token);
-  } catch (err) {
+  } catch {
     return sendApiError(401, "Unauthorized");
   }
+
+  const limiter = RateLimiterService.getLimiter();
+  const limited = await limiter.limit(`delete-answer-${tokenPayload.handle}`, {
+    bucket_time: 600,
+    req_limit: 300,
+  });
+  if (limited) {
+    return sendApiError(429, '요청 제한에 도달했습니다!');
+  }
+
   const willBeDeletedAnswer = await prisma.answer.findUnique({
     where: { id: data.id },
   });
