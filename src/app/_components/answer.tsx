@@ -105,12 +105,12 @@ export default function Answer({ value, idState, ref }: askProps) {
               />
             </Link>
           </div>
-          <div className="flex items-center text-sm break-all window:text-xl desktop:text-2xl chat-bubble chat-bubble-success text-slate-800">
+          <div className="flex items-center text-sm break-all window:text-xl desktop:text-2xl chat-bubble bg-green-600 text-slate-300 dark:text-slate-200">
             <Link href={`/main/user/${value.answeredPersonHandle}`}>
               {value.answer}
             </Link>
           </div>
-          <div className="chat-footer font-thin text-xs mt-2 underline text-blue-900">
+          <div className="chat-footer font-thin text-xs mt-2 underline text-blue-900 dark:text-blue-400">
             <Link href={`/main/user/${value.answeredPersonHandle}/${value.id}`}>
               {value.answeredAt.toLocaleString()}
             </Link>

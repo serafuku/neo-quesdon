@@ -119,7 +119,7 @@ export default function Question({
         </div>
       </div>
       <div className="text-2xl chat chat-end">
-        <div className="chat-bubble chat-bubble-success text-slate-800">
+        <div className="chat-bubble bg-green-600 text-slate-300 dark:text-slate-200">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-2 py-2"
@@ -164,7 +164,7 @@ export default function Question({
               <div className="w-full desktop:w-fit flex justify-center">
                 <button
                   type={"submit"}
-                  className="btn btn-outline btn-sm h-10 w-16 desktop:btn-md"
+                  className="btn btn-outline dark:border-white dark:text-slate-200 btn-sm h-10 w-16 desktop:btn-md"
                 >
                   답변
                 </button>
