@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Answer from "@/app/_components/answer";
-import { FaUserSlash } from "react-icons/fa";
 import { userProfileWithHostnameDto } from "@/app/_dto/fetch-profile/Profile.dto";
 import { AnswerDto } from "@/app/_dto/Answers.dto";
 import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
@@ -122,12 +121,7 @@ export default function UserPage() {
 
   return (
     <div className="w-full flex flex-col desktop:flex-row">
-      {userProfile === null ? (
-        <div className="w-full flex flex-col justify-center items-center glass text-4xl rounded-box shadow p-2">
-          <FaUserSlash />
-          <span>그런 사용자는 없어요!</span>
-        </div>
-      ) : (
+      {userProfile !== null && (
         <div className="w-full flex flex-col desktop:flex-row">
           {answers !== null ? (
             <div className="w-full">
