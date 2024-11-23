@@ -1,6 +1,6 @@
 "use client";
 
-import { SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Answer from "../_components/answer";
 import { FaExclamationCircle } from "react-icons/fa";
 import { answer } from "@prisma/client";
@@ -14,12 +14,17 @@ async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
     },
     body: JSON.stringify(req),
   });
-  if (res.ok) {
-    return (await res.json()) as answer[];
-  } else {
-    console.log("error:", res.status, res.statusText);
+  try {
+    if (res.ok) {
+      return (await res.json()) as answer[];
+    } else {
+      throw new Error(`답변을 불러오는데 실패했어요!: ${await res.text()}`);
+    }
+  } catch (err) {
+    alert(err)
     return [];
   }
+
 }
 export default function MainBody() {
   const [answers, setAnswers] = useState<answer[] | null>(null);

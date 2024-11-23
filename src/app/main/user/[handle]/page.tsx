@@ -7,12 +7,18 @@ import { useParams } from 'next/navigation';
 import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
 
 async function fetchProfile(handle: string) {
-  const profile = await fetch(`/api/db/fetch-profile/${handle}`);
-  if (profile && profile.ok) {
-    return profile.json() as unknown as userProfileWithHostnameDto;
-  } else {
+  const res = await fetch(`/api/db/fetch-profile/${handle}`);
+  try {
+    if (res && res.ok) {
+      return res.json() as unknown as userProfileWithHostnameDto;
+    } else {
+      throw new Error(`사용자를 불러오는데 실패했어요! ${await res.text()}`);
+    }
+  } catch (err) {
+    alert(err)
     return null;
   }
+
 }
 
 export default function ProfilePage() {

@@ -15,11 +15,17 @@ type ResponseType = {
 
 async function fetchProfile(handle: string) {
   const profile = await fetch(`/api/db/fetch-profile/${handle}`);
-  if (profile && profile.ok) {
-    return profile.json() as unknown as userProfileWithHostnameDto;
-  } else {
+  try {
+    if (profile.ok) {
+      return profile.json() as unknown as userProfileWithHostnameDto;
+    } else {
+      throw new Error(`프로필이 없습니다! ${await profile.text()}`);
+    }
+  } catch (err) {
+    alert(err);
     return undefined;
   }
+
 }
 
 export default function UserPage() {
@@ -40,18 +46,27 @@ export default function UserPage() {
       method: 'POST',
       body: JSON.stringify(q),
     });
-    if (res.ok) {
-      return res.json();
-    } else {
-      throw new Error(`fetch-user-answers fail! ${res.status}, ${res.statusText}`);
+    try {
+      if (res.ok) {
+        return res.json();
+      } else {
+        throw new Error(`fetch-user-answers fail! ${res.status}, ${res.statusText}`);
+      }
+    } catch (err) {
+      alert(err);
+      return {answers: [], count: 0};
     }
   };
 
   const handleDeleteAnswer = async (id: string) => {
-    await fetch('/api/db/delete-answer', {
+    const res = await fetch('/api/db/delete-answer', {
       method: 'POST',
       body: JSON.stringify({ id: id }),
     });
+    if (!res.ok) {
+      alert(`답변을 삭제하는데 실패하였습니다! ${await res.text()}`);
+      return;
+    }
     if (answers && count) {
       const filteredAnswer = answers.filter((el) => el.id !== id);
       setAnswers(filteredAnswer);

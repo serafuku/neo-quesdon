@@ -14,12 +14,18 @@ type FormValue = {
 };
 
 async function fetchProfile(handle: string) {
-  const profile = await fetch(`/api/db/fetch-profile/${handle}`);
-  if (profile && profile.ok) {
-    return profile.json() as unknown as userProfileWithHostnameDto;
-  } else {
+  const res = await fetch(`/api/db/fetch-profile/${handle}`);
+  try {
+    if (res && res.ok) {
+      return res.json() as unknown as userProfileWithHostnameDto;
+    } else {
+      throw new Error(`프로필을 불러오는데 실패했습니다! ${await res.text()}`);
+    }
+  } catch (err) {
+    alert(err)
     return undefined;
   }
+
 }
 
 export default function Profile() {
@@ -68,8 +74,17 @@ export default function Profile() {
     const res = await fetch('/api/db/create-question', {
       method: 'POST',
       body: JSON.stringify(q),
-    });
-    return res;
+    })
+    try {
+      if (res.ok) {
+        return res;
+      } else {
+        throw new Error(`질문을 보내는데 실패했어요! ${await res.text()}`);
+      }
+    } catch (err) {
+      alert(err);
+      return res;
+    }
   };
 
   const shareUrl = () => {
@@ -110,7 +125,6 @@ export default function Profile() {
       };
       reset()
       const res = await mkQuestionCreateApi(req);
-
       if (res.status === 200) {
         questionSuccessModalRef.current?.showModal();
       }

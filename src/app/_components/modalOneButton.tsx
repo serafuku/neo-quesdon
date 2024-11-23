@@ -5,6 +5,7 @@ type modalProps = {
   body: string;
   buttonText: string;
   ref: RefObject<HTMLDialogElement>;
+  onClick?: () => void;
 };
 
 export default function DialogModalOneButton({
@@ -12,6 +13,7 @@ export default function DialogModalOneButton({
   body,
   buttonText,
   ref,
+  onClick,
 }: modalProps) {
   return (
     <>
@@ -21,7 +23,7 @@ export default function DialogModalOneButton({
           <p className="py-4">{body}</p>
           <div className="modal-action">
             <form method="dialog">
-              <button className="btn">{buttonText}</button>
+              <button className="btn" onClick={onClick}>{buttonText}</button>
             </form>
           </div>
         </div>

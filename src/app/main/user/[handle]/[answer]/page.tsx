@@ -1,22 +1,30 @@
-"use client";
+'use client';
 
-import Answer from "@/app/_components/answer";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { fetchAnswer } from "./action";
-import { AnswerDto } from "@/app/_dto/Answers.dto";
+import Answer from '@/app/_components/answer';
+import { useParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { fetchAnswer } from './action';
+import { AnswerDto } from '@/app/_dto/Answers.dto';
+import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 
 export default function SingleAnswer() {
   const [answerBody, setAnswerBody] = useState<AnswerDto>();
+  const singleQuestionDeleteModalRef = useRef<HTMLDialogElement>(null);
   const { answer } = useParams() as { answer: string };
 
   const handleDeleteAnswer = async (id: string) => {
-    const res = await fetch("/api/db/delete-answer", {
-      method: "POST",
+    const res = await fetch('/api/db/delete-answer', {
+      method: 'POST',
       body: JSON.stringify({ id: id }),
     });
-    if (res.ok) {
-      window.history.back();
+    try {
+      if (res.ok) {
+        window.history.back();
+      } else {
+        throw new Error(`답변을 지우는데 실패했어요! ${await res.text()}`);
+      }
+    } catch (err) {
+      alert(err);
     }
   };
 
@@ -28,12 +36,16 @@ export default function SingleAnswer() {
     <div className="flex w-[90%] window:w-[80%] desktop:w-[70%]">
       {answerBody && (
         <>
-          <Answer value={answerBody} id={answerBody.id} />
-          <input
-            type="checkbox"
-            id={`answer_delete_modal_${answerBody.id}`}
-            className="modal-toggle"
+          <Answer value={answerBody} id={answerBody.id} ref={singleQuestionDeleteModalRef} />
+          <DialogModalTwoButton
+            title={'답변 지우기'}
+            body={'답변을 지울까요...?'}
+            confirmButtonText={'확인'}
+            cancelButtonText={'취소'}
+            ref={singleQuestionDeleteModalRef}
+            onClick={() => handleDeleteAnswer(answerBody.id)}
           />
+          <input type="checkbox" id={`answer_delete_modal_${answerBody.id}`} className="modal-toggle" />
           <div className="modal" role="dialog">
             <div className="modal-box">
               <h3 className="py-4 text-2xl">답변을 지울까요...?</h3>
@@ -45,10 +57,7 @@ export default function SingleAnswer() {
                 >
                   확인
                 </label>
-                <label
-                  htmlFor={`answer_delete_modal_${answerBody.id}`}
-                  className="btn"
-                >
+                <label htmlFor={`answer_delete_modal_${answerBody.id}`} className="btn">
                   취소
                 </label>
               </div>

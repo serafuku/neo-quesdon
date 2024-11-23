@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaUser } from "react-icons/fa";
 import { userProfileMeDto } from "../_dto/fetch-profile/Profile.dto";
 import DialogModalTwoButton from "../_components/modalTwoButton";
@@ -10,7 +10,7 @@ import DialogModalOneButton from "../_components/modalOneButton";
 const logout = async () => {
   await fetch("/api/web/logout");
   localStorage.removeItem("user_handle");
-  window.location.replace("/");
+  window.location.reload();
 };
 
 export default function MainHeader() {
@@ -106,32 +106,12 @@ export default function MainHeader() {
         ref={logoutModalRef}
         onClick={logout}
       />
-      <input
-        type="checkbox"
-        id="forceLogoutNoteModal"
-        className="modal-toggle"
-      />
-      <div className="modal" role="dialog">
-        <div className="modal-box">
-          <h3 className="py-4 text-2xl">
-            로그인 유효시간이 만료되어서 로그아웃 되었어요!
-          </h3>
-          <div className="modal-action">
-            <label
-              htmlFor="forceLogoutNoteModal"
-              className="btn btn-primary"
-              onClick={logout}
-            >
-              홈으로 돌아가기
-            </label>
-          </div>
-        </div>
-      </div>
       <DialogModalOneButton
         title={"자동 로그아웃"}
         body={"로그인 유효시간이 만료되어서 로그아웃 되었어요!"}
         buttonText={"확인"}
         ref={forcedLogoutModalRef}
+        onClick={logout}
       />
     </div>
   );

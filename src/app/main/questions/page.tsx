@@ -9,12 +9,16 @@ import DialogModalOneButton from "@/app/_components/modalOneButton";
 
 const fetchQuestions = async () => {
   const res = await fetch("/api/db/fetch-my-questions")
-    .then((r) => {
-      if (!r.ok) {
-        return null;
-      }
-      return r.json();
-    });
+  
+  try {
+    if (!res.ok) {
+      throw new Error(`내 질문을 불러오는데 실패했어요!: ${await res.text()}`)
+    } else {
+      return await res.json();
+    }
+  } catch (err) {
+    alert(err)
+  }
 
   return res;
 };

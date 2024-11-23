@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import detectInstance from "./api/functions/web/detectInstance";
 import { loginReqDto } from "./_dto/web/login/login.dto";
 import GithubRepoLink from "./_components/github";
+import DialogModalOneButton from "./_components/modalOneButton";
 
 interface FormValue {
   address: string;
@@ -65,6 +66,8 @@ function urlToHost(urlOrHost: string) {
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errMessage ,setErrorMessage] = useState<string>()
+  const errModalRef = useRef<HTMLDialogElement>(null);
   const router = useRouter();
   const {
     register,
@@ -89,7 +92,9 @@ export default function Home() {
             setIsLoading(false);
             router.replace(r.url);
           }).catch((err) => {
-            window.alert(err);
+            setIsLoading(false);
+            setErrorMessage(err);
+            errModalRef.current?.showModal()
           });
           break;
         case "cherrypick":
@@ -98,7 +103,9 @@ export default function Home() {
             setIsLoading(false);
             router.replace(r.url);
           }).catch((err) => {
-            window.alert(err);
+            setIsLoading(false);
+            setErrorMessage(err);
+            errModalRef.current?.showModal()
           });
           break;
         case "mastodon":
@@ -106,7 +113,9 @@ export default function Home() {
           mastodonAuth(payload).then((r) => {
             router.replace(r);
           }).catch((err) => {
-            window.alert(err);
+            setIsLoading(false);
+            setErrorMessage(err);
+            errModalRef.current?.showModal()
           });
           break;
         default:
@@ -203,6 +212,7 @@ export default function Home() {
       <footer className="w-full row-start-3 flex gap-6 flex-wrap items-center justify-end">
         <GithubRepoLink />
       </footer>
+      <DialogModalOneButton title={"오류"} body={`로그인 오류가 발생했어요! ${errMessage}`} buttonText={"확인"} ref={errModalRef} />
     </div>
   );
 }

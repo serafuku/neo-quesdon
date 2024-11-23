@@ -51,10 +51,7 @@ export async function GET(
       },
     });
     if (!profile) {
-      return NextResponse.json(
-        { message: `profile ${profile} not found` },
-        { status: 404 }
-      );
+      return sendApiError(404, '그런 유저는 없습니다!')
     }
     const { instanceType } = await prisma.server.findUniqueOrThrow({where: {instances: profile.user.hostName}});
     const resBody: userProfileWithHostnameDto = {
