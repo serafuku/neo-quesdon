@@ -5,9 +5,8 @@
   "scripts": {
     "dev": "source config/local_dev.env && next dev",
     "build": "npm run lint && next build",
-    "start": "next start",
-    "start:local": "source config/local_env.env && next start",
-    "start:docker": "prisma migrate deploy && node server.js",
+    "start": "source config/local_dev.env && next start",
+    "start:docker": "prisma migrate deploy && next start",
     "lint": "eslint ./src",
     "format": "prettier --write ./src",
     "prisma": "source config/local_dev.env && prisma migrate dev",
