@@ -2,7 +2,7 @@ import { fetchNameWithEmojiReqDto } from '@/app/_dto/fetch-name-with-emoji/fetch
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendErrorResponse } from '../../functions/web/errorResponse';
-import detectInstance from '../../functions/web/detectInstance';
+import detectInstance from '../../../../utils/detectInstance/detectInstance';
 import { Logger } from '@/utils/logger/Logger';
 
 const logger = new Logger('fetch-name-with-emoji');

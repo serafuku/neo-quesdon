@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import detectInstance from './api/functions/web/detectInstance';
+import detectInstance from '../utils/detectInstance/detectInstance';
 import { loginReqDto } from './_dto/web/login/login.dto';
 import GithubRepoLink from './_components/github';
 import DialogModalOneButton from './_components/modalOneButton';

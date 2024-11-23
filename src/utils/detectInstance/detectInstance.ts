@@ -1,3 +1,5 @@
+'use server'
+
 import { Logger } from '@/utils/logger/Logger';
 
 type nodeinfoMeta = {
