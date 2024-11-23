@@ -16,8 +16,8 @@ import { useParams } from "next/navigation";
 interface askProps {
   value: AnswerDto;
   id: string;
-  ref: RefObject<HTMLDialogElement>;
-  idState: Dispatch<SetStateAction<string>>;
+  ref?: RefObject<HTMLDialogElement>;
+  idState?: Dispatch<SetStateAction<string>>;
 }
 
 export async function fetchProfile(value: AnswerWithProfileDto) {
@@ -82,8 +82,10 @@ export default function Answer({ value, idState, ref }: askProps) {
               <a
                 className="link text-red-800 dark:text-red-500"
                 onClick={() => {
-                  ref.current?.showModal();
-                  idState(value.id);
+                  ref?.current?.showModal();
+                  if (idState) {
+                    idState(value.id);
+                  }
                 }}
               >
                 삭제
