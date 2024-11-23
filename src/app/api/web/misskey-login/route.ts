@@ -3,7 +3,7 @@ import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendErrorResponse } from '../../functions/web/errorResponse';
 import { MiApiError, MiAuthSession } from '@/app';
-import detectInstance from '../../functions/web/detectInstance';
+import detectInstance from '../../../../utils/detectInstance/detectInstance';
 import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
