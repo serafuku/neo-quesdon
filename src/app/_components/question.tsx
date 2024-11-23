@@ -72,21 +72,18 @@ export default function Question({
       return;
     }
 
-    const question = await getQuestion(singleQuestion.id);
+    const questionId = singleQuestion.id;
     const typedAnswer: typedAnswer = {
-      question: question!.question,
-      questioner: question!.questioner,
       answer: e.answer,
-      answeredPersonHandle: question!.questioneeHandle,
       nsfwedAnswer: e.nsfw,
       visibility: e.visibility,
     };
     const filteredQuestions = multipleQuestions.filter(
-      (el) => el.id !== singleQuestion.id
+      (el) => el.id !== questionId
     );
 
     setState(filteredQuestions);
-    postAnswer(question, typedAnswer);
+    postAnswer(questionId, typedAnswer);
     answerRef.current?.showModal();
   };
 
@@ -106,7 +103,7 @@ export default function Question({
           {singleQuestion.question}
         </div>
         <div className="chat-footer opacity-50">
-          {singleQuestion.questionedAt.toLocaleString()}
+          {new Date(singleQuestion.questionedAt).toLocaleString('ko-KR', {hour12: false})}
           <span
             className="text-red-500 font-bold ml-2 cursor-pointer"
             onClick={() => {

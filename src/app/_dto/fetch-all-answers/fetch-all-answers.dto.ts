@@ -1,6 +1,6 @@
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
-export class FetchAllAnswersDto {
+export class FetchAllAnswersReqDto {
   @IsOptional()
   @IsString()
   sinceId?: string;

@@ -9,9 +9,6 @@ export class loginReqDto {
       const re = /\/\/[^/@\s]+(:[0-9]{1,5})?\/?/;
       const matched_str = v.match(re)?.[0];
       if (matched_str) {
-        console.log(
-          `URL ${param.value} replaced with ${matched_str.replaceAll("/", "")}`
-        );
         return matched_str.replaceAll("/", "");
       }
       return v;

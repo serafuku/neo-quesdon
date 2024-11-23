@@ -1,19 +1,46 @@
 import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
-import { PrismaClient } from "@prisma/client";
 import type { user } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "../../functions/web/verify-jwt";
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
+import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
+import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
+import { getIpHash } from "@/utils/getIp/get-ip-hash";
+const logger = new Logger('create-question');
 
 export async function POST(req: NextRequest) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
+  const token = req.cookies.get("jwtToken")?.value;
+  const tokenPayload = await verifyToken(token).then((payload) => payload).catch(()=> {});
+  if (tokenPayload) {
+    const limiter = RateLimiterService.getLimiter();
+    const limited = await limiter.limit(`create-question-${tokenPayload.handle}`, {
+      bucket_time: 100,
+      req_limit: 10,
+    });
+    if (limited) {
+      return sendApiError(429, '요청 제한에 도달했습니다!');
+    }
+  } else {
+    const limiter = RateLimiterService.getLimiter();
+    const ipHash = getIpHash(getIpFromRequest(req));
+    const limited = await limiter.limit(`create-question-${ipHash}`, {
+      bucket_time: 100,
+      req_limit: 10,
+    });
+    if (limited) {
+      return sendApiError(429, '요청 제한에 도달했습니다!');
+    }
+  }
 
   try {
-    const body = await req.json();
     let data;
     try {
-      data = await validateStrict(CreateQuestionDto, body);
+      data = await validateStrict(CreateQuestionDto, await req.json());
     } catch (errors) {
       return sendErrorResponse(400, `${errors}`);
     }
@@ -37,19 +64,17 @@ export async function POST(req: NextRequest) {
 
     // 제시된 questioner 핸들이 JWT토큰의 핸들과 일치하는지 검사
     if (data.questioner) {
-      const token = req.cookies.get("jwtToken")?.value;
       try {
-        if (typeof token !== "string") {
-          throw new Error(`Token is not string!`);
+        if (!tokenPayload) {
+          throw new Error(`No Auth Token`);
         }
-        const tokenPayload = await verifyToken(token);
         if (
           tokenPayload.handle.toLowerCase() !== data.questioner.toLowerCase()
         ) {
           throw new Error(`Token and questioner not match`);
         }
       } catch (err) {
-        console.log(`questioner verify ERROR! ${err}`);
+        logger.warn(`questioner verify ERROR! ${err}`);
         return sendErrorResponse(403, `${err}`);
       }
     }
@@ -92,7 +117,7 @@ async function sendNotify(
   url: string
 ): Promise<void> {
   const notify_host = process.env.NOTI_HOST;
-  console.log(`try to send notification to ${questionee.handle}`);
+  logger.log(`try to send notification to ${questionee.handle}`);
   try {
     const res = await fetch(`https://${notify_host}/api/notes/create`, {
       method: "POST",
@@ -110,6 +135,6 @@ async function sendNotify(
       throw new Error(`Note create error`);
     }
   } catch (error) {
-    console.error("Post-question: fail to send notify: ", error);
+    logger.error("Post-question: fail to send notify: ", error);
   }
 }

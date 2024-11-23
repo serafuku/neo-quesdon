@@ -1,20 +1,35 @@
 import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
 import { validateStrict } from "@/utils/validator/strictValidator";
-import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
+import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { getIpHash } from "@/utils/getIp/get-ip-hash";
+import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 
+const logger = new Logger('fetch-user-answer');
 export async function POST(req: NextRequest) {
+  const prisma = GetPrismaClient.getClient();
   try {
-    const body = await req.json();
     let data;
     try {
-      data = await validateStrict(FetchUserAnswersDto, body);
+      data = await validateStrict(FetchUserAnswersDto, await req.json());
     } catch (err) {
       return sendErrorResponse(400, `${err}`);
     }
 
-    const prisma = new PrismaClient();
+    const limiter = RateLimiterService.getLimiter();
+    const ipHash = getIpHash(getIpFromRequest(req));
+    const limited = await limiter.limit(`fetch-user-answers-${ipHash}`, {
+      bucket_time: 600,
+      req_limit: 300,
+    });
+    if (limited) {
+      return sendApiError(429, '요청 제한에 도달했습니다!');
+    }
+  
     const query_limit = data.limit
       ? Math.max(1, Math.min(data.limit, 100))
       : 100;
@@ -34,6 +49,9 @@ export async function POST(req: NextRequest) {
           ...(typeof sinceId === "string" ? { gt: sinceId } : {}),
           ...(typeof untilId === "string" ? { lt: untilId } : {}),
         },
+      },
+      include: {
+        answeredPerson: true,
       },
       orderBy: {
         id: orderBy,
@@ -59,6 +77,6 @@ export async function POST(req: NextRequest) {
       count: answerCount[0]._count.answer,
     });
   } catch (err) {
-    console.log(err);
+    logger.log(err);
   }
 }

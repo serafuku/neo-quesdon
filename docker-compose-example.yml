@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - db
+      - redis
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -15,6 +16,17 @@ services:
       - ./config/docker.env
     links:
       - db
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    env_file:
+      - ./config/docker.env
+    networks:
+      - internal_network
+    volumes:
+      - redis:/data
   db:
     image: postgres:15-alpine
     restart: always
@@ -26,6 +38,7 @@ services:
       - db:/var/lib/postgresql/data
 volumes:
   db:
+  redis:
 
 networks:
   internal_network:

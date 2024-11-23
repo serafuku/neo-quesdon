@@ -1,8 +1,11 @@
-import type { NextConfig } from "next";
-import "reflect-metadata";
+import type { NextConfig } from 'next';
+import 'reflect-metadata';
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: 'standalone',
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     forceSwcTransforms: true,
   },

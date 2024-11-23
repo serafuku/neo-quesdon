@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FaUser } from "react-icons/fa";
-import { userProfileWithCountDto } from "../_dto/fetch-profile/Profile.dto";
+import { userProfileMeDto } from "../_dto/fetch-profile/Profile.dto";
 import DialogModalTwoButton from "../_components/modalTwoButton";
 import DialogModalOneButton from "../_components/modalOneButton";
 
@@ -14,7 +14,7 @@ const logout = async () => {
 };
 
 export default function MainHeader() {
-  const [user, setUser] = useState<userProfileWithCountDto>();
+  const [user, setUser] = useState<userProfileMeDto>();
   const logoutModalRef = useRef<HTMLDialogElement>(null);
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
 

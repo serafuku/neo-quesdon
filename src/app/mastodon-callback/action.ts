@@ -2,17 +2,19 @@
 
 import { validateStrict } from "@/utils/validator/strictValidator";
 import { mastodonCallbackTokenClaimPayload } from "../_dto/mastodon-callback/callback-token-claim.dto";
-import { PrismaClient } from "@prisma/client";
 import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
 import { DBpayload } from "../misskey-callback/page";
 import { cookies } from "next/headers";
 import { SignJWT } from "jose";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
 
-const prisma = new PrismaClient();
-
+const logger = new Logger('Mastodon-callback');
 export async function login(
   loginReqestData: mastodonCallbackTokenClaimPayload
 ) {
+  const prisma = GetPrismaClient.getClient();
+
   //Class Validator로 들어온 로그인 정보 검증
   let loginReq: mastodonCallbackTokenClaimPayload;
   try {
@@ -24,8 +26,6 @@ export async function login(
     throw new Error(JSON.stringify(err));
   }
   loginReq.mastodonHost = loginReq.mastodonHost.toLowerCase();
-
-  console.log(loginReq.mastodonHost);
 
   const serverInfo = await prisma.server.findFirst({
     where: {
@@ -68,7 +68,7 @@ export async function login(
     try {
       await pushDB(dbPayload);
     } catch (err) {
-      console.error("Fail to push user to DB", err);
+      logger.error("Fail to push user to DB", err);
       throw err;
     }
 
@@ -76,7 +76,7 @@ export async function login(
       //프론트 쿠키스토어에 쿠키 저장
       const cookieStore = await cookies();
       const jwtToken = await generateJwt(loginReq.mastodonHost, user_handle);
-      console.log(`Send JWT to Frontend... ${jwtToken}`);
+      logger.log(`Send JWT to Frontend... ${jwtToken}`);
       cookieStore.set("jwtToken", jwtToken, {
         expires: Date.now() + 1000 * 60 * 60 * 6,
         httpOnly: true,
@@ -86,7 +86,7 @@ export async function login(
         httpOnly: true,
       });
     } catch (err) {
-      console.error("Make JWT or Set cookie Failed! ", err);
+      logger.error("Make JWT or Set cookie Failed! ", err);
       throw err;
     }
 
@@ -105,6 +105,8 @@ async function requestMastodonAccessCodeAndUserInfo(
   client_id: string,
   client_secret: string
 ) {
+  const prisma = GetPrismaClient.getClient();
+
   const checkInstances = await prisma.server.findFirst({
     where: {
       instances: payload.mastodonHost,
@@ -157,7 +159,8 @@ async function generateJwt(hostname: string, handle: string) {
 }
 
 async function pushDB(payload: DBpayload) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
+
   await prisma.user.upsert({
     where: {
       handle: payload.handle,

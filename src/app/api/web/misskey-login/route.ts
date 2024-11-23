@@ -1,21 +1,37 @@
 import { loginReqDto } from "@/app/_dto/web/login/login.dto";
 import { validateStrict } from "@/utils/validator/strictValidator";
-import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { sendErrorResponse } from "../../functions/web/errorResponse";
 import { MiApiError, MiAuthSession } from "@/app";
+import detectInstance from "../../functions/web/detectInstance";
+import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
+import { Logger } from "@/utils/logger/Logger";
+import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { getIpHash } from "@/utils/getIp/get-ip-hash";
+import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
+import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
 
+const logger = new Logger('misskey-login');
 export async function POST(req: NextRequest) {
+  const prisma = GetPrismaClient.getClient();
   let data: loginReqDto;
-  const body = await req.json();
   try {
-    data = await validateStrict(loginReqDto, body);
+    data = await validateStrict(loginReqDto, await req.json());
   } catch (err) {
     return sendErrorResponse(400, `${err}`);
   }
 
+  const limiter = RateLimiterService.getLimiter();
+  const ipHash = getIpHash(getIpFromRequest(req));
+  const limited = await limiter.limit(`misskey-login-${ipHash}`, {
+    bucket_time: 600,
+    req_limit: 60,
+  });
+  if (limited) {
+    return sendApiError(429, '요청 제한에 도달했습니다!');
+  }
+
   const misskeyHost = data.host.toLowerCase();
-  const prisma = new PrismaClient();
 
   try {
     const serverInfo = await prisma.server.findFirst({
@@ -49,18 +65,20 @@ export async function POST(req: NextRequest) {
       }
       const data = await res.json();
       const appSecret = data.secret;
-      console.log("New Misskey APP created!", data);
-
+      logger.log("New Misskey APP created!", data);
+      const detectedInstanceType = await detectInstance(misskeyHost) === 'cherrypick' ? 'cherrypick' : 'misskey';
       await prisma.server.upsert({
         where: {
           instances: misskeyHost,
         },
         update: {
           appSecret: appSecret,
+          instanceType: detectedInstanceType,
         },
         create: {
           appSecret: appSecret,
           instances: misskeyHost,
+          instanceType: detectedInstanceType,
         },
       });
       const authRes = await initiateMisskeyAuthSession(misskeyHost, appSecret);
@@ -71,7 +89,7 @@ export async function POST(req: NextRequest) {
         );
       }
       const misskeyAuthSession = (await authRes.json()) as MiAuthSession;
-      console.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
+      logger.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
       return NextResponse.json(misskeyAuthSession);
     }
     // 앱 시크릿 존재하는 경우
@@ -84,7 +102,7 @@ export async function POST(req: NextRequest) {
         const data = (await res.json()) as MiApiError;
         if (data.error.code === "NO_SUCH_APP") {
           // 어라라...? 앱 스크릿 무효화
-          console.log(
+          logger.warn(
             `Misskey response NO_SUCH_APP, delete invalid appSecret from DB`
           );
           await prisma.server.update({
@@ -95,7 +113,7 @@ export async function POST(req: NextRequest) {
         return sendErrorResponse(500, `Fail to Create Misskey Auth Session`);
       }
       const misskeyAuthSession = (await res.json()) as MiAuthSession;
-      console.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
+      logger.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
       return NextResponse.json(misskeyAuthSession);
     }
   } catch (err) {

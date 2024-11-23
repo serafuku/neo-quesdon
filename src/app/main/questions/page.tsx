@@ -8,7 +8,14 @@ import DialogModalTwoButton from "@/app/_components/modalTwoButton";
 import DialogModalOneButton from "@/app/_components/modalOneButton";
 
 const fetchQuestions = async () => {
-  const res = await fetch("/api/db/fetch-my-questions").then((r) => r.json());
+  const res = await fetch("/api/db/fetch-my-questions")
+    .then((r) => {
+      if (!r.ok) {
+        console.error(`Fail to fetch my questions`);
+        return null;
+      }
+      return r.json();
+    });
 
   return res;
 };

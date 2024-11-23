@@ -45,3 +45,7 @@ next-env.d.ts
 
 #localDB data
 local_db_data
+
+# local Redis data
+local_redis_data
+

@@ -31,10 +31,7 @@ export interface questions {
 }
 
 export interface typedAnswer {
-  question: string;
-  questioner: string | null;
   answer: string;
-  answeredPersonHandle: string;
   nsfwedAnswer: boolean;
   visibility: "public" | "home" | "followers";
 }

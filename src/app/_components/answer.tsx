@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import NameComponents from "./NameComponents";
-import { AnswerDto } from "../_dto/Answers.dto";
+import { AnswerDto, AnswerWithProfileDto } from "../_dto/Answers.dto";
 import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
 import { useParams } from "next/navigation";
 
@@ -20,8 +20,11 @@ interface askProps {
   idState: Dispatch<SetStateAction<string>>;
 }
 
-export async function fetchProfile(handle: string) {
-  const profile = await fetch(`/api/db/fetch-profile/${handle}`);
+export async function fetchProfile(value: AnswerWithProfileDto) {
+  if (value.answeredPerson) {
+    return value.answeredPerson;
+  }
+  const profile = await fetch(`/api/db/fetch-profile/${value.answeredPersonHandle}`);
   if (profile && profile.ok) {
     return profile.json() as unknown as userProfileDto;
   } else {
@@ -43,9 +46,9 @@ export default function Answer({ value, idState, ref }: askProps) {
   }, [profileHandle]);
 
   useEffect(() => {
-    fetchProfile(value.answeredPersonHandle).then((r) => setUserInfo(r));
+    fetchProfile(value).then((r) => setUserInfo(r));
     setShowNsfw(!value.nsfwedAnswer);
-  }, [value.answeredPersonHandle, value.nsfwedAnswer]);
+  }, [value]);
 
   return (
     <div className="w-full glass rounded-box px-2 desktop:px-8 py-4 mb-2 shadow">
@@ -112,7 +115,7 @@ export default function Answer({ value, idState, ref }: askProps) {
           </div>
           <div className="chat-footer font-thin text-xs mt-2 underline text-blue-900 dark:text-blue-400">
             <Link href={`/main/user/${value.answeredPersonHandle}/${value.id}`}>
-              {value.answeredAt.toLocaleString()}
+              {new Date(value.answeredAt).toLocaleString('ko-kr', {hour12: false})}
             </Link>
           </div>
         </div>
