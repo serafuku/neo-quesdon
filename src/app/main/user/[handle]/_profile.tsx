@@ -173,7 +173,7 @@ export default function Profile() {
         <div className="flex flex-col items-center gap-2 py-2">
           {userProfile && userProfile.avatarUrl ? (
             <div className="flex w-full h-24">
-              <Link href={`https://${userProfile.hostname}/${userProfile.handle}`}>
+              <Link href={`https://${userProfile.hostname}/${userProfile.handle.match(/^@([^@ ]){1,100}/g)?.[0]}`}>
                 <img
                   src={userProfile.avatarUrl}
                   alt="User Avatar"
