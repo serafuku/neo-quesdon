@@ -1,17 +1,25 @@
-import type { profile, user } from "@prisma/client";
-import { User } from "./api/misskey-entities/user";
+import type { profile, user } from '@prisma/client';
+import { MiUser } from './api/misskey-entities/user';
 
-export interface callbackTokenClaimPayload {
-  //Misskey Access key 를 요청할 misskey의 host (예: serafuku.moe)
-  misskeyHost: string;
-
-  //callback으로 받은 토큰
-  callback_token: string;
-}
-export interface userInfoPayload {
-  user: User;
+interface MiAuthSession {
+  token: string;
+  url: string;
 }
 
+interface MiApiError {
+  error: {
+    message: string;
+    code: string;
+    id: string;
+    kind: 'client' | 'server';
+  };
+}
+
+/** Misskey 의 /api/auth/session/userkey 에서 돌아오는 형식 */
+export interface misskeyAccessKeyApiResponse {
+  accessToken: string;
+  user: MiUser;
+}
 
 export interface questions {
   id: number;
@@ -23,11 +31,21 @@ export interface questions {
 }
 
 export interface typedAnswer {
-  question: string;
-  questioner: string | null;
   answer: string;
-  answeredPersonHandle: string;
   nsfwedAnswer: boolean;
+  visibility: 'public' | 'home' | 'followers';
+}
+
+export interface MkNoteAnswers {
+  cw: string;
+  text: string;
+  visibility: 'public' | 'home' | 'followers';
+}
+
+export interface mastodonTootAnswers {
+  spoiler_text: string;
+  status: string;
+  visibility: 'public' | 'unlisted' | 'private';
 }
 
 export interface postQuestion {

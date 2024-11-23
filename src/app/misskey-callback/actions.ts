@@ -1,18 +1,29 @@
-"use server";
+'use server';
 
-import { PrismaClient } from "@prisma/client";
-import { DBpayload } from "./page";
-import { cookies } from "next/headers";
-import { SignJWT } from "jose";
-import { callbackTokenClaimPayload, userInfoPayload } from "..";
-import { User as MiUser } from "../api/misskey-entities/user";
-import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
+import { DBpayload } from './page';
+import { cookies } from 'next/headers';
+import { SignJWT } from 'jose';
+import { misskeyAccessKeyApiResponse } from '..';
+import { MiUser } from '../api/misskey-entities/user';
+import { fetchNameWithEmoji } from '../api/functions/web/fetchUsername';
+import { validateStrict } from '@/utils/validator/strictValidator';
+import { misskeyCallbackTokenClaimPayload } from '../_dto/misskey-callback/callback-token-claim.dto';
+import { misskeyUserInfoPayload } from '../_dto/misskey-callback/user-info.dto';
+import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { Logger } from '@/utils/logger/Logger';
 
-
-export async function login(loginReq: callbackTokenClaimPayload): Promise<userInfoPayload> {
+const logger = new Logger('misskey-callback');
+export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): Promise<misskeyUserInfoPayload> {
+  let loginReq: misskeyCallbackTokenClaimPayload;
+  try {
+    loginReq = await validateStrict(misskeyCallbackTokenClaimPayload, loginReqestData);
+  } catch (err) {
+    throw new Error(JSON.stringify(err));
+  }
+  loginReq.misskeyHost = loginReq.misskeyHost.toLowerCase();
 
   // 미스키 App 인증 API에서 액세스토큰과 MiUser 정보를 받아오기
-  const misskeyApiResponse = await requestMiAccessTokenAndUserInfo(loginReq);
+  const misskeyApiResponse: misskeyAccessKeyApiResponse = await requestMiAccessTokenAndUserInfo(loginReq);
   if (misskeyApiResponse === null) {
     throw new Error(`misskey token get fail!`);
   }
@@ -27,9 +38,10 @@ export async function login(loginReq: callbackTokenClaimPayload): Promise<userIn
 
   let nameWithEmoji = await fetchNameWithEmoji({
     name: user.name ?? user.username,
-    misskeyBaseUrl: `https://${loginReq.misskeyHost}`,
+    baseUrl: loginReq.misskeyHost,
+    emojis: null,
   });
-  
+
   if (nameWithEmoji.length === 0) {
     nameWithEmoji = [`${user.username}`];
   }
@@ -47,8 +59,8 @@ export async function login(loginReq: callbackTokenClaimPayload): Promise<userIn
   };
   try {
     await pushDB(dbPayload);
-  } catch(err) {
-    console.error(`Fail to push user to DB`, err);
+  } catch (err) {
+    logger.error(`Fail to push user to DB`, err);
     throw err;
   }
 
@@ -56,36 +68,34 @@ export async function login(loginReq: callbackTokenClaimPayload): Promise<userIn
     // 프론트 쿠키스토어에 쿠키 저장
     const cookieStore = await cookies();
     const jwtToken = await generateJwt(loginReq.misskeyHost, user_handle);
-    console.log(`Send JWT to Frontend... ${jwtToken}`);
-    cookieStore.set("jwtToken", jwtToken, {
+    logger.log(`Send JWT to Frontend... ${jwtToken}`);
+    cookieStore.set('jwtToken', jwtToken, {
       expires: Date.now() + 1000 * 60 * 60 * 6,
       httpOnly: true,
     });
-    cookieStore.set("server", loginReq.misskeyHost, {
+    cookieStore.set('server', loginReq.misskeyHost, {
       expires: Date.now() + 1000 * 60 * 60 * 6,
       httpOnly: true,
     });
   } catch (err) {
-    console.error(`Make JWT or Set cookie failed!`, err);
+    logger.error(`Make JWT or Set cookie failed!`, err);
     throw err;
   }
-
 
   //유저 정보 프론트로 반환
   return { user: user };
 }
 
-
 /**
- * 미스키에서 유저가 권한을 승인한 후, 콜백으로 받은 (App인증 방식) 토큰을 사용해서 
- * 미스키에서 accessToken과 유저 정보를 받아옴. 
+ * 미스키에서 유저가 권한을 승인한 후, 콜백으로 받은 (App인증 방식) 토큰을 사용해서
+ * 미스키에서 accessToken과 유저 정보를 받아옴.
  *  참고: https://misskey-hub.net/ko/docs/for-developers/api/token/app/
- * 인증 성공시 미스키의 /api/auth/session/userkey 응답 바디를 반환, 실패시 null 반환. 
+ * 인증 성공시 미스키의 /api/auth/session/userkey 응답 바디를 반환, 실패시 null 반환.
  * @param payload callbackTokenClaimPayload
  * @returns misskey appAuth API response body, or null when failed
  */
-async function requestMiAccessTokenAndUserInfo(payload: callbackTokenClaimPayload) {
-  const prisma = new PrismaClient();
+async function requestMiAccessTokenAndUserInfo(payload: misskeyCallbackTokenClaimPayload) {
+  const prisma = GetPrismaClient.getClient();
 
   const checkInstances = await prisma.server.findFirst({
     where: {
@@ -94,24 +104,21 @@ async function requestMiAccessTokenAndUserInfo(payload: callbackTokenClaimPayloa
   });
 
   if (checkInstances) {
-    const res = await fetch(
-      `https://${payload.misskeyHost}/api/auth/session/userkey`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          appSecret: checkInstances.appSecret,
-          token: payload.callback_token,
-        }),
-      }
-    );
+    const res = await fetch(`https://${payload.misskeyHost}/api/auth/session/userkey`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        appSecret: checkInstances.appSecret,
+        token: payload.callback_token,
+      }),
+    });
     if (res.ok) {
       const resBody = await res.json();
       return resBody;
     } else {
-      console.error(`Fail to get Misskey Access token`, res.status, res.statusText);
+      logger.error(`Fail to get Misskey Access token`, res.status, res.statusText);
       return null;
     }
   } else {
@@ -119,9 +126,8 @@ async function requestMiAccessTokenAndUserInfo(payload: callbackTokenClaimPayloa
   }
 }
 
-
 async function generateJwt(hostname: string, handle: string) {
-  const alg = "HS256";
+  const alg = 'HS256';
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
   const webUrl = process.env.WEB_URL;
@@ -132,14 +138,15 @@ async function generateJwt(hostname: string, handle: string) {
     .setProtectedHeader({ alg })
     .setIssuedAt()
     .setIssuer(`${webUrl}`)
-    .setAudience("urn:example:audience")
-    .setExpirationTime("6h")
+    .setAudience('urn:example:audience')
+    .setExpirationTime('6h')
     .sign(secret);
   return jwtToken;
 }
 
 async function pushDB(payload: DBpayload) {
-  const prisma = new PrismaClient();
+  const prisma = GetPrismaClient.getClient();
+
   await prisma.user.upsert({
     where: {
       handle: payload.handle,

@@ -1,10 +1,6 @@
-import MainHeader from "./_header";
+import MainHeader from './_header';
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <div>
       <header className="w-full h-full flex justify-center">

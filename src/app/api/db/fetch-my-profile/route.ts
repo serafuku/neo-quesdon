@@ -1,18 +1,39 @@
-import { userProfileDto } from "@/app/_dto/fetch-profile/Profile.dto";
-import { PrismaClient } from "@prisma/client";
-import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "../../functions/web/verify-jwt";
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '../../functions/web/verify-jwt';
+import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
 
 export async function GET(req: NextRequest) {
-  const prisma = new PrismaClient();
-  const token = req.cookies.get("jwtToken")?.value;
+  const prisma = GetPrismaClient.getClient();
+  const token = req.cookies.get('jwtToken')?.value;
 
   try {
     if (!token) {
-      throw new Error("No token");
+      return sendApiError(401, 'No Auth Token');
     }
-    const { handle } = await verifyToken(token);
+    let handle: string;
+    try {
+      handle = (await verifyToken(token)).handle;
+    } catch {
+      return sendApiError(401, 'Token Verify Error');
+    }
+    const limiter = RateLimiterService.getLimiter();
+    const limited = await limiter.limit(`fetch-my-profile-${handle}`, {
+      bucket_time: 600,
+      req_limit: 300,
+    });
+    if (limited) {
+      return sendApiError(429, '요청 제한에 도달했습니다!');
+    }
+
     const userProfile = await prisma.profile.findUnique({
+      include: {
+        user: {
+          select: { hostName: true },
+        },
+      },
       where: {
         handle: handle,
       },
@@ -20,7 +41,25 @@ export async function GET(req: NextRequest) {
     if (!userProfile) {
       return NextResponse.json({ message: `User not found` }, { status: 404 });
     }
-    const res: userProfileDto = {
+    const host = userProfile.user.hostName;
+    const { instanceType } = await prisma.server.findUniqueOrThrow({
+      where: { instances: host },
+      select: { instanceType: true },
+    });
+
+    const questionCount = await prisma.profile.findUnique({
+      where: {
+        handle: handle,
+      },
+      select: {
+        _count: {
+          select: {
+            questions: true,
+          },
+        },
+      },
+    });
+    const res: userProfileMeDto = {
       handle: userProfile.handle,
       name: userProfile.name,
       stopNewQuestion: userProfile.stopNewQuestion,
@@ -29,13 +68,12 @@ export async function GET(req: NextRequest) {
       questionBoxName: userProfile.questionBoxName,
       stopNotiNewQuestion: userProfile.stopNotiNewQuestion,
       stopPostAnswer: userProfile.stopPostAnswer,
+      questions: questionCount ? questionCount._count.questions : null,
+      instanceType: instanceType,
     };
 
     return NextResponse.json(res);
   } catch (err) {
-    return NextResponse.json(
-      { message: `Bad Request: ${err}` },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: `Bad Request: ${err}` }, { status: 400 });
   }
 }

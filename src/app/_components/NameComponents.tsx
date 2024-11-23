@@ -11,7 +11,7 @@ export default function NameComponents({ username, width, height }: username) {
         <div className="flex items-center">
           {username?.map((el, key) => (
             <div key={key}>
-              {el.toString().substring(0, 8) === "https://" ? (
+              {el.toString().substring(0, 8) === 'https://' ? (
                 <img
                   className={`mx-1`}
                   style={{ width: width, height: height }}

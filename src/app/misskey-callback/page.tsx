@@ -1,21 +1,23 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { login } from "./actions";
-import { User as MiUser } from "../api/misskey-entities/user";
-import { callbackTokenClaimPayload, userInfoPayload } from "..";
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { login } from './actions';
+import { MiUser as MiUser } from '../api/misskey-entities/user';
+import { misskeyCallbackTokenClaimPayload } from '../_dto/misskey-callback/callback-token-claim.dto';
+import { misskeyUserInfoPayload } from '../_dto/misskey-callback/user-info.dto';
+import type { profile, user } from '@prisma/client';
 
 export type DBpayload = {
-  account: string;
-  accountLower: string;
-  hostName: string;
-  handle: string;
-  name: string[];
-  avatarUrl: string;
-  accessToken: string;
-  userId: string;
+  account: user['account'];
+  accountLower: user['accountLower'];
+  hostName: user['hostName'];
+  handle: user['handle'];
+  name: profile['name'];
+  avatarUrl: profile['avatarUrl'];
+  accessToken: user['token'];
+  userId: user['userId'];
 };
 
 export default function CallbackPage() {
@@ -24,7 +26,7 @@ export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const server = localStorage.getItem("server");
+    const server = localStorage.getItem('server');
 
     const url = new URL(window.location.href);
     const params = new URLSearchParams(url.search);
@@ -35,30 +37,29 @@ export default function CallbackPage() {
     const fn = async () => {
       try {
         if (server) {
-          const callback_token = params.get("token");
-          if (callback_token === null) { 
+          const callback_token = params.get('token');
+          if (callback_token === null) {
             throw new Error('callback token is null?');
           }
-          const payload: callbackTokenClaimPayload = {
+          const payload: misskeyCallbackTokenClaimPayload = {
             misskeyHost: server,
             callback_token: callback_token,
           };
-          
-          let res: userInfoPayload;
+
+          let res: misskeyUserInfoPayload;
           try {
             res = await login(payload);
           } catch (err) {
             console.error(`login failed!`, err);
             throw err;
           }
-  
+
           const user: MiUser = res.user;
-  
-  
+
           const handle = `@${user.username}@${server}`;
           localStorage.setItem('user_handle', handle);
-  
-          router.replace("/main");
+
+          router.replace('/main');
         }
       } catch (err) {
         console.error(err);
@@ -75,13 +76,7 @@ export default function CallbackPage() {
 
   return (
     <div className="w-full h-[100vh] flex flex-col gap-2 justify-center items-center text-3xl">
-      <Image
-        src={`/loading/${id}.gif`}
-        width={64}
-        height={64}
-        alt="Login Loading"
-        unoptimized
-      />
+      <Image src={`/loading/${id}.gif`} width={64} height={64} alt="Login Loading" unoptimized />
       <span>로그인하고 있어요...</span>
     </div>
   );

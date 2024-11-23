@@ -1,3 +1,5 @@
+import { profile } from '@prisma/client';
+
 export interface AnswerDto {
   id: string;
   question: string;
@@ -6,4 +8,8 @@ export interface AnswerDto {
   answeredAt: Date;
   answeredPersonHandle: string;
   nsfwedAnswer: boolean;
+}
+
+export interface AnswerWithProfileDto extends AnswerDto {
+  answeredPerson?: profile;
 }

@@ -1,6 +1,6 @@
-"use server";
+'use server';
 
-import { jwtVerify } from "jose";
+import { jwtVerify } from 'jose';
 
 type jwtPayload = {
   handle: string;
@@ -13,23 +13,23 @@ type jwtPayload = {
  * @returns JWT payload
  * @throws JWT validation error
  */
-export async function verifyToken(token: string) {
+export async function verifyToken(token: string | null | undefined) {
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
   try {
+    if (typeof token !== 'string') {
+      throw new Error('token is not string');
+    }
     const { payload } = await jwtVerify(token, secret);
     const data: jwtPayload = {
-      handle: "",
-      server: "",
+      handle: '',
+      server: '',
     };
-    if (
-      typeof payload.handle === "string" &&
-      typeof payload.server === "string"
-    ) {
+    if (typeof payload.handle === 'string' && typeof payload.server === 'string') {
       data.handle = payload.handle;
       data.server = payload.server;
     } else {
-      throw new Error("JWT payload error");
+      throw new Error('JWT payload error');
     }
     return data;
   } catch (err) {
