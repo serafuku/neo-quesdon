@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SubmitHandler, useForm } from "react-hook-form";
 import type { questions, typedAnswer } from "..";
-import { getQuestion, postAnswer } from "../main/questions/action";
+import { postAnswer } from "../main/questions/action";
 import { RefObject } from "react";
 
 interface formValue {
@@ -13,7 +13,7 @@ interface formValue {
 interface askProps {
   singleQuestion: questions;
   multipleQuestions: questions[];
-  setState: React.Dispatch<React.SetStateAction<questions[] | null>>;
+  setQuestions: React.Dispatch<React.SetStateAction<questions[] | undefined | null>>;
   setId: React.Dispatch<React.SetStateAction<number>>;
   deleteRef: RefObject<HTMLDialogElement>;
   answerRef: RefObject<HTMLDialogElement>;
@@ -22,11 +22,12 @@ interface askProps {
 export default function Question({
   singleQuestion,
   multipleQuestions,
-  setState,
+  setQuestions,
   setId,
   deleteRef,
   answerRef,
 }: askProps) {
+
   const {
     register,
     handleSubmit,
@@ -44,6 +45,8 @@ export default function Question({
     },
   });
 
+
+
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       const isValid = await trigger();
@@ -52,7 +55,7 @@ export default function Question({
         return;
       } else {
         const value = getValues();
-        if (value) {
+        if (value && !answerRef.current?.open) {          
           await onSubmit(value);
         }
       }
@@ -82,8 +85,8 @@ export default function Question({
       (el) => el.id !== questionId
     );
 
-    setState(filteredQuestions);
-    postAnswer(questionId, typedAnswer);
+    setQuestions(filteredQuestions);
+    await postAnswer(questionId, typedAnswer);    
     answerRef.current?.showModal();
   };
 

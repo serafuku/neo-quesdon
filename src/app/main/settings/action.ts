@@ -1,6 +1,5 @@
 "use server";
 
-import { jwtVerify, JWTVerifyResult } from "jose";
 import { cookies } from "next/headers";
 import { FormValue } from "./page";
 import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
@@ -23,6 +22,7 @@ export async function fetchUser() {
     return user;
   } catch (err) {
     logger.error(err);
+    return null;
   }
 }
 

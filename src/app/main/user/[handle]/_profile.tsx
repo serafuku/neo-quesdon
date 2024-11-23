@@ -61,7 +61,6 @@ export default function Profile() {
           await onSubmit(value);
         }
       }
-      questionSuccessModalRef.current?.showModal();
     }
   };
 
@@ -104,21 +103,16 @@ export default function Profile() {
         return;
       }
 
-      if (questionSuccessModalRef.current) {
-        questionSuccessModalRef.current.showModal();
-      } else {
-        alert('오류에요!!!');
-      }
-
       const req: CreateQuestionDto = {
         question: e.question,
         questioner: user_handle,
         questionee: profileHandle,
       };
+      reset()
       const res = await mkQuestionCreateApi(req);
 
       if (res.status === 200) {
-        reset();
+        questionSuccessModalRef.current?.showModal();
       }
     }
     // 작성자 비공개
@@ -138,20 +132,15 @@ export default function Profile() {
           return;
         }
 
-        if (questionSuccessModalRef.current) {
-          questionSuccessModalRef.current.showModal();
-        } else {
-          alert('오류에요!!!');
-        }
-
         const req: CreateQuestionDto = {
           question: e.question,
           questioner: null,
           questionee: profileHandle,
         };
+        reset();
         const res = await mkQuestionCreateApi(req);
         if (res.status === 200) {
-          reset();
+          questionSuccessModalRef.current?.showModal()
         }
       }
     }

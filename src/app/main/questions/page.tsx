@@ -11,7 +11,6 @@ const fetchQuestions = async () => {
   const res = await fetch("/api/db/fetch-my-questions")
     .then((r) => {
       if (!r.ok) {
-        console.error(`Fail to fetch my questions`);
         return null;
       }
       return r.json();
@@ -21,7 +20,7 @@ const fetchQuestions = async () => {
 };
 
 export default function Questions() {
-  const [questions, setQuestions] = useState<questions[] | null>(null);
+  const [questions, setQuestions] = useState<questions[] | null>();
   const [id, setId] = useState<number>(0);
   const deleteQuestionModalRef = useRef<HTMLDialogElement>(null);
   const answeredQuestionModalRef = useRef<HTMLDialogElement>(null);
@@ -33,13 +32,13 @@ export default function Questions() {
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] flex flex-col justify-center">
       <h3 className="text-3xl desktop:text-4xl mb-2">미답변 질문들</h3>
-      {questions === undefined || null ? (
-        <div>
-          <span className="loading loading-infinity loading-lg" />
-        </div>
+      {questions === undefined ? (
+            <div className="w-full flex justify-center">
+            <span className="loading loading-spinner loading-lg" />
+          </div>
       ) : (
         <div className="w-full">
-          {questions ? (
+          {questions !== null ? (
             <div>
               {questions.length > 0 ? (
                 <div>
@@ -49,7 +48,7 @@ export default function Questions() {
                         singleQuestion={el}
                         multipleQuestions={questions}
                         setId={setId}
-                        setState={setQuestions}
+                        setQuestions={setQuestions}
                         answerRef={answeredQuestionModalRef}
                         deleteRef={deleteQuestionModalRef}
                       />
@@ -66,7 +65,7 @@ export default function Questions() {
             </div>
           ) : (
             <div className="w-full flex justify-center">
-              <span className="loading loading-spinner loading-lg" />
+              <span className="text-2xl">로그인이 안 되어있어요!</span>
             </div>
           )}
         </div>
