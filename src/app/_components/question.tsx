@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SubmitHandler, useForm } from "react-hook-form";
 import type { questions, typedAnswer } from "..";
 import { getQuestion, postAnswer } from "../main/questions/action";
+import { RefObject } from "react";
 
 interface formValue {
   answer: string;
@@ -13,14 +14,18 @@ interface askProps {
   singleQuestion: questions;
   multipleQuestions: questions[];
   setState: React.Dispatch<React.SetStateAction<questions[] | null>>;
-  id: number;
+  setId: React.Dispatch<React.SetStateAction<number>>;
+  deleteRef: RefObject<HTMLDialogElement>;
+  answerRef: RefObject<HTMLDialogElement>;
 }
 
 export default function Question({
   singleQuestion,
   multipleQuestions,
   setState,
-  id,
+  setId,
+  deleteRef,
+  answerRef,
 }: askProps) {
   const {
     register,
@@ -79,13 +84,13 @@ export default function Question({
 
     setState(filteredQuestions);
     postAnswer(questionId, typedAnswer);
-    document.getElementById("my_modal_1")?.click();
+    answerRef.current?.showModal();
   };
 
   return (
     <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
       <div className="text-2xl chat chat-start">
-        <div className="chat-header">
+        <div className="chat-header dark:text-slate-100">
           {singleQuestion.questioner ? (
             <Link href={`/main/user/${singleQuestion.questioner}`}>
               {singleQuestion.questioner}
@@ -94,23 +99,24 @@ export default function Question({
             "익명의 질문자"
           )}
         </div>
-        <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl">
+        <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl text-slate-200">
           {singleQuestion.question}
         </div>
-        <div className="chat-footer opacity-50">
+        <div className="chat-footer opacity-50 dark:text-slate-100 dark:opacity-80">
           {new Date(singleQuestion.questionedAt).toLocaleString('ko-KR', {hour12: false})}
           <span
             className="text-red-500 font-bold ml-2 cursor-pointer"
-            onClick={() =>
-              document.getElementById(`question_delete_modal_${id}`)?.click()
-            }
+            onClick={() => {
+              deleteRef.current?.showModal();
+              setId(singleQuestion.id);
+            }}
           >
             삭제
           </span>
         </div>
       </div>
       <div className="text-2xl chat chat-end">
-        <div className="chat-bubble bg-green-600">
+        <div className="chat-bubble bg-green-600 text-slate-300 dark:text-slate-200">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-2 py-2"
@@ -123,6 +129,7 @@ export default function Question({
             )}
             <textarea
               {...register("answer", { required: "required" })}
+              tabIndex={0}
               className={`textarea textarea-sm text-sm h-24 desktop:h-32 window:text-xl desktop:text-2xl bg-transparent ${
                 errors.answer && "textarea-error"
               }`}
@@ -154,7 +161,7 @@ export default function Question({
               <div className="w-full desktop:w-fit flex justify-center">
                 <button
                   type={"submit"}
-                  className="btn btn-outline btn-sm h-10 w-16 desktop:btn-md"
+                  className="btn btn-outline dark:border-white dark:text-slate-200 btn-sm h-10 w-16 desktop:btn-md"
                 >
                   답변
                 </button>

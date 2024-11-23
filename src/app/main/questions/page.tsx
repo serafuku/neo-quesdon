@@ -4,6 +4,8 @@ import { questions } from "@/app";
 import Question from "@/app/_components/question";
 import { useEffect, useRef, useState } from "react";
 import { deleteQuestion } from "./action";
+import DialogModalTwoButton from "@/app/_components/modalTwoButton";
+import DialogModalOneButton from "@/app/_components/modalOneButton";
 
 const fetchQuestions = async () => {
   const res = await fetch("/api/db/fetch-my-questions")
@@ -20,24 +22,13 @@ const fetchQuestions = async () => {
 
 export default function Questions() {
   const [questions, setQuestions] = useState<questions[] | null>(null);
-  const parentDivRef = useRef<HTMLDivElement>(null);
-
-  const onEscape = (e: React.KeyboardEvent) => {
-    const modalState = document.getElementById(
-      "my_modal_1"
-    ) as HTMLInputElement;
-    if (e.key === "Escape") {
-      modalState.checked = false;
-    }
-  };
+  const [id, setId] = useState<number>(0);
+  const deleteQuestionModalRef = useRef<HTMLDialogElement>(null);
+  const answeredQuestionModalRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     fetchQuestions().then((r) => setQuestions(r));
   }, []);
-
-  useEffect(() => {
-    parentDivRef.current?.focus();
-  }, [questions]);
 
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] flex flex-col justify-center">
@@ -57,45 +48,11 @@ export default function Questions() {
                       <Question
                         singleQuestion={el}
                         multipleQuestions={questions}
+                        setId={setId}
                         setState={setQuestions}
-                        id={el.id}
+                        answerRef={answeredQuestionModalRef}
+                        deleteRef={deleteQuestionModalRef}
                       />
-                      <input
-                        type="checkbox"
-                        id={`question_delete_modal_${el.id}`}
-                        className="modal-toggle"
-                      />
-                      <div className="modal" role="dialog">
-                        <div className="modal-box">
-                          <h3 className="py-4 text-2xl">질문을 지울까요...?</h3>
-                          <div className="modal-action">
-                            <label
-                              htmlFor={`question_delete_modal_${el.id}`}
-                              className="btn btn-error"
-                              onClick={() => {
-                                deleteQuestion(el.id);
-                                setQuestions((prevQuestions) =>
-                                  prevQuestions
-                                    ? [
-                                        ...prevQuestions.filter(
-                                          (prev) => prev.id !== el.id
-                                        ),
-                                      ]
-                                    : null
-                                );
-                              }}
-                            >
-                              확인
-                            </label>
-                            <label
-                              htmlFor={`question_delete_modal_${el.id}`}
-                              className="btn"
-                            >
-                              취소
-                            </label>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   ))}
                 </div>
@@ -114,23 +71,27 @@ export default function Questions() {
           )}
         </div>
       )}
-      <input type="checkbox" id="my_modal_1" className="modal-toggle" />
-      <div
-        className="modal"
-        role="dialog"
-        onKeyDown={onEscape}
-        tabIndex={0}
-        ref={parentDivRef}
-      >
-        <div className="modal-box">
-          <h3 className="py-4 text-2xl">답변했어요!</h3>
-          <div className="modal-action">
-            <label htmlFor="my_modal_1" className="btn">
-              닫기
-            </label>
-          </div>
-        </div>
-      </div>
+      <DialogModalOneButton
+        title={"답변완료"}
+        body={"답변했어요!"}
+        buttonText={"확인"}
+        ref={answeredQuestionModalRef}
+      />
+      <DialogModalTwoButton
+        title={"질문 지우기"}
+        body={"질문을 지울까요...?"}
+        confirmButtonText={"확인"}
+        cancelButtonText={"취소"}
+        ref={deleteQuestionModalRef}
+        onClick={() => {
+          deleteQuestion(id);
+          setQuestions((prevQuestions) =>
+            prevQuestions
+              ? [...prevQuestions.filter((prev) => prev.id !== id)]
+              : null
+          );
+        }}
+      />
     </div>
   );
 }

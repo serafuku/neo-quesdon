@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import Answer from "../_components/answer";
 import { FaExclamationCircle } from "react-icons/fa";
 import { answer } from "@prisma/client";
