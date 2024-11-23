@@ -21,7 +21,7 @@ export async function fetchUser() {
     });
     return user;
   } catch (err) {
-    logger.error(err);
+    logger.debug(err);
     return null;
   }
 }

@@ -11,7 +11,9 @@ const fetchQuestions = async () => {
   const res = await fetch('/api/db/fetch-my-questions');
 
   try {
-    if (!res.ok) {
+    if (res.status === 401) {
+      return null;
+    } else if (!res.ok) {
       throw new Error(`내 질문을 불러오는데 실패했어요!: ${await res.text()}`);
     } else {
       return await res.json();
