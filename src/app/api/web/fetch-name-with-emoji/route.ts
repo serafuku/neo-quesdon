@@ -48,38 +48,6 @@ export async function POST(req: NextRequest) {
       }
 
     case 'misskey':
-      try {
-        if (emojiInUsername) {
-          for (let i = 0; i < emojiInUsername.length; i++) {
-            const emojiAddress = await fetch(`https://${baseUrl}/api/emoji`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                name: emojiInUsername[i],
-              }),
-            }).then((r) => r.json());
-
-            usernameEmojiAddress.push(emojiAddress.url);
-          }
-
-          for (const el in nameArray) {
-            usernameIndex.push(nameArray.indexOf(emojiInUsername[el]));
-          }
-          const filteredIndex = usernameIndex.filter((value) => value >= 0);
-
-          for (let i = 0; i < usernameEmojiAddress.length; i++) {
-            nameArray.splice(filteredIndex[i], 1, usernameEmojiAddress[i]);
-          }
-        }
-
-        return NextResponse.json({ nameWithEmoji: nameArray });
-      } catch (err) {
-        logger.error(err);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-      }
-
     case 'cherrypick':
       try {
         if (emojiInUsername) {
@@ -109,8 +77,8 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ nameWithEmoji: nameArray });
       } catch (err) {
-        logger.error(err);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        logger.warn(err);
+        return NextResponse.json({ nameWithEmoji: [name]});
       }
 
     default:
