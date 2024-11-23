@@ -1,9 +1,9 @@
 'use server';
 
 import type { mastodonTootAnswers, MkNoteAnswers, typedAnswer } from '@/app';
-import { verifyToken } from '@/app/api/functions/web/verify-jwt';
-import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { verifyToken } from '@/app/api/_utils/jwt/verify-jwt';
+import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { question } from '@prisma/client';
 import { createHash } from 'crypto';

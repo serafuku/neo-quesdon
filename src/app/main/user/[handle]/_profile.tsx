@@ -2,7 +2,7 @@ import DialogModalOneButton from '@/app/_components/modalOneButton';
 import NameComponents from '@/app/_components/NameComponents';
 import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
 import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
-import josa from '@/app/api/functions/josa';
+import josa from '@/app/api/_utils/josa';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';

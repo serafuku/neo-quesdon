@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { Logger } from '../logger/Logger';
+import { Logger } from '@/utils/logger/Logger';
 
 const logger = new Logger('get-ip-from-request');
 export function getIpFromRequest(req: NextRequest) {

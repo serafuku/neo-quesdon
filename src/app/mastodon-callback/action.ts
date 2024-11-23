@@ -2,11 +2,11 @@
 
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { mastodonCallbackTokenClaimPayload } from '../_dto/mastodon-callback/callback-token-claim.dto';
-import { fetchNameWithEmoji } from '../api/functions/web/fetchUsername';
+import { fetchNameWithEmoji } from '../api/_utils/fetchUsername';
 import { DBpayload } from '../misskey-callback/page';
 import { cookies } from 'next/headers';
 import { SignJWT } from 'jose';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 
 const logger = new Logger('Mastodon-callback');

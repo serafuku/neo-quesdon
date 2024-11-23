@@ -1,12 +1,12 @@
 import { DeleteAnswerDto } from '@/app/_dto/delete-answer/delete-answer.dto';
-import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '../../functions/web/verify-jwt';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { verifyToken } from '../../_utils/jwt/verify-jwt';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
+import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
 
 const logger = new Logger('delete-answer');
 export async function POST(req: NextRequest) {

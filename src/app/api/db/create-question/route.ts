@@ -1,15 +1,14 @@
 import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
 import type { user } from '@prisma/client';
 import { type NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '../../functions/web/verify-jwt';
+import { verifyToken } from '../../_utils/jwt/verify-jwt';
 import { validateStrict } from '@/utils/validator/strictValidator';
-import { sendErrorResponse } from '../../functions/web/errorResponse';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
-import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
-import { getIpFromRequest } from '@/utils/getIp/get-ip-from-Request';
-import { getIpHash } from '@/utils/getIp/get-ip-hash';
+import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
+import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
+import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
+import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
 const logger = new Logger('create-question');
 
 export async function POST(req: NextRequest) {
@@ -17,7 +16,7 @@ export async function POST(req: NextRequest) {
   const token = req.cookies.get('jwtToken')?.value;
   const tokenPayload = await verifyToken(token)
     .then((payload) => payload)
-    .catch(() => { });
+    .catch(() => {});
   if (tokenPayload) {
     const limiter = RateLimiterService.getLimiter();
     const limited = await limiter.limit(`create-question-${tokenPayload.handle}`, {
@@ -45,7 +44,7 @@ export async function POST(req: NextRequest) {
       data = await validateStrict(CreateQuestionDto, await req.json());
     } catch (errors) {
       logger.warn(errors);
-      return sendErrorResponse(400, `${errors}`);
+      return sendApiError(400, `${errors}`);
     }
 
     const questionee_user = await prisma.user.findUniqueOrThrow({
@@ -78,7 +77,7 @@ export async function POST(req: NextRequest) {
         }
       } catch (err) {
         logger.warn(`questioner verify ERROR! ${err}`);
-        return sendErrorResponse(403, `${err}`);
+        return sendApiError(403, `${err}`);
       }
     }
 

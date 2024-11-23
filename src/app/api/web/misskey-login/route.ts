@@ -1,15 +1,14 @@
 import { loginReqDto } from '@/app/_dto/web/login/login.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import { sendErrorResponse } from '../../functions/web/errorResponse';
 import { MiApiError, MiAuthSession } from '@/app';
 import detectInstance from '../../../../utils/detectInstance/detectInstance';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
-import { getIpHash } from '@/utils/getIp/get-ip-hash';
-import { getIpFromRequest } from '@/utils/getIp/get-ip-from-Request';
-import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
+import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
+import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
+import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 
 const logger = new Logger('misskey-login');
 export async function POST(req: NextRequest) {
@@ -18,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     data = await validateStrict(loginReqDto, await req.json());
   } catch (err) {
-    return sendErrorResponse(400, `${err}`);
+    return sendApiError(400, `${err}`);
   }
 
   const limiter = RateLimiterService.getLimiter();
@@ -58,7 +57,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        return sendErrorResponse(500, `Login Error! From Remote: ${await res.text()}`);
+        return sendApiError(500, `Login Error! From Remote: ${await res.text()}`);
       }
       const data = await res.json();
       const appSecret = data.secret;
@@ -80,7 +79,7 @@ export async function POST(req: NextRequest) {
       });
       const authRes = await initiateMisskeyAuthSession(misskeyHost, appSecret);
       if (!authRes.ok) {
-        return sendErrorResponse(500, `Fail to Create Auth Session: ${await authRes.text()}`);
+        return sendApiError(500, `Fail to Create Auth Session: ${await authRes.text()}`);
       }
       const misskeyAuthSession = (await authRes.json()) as MiAuthSession;
       logger.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
@@ -99,14 +98,14 @@ export async function POST(req: NextRequest) {
             data: { appSecret: null },
           });
         }
-        return sendErrorResponse(500, `Fail to Create Misskey Auth Session`);
+        return sendApiError(500, `Fail to Create Misskey Auth Session`);
       }
       const misskeyAuthSession = (await res.json()) as MiAuthSession;
       logger.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
       return NextResponse.json(misskeyAuthSession);
     }
   } catch (err) {
-    return sendErrorResponse(500, `login error... ${err}`);
+    return sendApiError(500, `login error... ${err}`);
   }
 }
 
