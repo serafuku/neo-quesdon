@@ -1,9 +1,9 @@
 import { fetchNameWithEmojiReqDto } from '@/app/_dto/fetch-name-with-emoji/fetch-name-with-emoji.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import { sendErrorResponse } from '../../functions/web/errorResponse';
 import detectInstance from '../../../../utils/detectInstance/detectInstance';
 import { Logger } from '@/utils/logger/Logger';
+import { sendApiError } from '../../_utils/apiErrorResponse/sendApiError';
 
 const logger = new Logger('fetch-name-with-emoji');
 export async function POST(req: NextRequest) {
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     data = await validateStrict(fetchNameWithEmojiReqDto, await req.json());
   } catch (err) {
-    return sendErrorResponse(400, `${err}`);
+    return sendApiError(400, `${err}`);
   }
 
   const { name, baseUrl }: fetchNameWithEmojiReqDto = data;

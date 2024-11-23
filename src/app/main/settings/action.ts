@@ -2,9 +2,9 @@
 
 import { cookies } from 'next/headers';
 import { FormValue } from './page';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { verifyToken } from '@/app/api/functions/web/verify-jwt';
+import { verifyToken } from '@/app/api/_utils/jwt/verify-jwt';
 
 export async function fetchUser() {
   const logger = new Logger('fetchUser');

@@ -1,14 +1,13 @@
 import { loginReqDto } from '@/app/_dto/web/login/login.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import { sendErrorResponse } from '../../functions/web/errorResponse';
 import { v4 as uuid } from 'uuid';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/app/api/_utils//getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
-import { getIpHash } from '@/utils/getIp/get-ip-hash';
-import { getIpFromRequest } from '@/utils/getIp/get-ip-from-Request';
-import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
+import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
+import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
+import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 
 const logger = new Logger('mastodon-login');
 export async function POST(req: NextRequest) {
@@ -19,7 +18,7 @@ export async function POST(req: NextRequest) {
   try {
     data = await validateStrict(loginReqDto, await req.json());
   } catch (err) {
-    return sendErrorResponse(400, `${err}`);
+    return sendApiError(400, `${err}`);
   }
 
   const limiter = RateLimiterService.getLimiter();
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
       }).then((r) => r.json());
 
       if (!res.id) {
-        return sendErrorResponse(500, `Mastodon Response: ${JSON.stringify(res)}`);
+        return sendApiError(500, `Mastodon Response: ${JSON.stringify(res)}`);
       }
       logger.log('New Mastodon OAuth2 App Created:', res);
 
@@ -84,7 +83,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(session);
     }
   } catch (err) {
-    return sendErrorResponse(500, `login error... ${err}`);
+    return sendApiError(500, `login error... ${err}`);
   }
 }
 
