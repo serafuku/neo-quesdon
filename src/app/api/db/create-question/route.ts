@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const token = req.cookies.get('jwtToken')?.value;
   const tokenPayload = await verifyToken(token)
     .then((payload) => payload)
-    .catch(() => {});
+    .catch(() => { });
   if (tokenPayload) {
     const limiter = RateLimiterService.getLimiter();
     const limited = await limiter.limit(`create-question-${tokenPayload.handle}`, {
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     } else {
       // 알림 전송
       const url = `${process.env.WEB_URL}/main/questions`;
-      sendNotify(questionee_user, newQuestion.question, url);
+      sendNotify(questionee_user, data.questioner, newQuestion.question, url);
     }
 
     // notify send 기다라지 않고 200반환
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function sendNotify(questionee: user, question: string, url: string): Promise<void> {
+async function sendNotify(questionee: user, questioner: string | null, question: string, url: string): Promise<void> {
   const notify_host = process.env.NOTI_HOST;
   logger.log(`try to send notification to ${questionee.handle}`);
   try {
@@ -125,7 +125,7 @@ async function sendNotify(questionee: user, question: string, url: string): Prom
       body: JSON.stringify({
         visibleUserIds: [questionee.userId],
         visibility: 'specified',
-        text: `${questionee.handle} <네오-퀘스돈> 새로운 질문이에요!\nQ. ${question}\n ${url}`,
+        text: `${questionee.handle} <네오-퀘스돈> 새로운 질문이에요!\n질문자: ${questioner ? `\`${questioner}\`` : '익명의 질문자'}\nQ. ${question}\n ${url}`,
       }),
     });
     if (!res.ok) {
