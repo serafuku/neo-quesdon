@@ -145,16 +145,22 @@ async function mkMisskeyNote(
     text: text,
     visibility: visibility,
   };
-  const res = await fetch(`https://${hostname}/api/notes/create`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${i}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(newAnswerNote),
-  });
-  if (!res.ok) {
-    NoteLogger.warn(`Note create fail! `, res.status, res.statusText);
+  try {
+    const res = await fetch(`https://${hostname}/api/notes/create`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${i}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newAnswerNote),
+    });
+    if (!res.ok) {
+      throw new Error(`Note Create Fail! ${await res.text()}`);
+    } else {
+      NoteLogger.log(`Note Created! ${res.statusText}`);
+    }
+  } catch (err) {
+    NoteLogger.warn(err);
   }
 }
 
@@ -197,7 +203,9 @@ async function mastodonToot(
     });
 
     if (!res.ok) {
-      throw new Error(`HTTP Error! status:${res.status}`);
+      throw new Error(`HTTP Error! status:${await res.text()}`);
+    } else {
+      tootLogger.log(`Toot Created! ${res.statusText}`);
     }
   } catch (err) {
     tootLogger.warn(`Toot Create Fail!`, err);

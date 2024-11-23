@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
     try {
       data = await validateStrict(CreateQuestionDto, await req.json());
     } catch (errors) {
+      logger.warn(errors);
       return sendErrorResponse(400, `${errors}`);
     }
 
@@ -59,8 +60,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (questionee_profile.stopAnonQuestion && !data.questioner) {
+      logger.debug('The user has prohibits anonymous questions.');
       throw new Error('The user has prohibits anonymous questions.');
     } else if (questionee_profile.stopNewQuestion) {
+      logger.debug('User stops NewQuestion');
       throw new Error('User stops NewQuestion');
     }
 
@@ -99,9 +102,7 @@ export async function POST(req: NextRequest) {
     } else {
       // 알림 전송
       const url = `${process.env.WEB_URL}/main/questions`;
-      setImmediate(() => {
-        sendNotify(questionee_user, newQuestion.question, url);
-      });
+      sendNotify(questionee_user, newQuestion.question, url);
     }
 
     // notify send 기다라지 않고 200반환
@@ -127,8 +128,10 @@ async function sendNotify(questionee: user, question: string, url: string): Prom
         text: `${questionee.handle} <네오-퀘스돈> 새로운 질문이에요!\nQ. ${question}\n ${url}`,
       }),
     });
-    if (res.ok === false) {
-      throw new Error(`Note create error`);
+    if (!res.ok) {
+      throw new Error(`Note create error ${await res.text()}`);
+    } else {
+      logger.log(`Notification Sent to ${questionee.handle}`);
     }
   } catch (error) {
     logger.error('Post-question: fail to send notify: ', error);
