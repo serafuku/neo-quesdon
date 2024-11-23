@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ nameWithEmoji: nameArray });
       } catch (err) {
         logger.warn(err);
-        return NextResponse.json({ nameWithEmoji: [name]});
+        return NextResponse.json({ nameWithEmoji: [name] });
       }
 
     default:

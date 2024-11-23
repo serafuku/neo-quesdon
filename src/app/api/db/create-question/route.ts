@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const token = req.cookies.get('jwtToken')?.value;
   const tokenPayload = await verifyToken(token)
     .then((payload) => payload)
-    .catch(() => { });
+    .catch(() => {});
   if (tokenPayload) {
     const limiter = RateLimiterService.getLimiter();
     const limited = await limiter.limit(`create-question-${tokenPayload.handle}`, {
