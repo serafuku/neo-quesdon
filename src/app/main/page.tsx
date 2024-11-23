@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Answer from "../_components/answer";
-import { FaExclamationCircle } from "react-icons/fa";
-import { answer } from "@prisma/client";
-import { FetchAllAnswersReqDto } from "../_dto/fetch-all-answers/fetch-all-answers.dto";
+import { useEffect, useState } from 'react';
+import Answer from '../_components/answer';
+import { FaExclamationCircle } from 'react-icons/fa';
+import { answer } from '@prisma/client';
+import { FetchAllAnswersReqDto } from '../_dto/fetch-all-answers/fetch-all-answers.dto';
 
 async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
-  const res = await fetch("/api/db/fetch-all-answers", {
-    method: "POST",
+  const res = await fetch('/api/db/fetch-all-answers', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(req),
   });
@@ -21,10 +21,9 @@ async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
       throw new Error(`답변을 불러오는데 실패했어요!: ${await res.text()}`);
     }
   } catch (err) {
-    alert(err)
+    alert(err);
     return [];
   }
-
 }
 export default function MainBody() {
   const [answers, setAnswers] = useState<answer[] | null>(null);
@@ -33,7 +32,7 @@ export default function MainBody() {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchAllAnswers({ sort: "DESC", limit: 25 }).then((r) => {
+    fetchAllAnswers({ sort: 'DESC', limit: 25 }).then((r) => {
       if (r.length === 0) {
         setLoading(false);
         setAnswers([]);
@@ -48,23 +47,19 @@ export default function MainBody() {
     const observer = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting && untilId !== null) {
-          fetchAllAnswers({ sort: "DESC", limit: 25, untilId: untilId }).then(
-            (r) => {
-              if (r.length === 0) {
-                setLoading(false);
-                return;
-              }
-              setAnswers((prev_answers) =>
-                prev_answers ? [...prev_answers, ...r] : null
-              );
-              setUntilId(r[r.length - 1].id);
+          fetchAllAnswers({ sort: 'DESC', limit: 25, untilId: untilId }).then((r) => {
+            if (r.length === 0) {
+              setLoading(false);
+              return;
             }
-          );
+            setAnswers((prev_answers) => (prev_answers ? [...prev_answers, ...r] : null));
+            setUntilId(r[r.length - 1].id);
+          });
         }
       },
       {
         threshold: 0.7,
-      }
+      },
     );
     if (mounted) observer.observe(mounted);
     return () => {
@@ -88,10 +83,7 @@ export default function MainBody() {
                   <Answer id={r.id} value={r} />
                 </div>
               ))}
-              <div
-                className="w-full h-16 flex justify-center items-center"
-                ref={(ref) => setMounted(ref)}
-              >
+              <div className="w-full h-16 flex justify-center items-center" ref={(ref) => setMounted(ref)}>
                 {loading ? (
                   <div>
                     <span className="loading loading-spinner loading-lg" />

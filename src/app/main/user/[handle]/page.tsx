@@ -15,10 +15,9 @@ async function fetchProfile(handle: string) {
       throw new Error(`사용자를 불러오는데 실패했어요! ${await res.text()}`);
     }
   } catch (err) {
-    alert(err)
+    alert(err);
     return null;
   }
-
 }
 
 export default function ProfilePage() {

@@ -1,21 +1,23 @@
-import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
-import type { user } from "@prisma/client";
-import { type NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "../../functions/web/verify-jwt";
-import { validateStrict } from "@/utils/validator/strictValidator";
-import { sendErrorResponse } from "../../functions/web/errorResponse";
-import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
-import { Logger } from "@/utils/logger/Logger";
-import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
-import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
-import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
-import { getIpHash } from "@/utils/getIp/get-ip-hash";
+import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
+import type { user } from '@prisma/client';
+import { type NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '../../functions/web/verify-jwt';
+import { validateStrict } from '@/utils/validator/strictValidator';
+import { sendErrorResponse } from '../../functions/web/errorResponse';
+import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { Logger } from '@/utils/logger/Logger';
+import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
+import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { getIpFromRequest } from '@/utils/getIp/get-ip-from-Request';
+import { getIpHash } from '@/utils/getIp/get-ip-hash';
 const logger = new Logger('create-question');
 
 export async function POST(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
-  const token = req.cookies.get("jwtToken")?.value;
-  const tokenPayload = await verifyToken(token).then((payload) => payload).catch(()=> {});
+  const token = req.cookies.get('jwtToken')?.value;
+  const tokenPayload = await verifyToken(token)
+    .then((payload) => payload)
+    .catch(() => {});
   if (tokenPayload) {
     const limiter = RateLimiterService.getLimiter();
     const limited = await limiter.limit(`create-question-${tokenPayload.handle}`, {
@@ -57,9 +59,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (questionee_profile.stopAnonQuestion && !data.questioner) {
-      throw new Error("The user has prohibits anonymous questions.");
+      throw new Error('The user has prohibits anonymous questions.');
     } else if (questionee_profile.stopNewQuestion) {
-      throw new Error("User stops NewQuestion");
+      throw new Error('User stops NewQuestion');
     }
 
     // 제시된 questioner 핸들이 JWT토큰의 핸들과 일치하는지 검사
@@ -68,9 +70,7 @@ export async function POST(req: NextRequest) {
         if (!tokenPayload) {
           throw new Error(`No Auth Token`);
         }
-        if (
-          tokenPayload.handle.toLowerCase() !== data.questioner.toLowerCase()
-        ) {
+        if (tokenPayload.handle.toLowerCase() !== data.questioner.toLowerCase()) {
           throw new Error(`Token and questioner not match`);
         }
       } catch (err) {
@@ -111,23 +111,19 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function sendNotify(
-  questionee: user,
-  question: string,
-  url: string
-): Promise<void> {
+async function sendNotify(questionee: user, question: string, url: string): Promise<void> {
   const notify_host = process.env.NOTI_HOST;
   logger.log(`try to send notification to ${questionee.handle}`);
   try {
     const res = await fetch(`https://${notify_host}/api/notes/create`, {
-      method: "POST",
+      method: 'POST',
       headers: {
         authorization: `Bearer ${process.env.NOTI_TOKEN}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         visibleUserIds: [questionee.userId],
-        visibility: "specified",
+        visibility: 'specified',
         text: `${questionee.handle} <네오-퀘스돈> 새로운 질문이에요!\nQ. ${question}\n ${url}`,
       }),
     });
@@ -135,6 +131,6 @@ async function sendNotify(
       throw new Error(`Note create error`);
     }
   } catch (error) {
-    logger.error("Post-question: fail to send notify: ", error);
+    logger.error('Post-question: fail to send notify: ', error);
   }
 }

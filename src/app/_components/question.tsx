@@ -1,13 +1,13 @@
-import Link from "next/link";
-import { SubmitHandler, useForm } from "react-hook-form";
-import type { questions, typedAnswer } from "..";
-import { postAnswer } from "../main/questions/action";
-import { RefObject } from "react";
+import Link from 'next/link';
+import { SubmitHandler, useForm } from 'react-hook-form';
+import type { questions, typedAnswer } from '..';
+import { postAnswer } from '../main/questions/action';
+import { RefObject } from 'react';
 
 interface formValue {
   answer: string;
   nsfw: boolean;
-  visibility: "public" | "home" | "followers";
+  visibility: 'public' | 'home' | 'followers';
 }
 
 interface askProps {
@@ -27,7 +27,6 @@ export default function Question({
   deleteRef,
   answerRef,
 }: askProps) {
-
   const {
     register,
     handleSubmit,
@@ -39,38 +38,36 @@ export default function Question({
     formState: { errors },
   } = useForm<formValue>({
     defaultValues: {
-      answer: "",
+      answer: '',
       nsfw: false,
-      visibility: "public",
+      visibility: 'public',
     },
   });
 
-
-
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       const isValid = await trigger();
 
       if (isValid === false) {
         return;
       } else {
         const value = getValues();
-        if (value && !answerRef.current?.open) {          
+        if (value && !answerRef.current?.open) {
           await onSubmit(value);
         }
       }
     }
   };
 
-  const nsfwedAnswer = watch("nsfw");
+  const nsfwedAnswer = watch('nsfw');
 
   const onSubmit: SubmitHandler<formValue> = async (e) => {
     const detectWhiteSpaces = new RegExp(/^\s+$/);
 
     if (detectWhiteSpaces.test(e.answer) === true) {
-      setError("answer", {
-        type: "answerOnlyWhiteSpace",
-        message: "답변에 아무말 안 하시게요...?",
+      setError('answer', {
+        type: 'answerOnlyWhiteSpace',
+        message: '답변에 아무말 안 하시게요...?',
       });
       return;
     }
@@ -81,12 +78,10 @@ export default function Question({
       nsfwedAnswer: e.nsfw,
       visibility: e.visibility,
     };
-    const filteredQuestions = multipleQuestions.filter(
-      (el) => el.id !== questionId
-    );
+    const filteredQuestions = multipleQuestions.filter((el) => el.id !== questionId);
 
     setQuestions(filteredQuestions);
-    await postAnswer(questionId, typedAnswer);    
+    await postAnswer(questionId, typedAnswer);
     answerRef.current?.showModal();
   };
 
@@ -95,18 +90,16 @@ export default function Question({
       <div className="text-2xl chat chat-start">
         <div className="chat-header dark:text-slate-100">
           {singleQuestion.questioner ? (
-            <Link href={`/main/user/${singleQuestion.questioner}`}>
-              {singleQuestion.questioner}
-            </Link>
+            <Link href={`/main/user/${singleQuestion.questioner}`}>{singleQuestion.questioner}</Link>
           ) : (
-            "익명의 질문자"
+            '익명의 질문자'
           )}
         </div>
         <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl text-slate-200">
           {singleQuestion.question}
         </div>
         <div className="chat-footer opacity-50 dark:text-slate-100 dark:opacity-80">
-          {new Date(singleQuestion.questionedAt).toLocaleString('ko-KR', {hour12: false})}
+          {new Date(singleQuestion.questionedAt).toLocaleString('ko-KR', { hour12: false })}
           <span
             className="text-red-500 font-bold ml-2 cursor-pointer"
             onClick={() => {
@@ -120,21 +113,15 @@ export default function Question({
       </div>
       <div className="text-2xl chat chat-end">
         <div className="chat-bubble bg-green-600 text-slate-300 dark:text-slate-200">
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-2 py-2"
-          >
-            {errors.answer && errors.answer.type === "answerOnlyWhiteSpace" && (
-              <div
-                className="tooltip tooltip-open tooltip-error transition-opacity"
-                data-tip={errors.answer.message}
-              />
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2 py-2">
+            {errors.answer && errors.answer.type === 'answerOnlyWhiteSpace' && (
+              <div className="tooltip tooltip-open tooltip-error transition-opacity" data-tip={errors.answer.message} />
             )}
             <textarea
-              {...register("answer", { required: "required" })}
+              {...register('answer', { required: 'required' })}
               tabIndex={0}
               className={`textarea textarea-sm text-sm h-24 desktop:h-32 window:text-xl desktop:text-2xl bg-transparent ${
-                errors.answer && "textarea-error"
+                errors.answer && 'textarea-error'
               }`}
               placeholder="답변을 입력하세요..."
               onKeyDown={onCtrlEnter}
@@ -146,16 +133,12 @@ export default function Question({
                   <input
                     type="checkbox"
                     className="toggle toggle-accent"
-                    onClick={() => setValue("nsfw", !nsfwedAnswer)}
+                    onClick={() => setValue('nsfw', !nsfwedAnswer)}
                   />
-                  <input type="hidden" {...register("nsfw")} />
+                  <input type="hidden" {...register('nsfw')} />
                   <span className="text-sm desktop:text-xl">NSFW로 체크</span>
                 </div>
-                <select
-                  {...register("visibility")}
-                  className="select select-ghost select-sm"
-                  defaultValue={"public"}
-                >
+                <select {...register('visibility')} className="select select-ghost select-sm" defaultValue={'public'}>
                   <option value="public">공개</option>
                   <option value="home">홈</option>
                   <option value="followers">팔로워</option>
@@ -163,7 +146,7 @@ export default function Question({
               </div>
               <div className="w-full desktop:w-fit flex justify-center">
                 <button
-                  type={"submit"}
+                  type={'submit'}
                   className="btn btn-outline dark:border-white dark:text-slate-200 btn-sm h-10 w-16 desktop:btn-md"
                 >
                   답변

@@ -1,33 +1,33 @@
-import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
-import Image from "next/image";
+import type { Metadata, Viewport } from 'next';
+import localFont from 'next/font/local';
+import './globals.css';
+import Image from 'next/image';
 
 const theJamsil = localFont({
   src: [
     {
-      path: "./fonts/The-Jamsil-1-Thin.ttf",
-      weight: "100",
+      path: './fonts/The-Jamsil-1-Thin.ttf',
+      weight: '100',
     },
     {
-      path: "./fonts/The-Jamsil-3-Regular.ttf",
-      weight: "400",
+      path: './fonts/The-Jamsil-3-Regular.ttf',
+      weight: '400',
     },
     {
-      path: "./fonts/The-Jamsil-6-ExtraBold.ttf",
-      weight: "800",
+      path: './fonts/The-Jamsil-6-ExtraBold.ttf',
+      weight: '800',
     },
   ],
-  variable: "--font-the-jamsil",
+  variable: '--font-the-jamsil',
 });
 
 export const metadata: Metadata = {
-  title: "Neo-Quesdon",
-  description: "세라복.모에의 새로운 Quesdon",
+  title: 'Neo-Quesdon',
+  description: '세라복.모에의 새로운 Quesdon',
 };
 
 export const viewport: Viewport = {
-  width: "device-width",
+  width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
@@ -54,7 +54,7 @@ export default function RootLayout({
             unoptimized
             objectFit="cover"
             style={{
-              opacity: "0.6",
+              opacity: '0.6',
             }}
           />
         </div>

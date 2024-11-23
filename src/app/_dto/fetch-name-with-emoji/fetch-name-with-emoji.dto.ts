@@ -1,10 +1,4 @@
-import {
-  IsArray,
-  IsBoolean,
-  IsOptional,
-  IsString,
-  ValidateIf,
-} from "class-validator";
+import { IsArray, IsBoolean, IsOptional, IsString, ValidateIf } from 'class-validator';
 
 class mastodonEmojiModel {
   @IsString()

@@ -1,4 +1,4 @@
-import { IsString } from "class-validator";
+import { IsString } from 'class-validator';
 
 export class misskeyCallbackTokenClaimPayload {
   /** Misskey Access key 를 요청할 misskey의 host (예: serafuku.moe) */

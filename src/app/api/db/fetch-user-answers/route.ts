@@ -1,13 +1,13 @@
-import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
-import { validateStrict } from "@/utils/validator/strictValidator";
-import { NextRequest, NextResponse } from "next/server";
-import { sendErrorResponse } from "../../functions/web/errorResponse";
-import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
-import { Logger } from "@/utils/logger/Logger";
-import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
-import { getIpHash } from "@/utils/getIp/get-ip-hash";
-import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
-import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
+import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
+import { validateStrict } from '@/utils/validator/strictValidator';
+import { NextRequest, NextResponse } from 'next/server';
+import { sendErrorResponse } from '../../functions/web/errorResponse';
+import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { Logger } from '@/utils/logger/Logger';
+import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
+import { getIpHash } from '@/utils/getIp/get-ip-hash';
+import { getIpFromRequest } from '@/utils/getIp/get-ip-from-Request';
+import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
 
 const logger = new Logger('fetch-user-answer');
 export async function POST(req: NextRequest) {
@@ -29,15 +29,13 @@ export async function POST(req: NextRequest) {
     if (limited) {
       return sendApiError(429, '요청 제한에 도달했습니다!');
     }
-  
-    const query_limit = data.limit
-      ? Math.max(1, Math.min(data.limit, 100))
-      : 100;
+
+    const query_limit = data.limit ? Math.max(1, Math.min(data.limit, 100)) : 100;
     const sinceId = data.sinceId;
     const untilId = data.untilId;
 
     //내림차순이 기본값
-    const orderBy = data.sort === "ASC" ? "asc" : "desc";
+    const orderBy = data.sort === 'ASC' ? 'asc' : 'desc';
 
     if (!data.answeredPersonHandle) {
       throw new Error(`answeredPersonHandle is null`);
@@ -46,8 +44,8 @@ export async function POST(req: NextRequest) {
       where: {
         answeredPersonHandle: data.answeredPersonHandle,
         id: {
-          ...(typeof sinceId === "string" ? { gt: sinceId } : {}),
-          ...(typeof untilId === "string" ? { lt: untilId } : {}),
+          ...(typeof sinceId === 'string' ? { gt: sinceId } : {}),
+          ...(typeof untilId === 'string' ? { lt: untilId } : {}),
         },
       },
       include: {

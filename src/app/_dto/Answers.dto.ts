@@ -1,4 +1,4 @@
-import { profile } from "@prisma/client";
+import { profile } from '@prisma/client';
 
 export interface AnswerDto {
   id: string;

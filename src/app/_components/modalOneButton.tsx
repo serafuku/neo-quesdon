@@ -1,4 +1,4 @@
-import { RefObject } from "react";
+import { RefObject } from 'react';
 
 type modalProps = {
   title: string;
@@ -8,13 +8,7 @@ type modalProps = {
   onClick?: () => void;
 };
 
-export default function DialogModalOneButton({
-  title,
-  body,
-  buttonText,
-  ref,
-  onClick,
-}: modalProps) {
+export default function DialogModalOneButton({ title, body, buttonText, ref, onClick }: modalProps) {
   return (
     <>
       <dialog ref={ref} className="modal">
@@ -23,7 +17,9 @@ export default function DialogModalOneButton({
           <p className="py-4">{body}</p>
           <div className="modal-action">
             <form method="dialog">
-              <button className="btn" onClick={onClick}>{buttonText}</button>
+              <button className="btn" onClick={onClick}>
+                {buttonText}
+              </button>
             </form>
           </div>
         </div>

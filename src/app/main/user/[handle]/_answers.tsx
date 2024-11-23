@@ -25,7 +25,6 @@ async function fetchProfile(handle: string) {
     alert(err);
     return undefined;
   }
-
 }
 
 export default function UserPage() {
@@ -54,7 +53,7 @@ export default function UserPage() {
       }
     } catch (err) {
       alert(err);
-      return {answers: [], count: 0};
+      return { answers: [], count: 0 };
     }
   };
 

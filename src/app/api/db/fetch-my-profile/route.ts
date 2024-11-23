@@ -1,23 +1,23 @@
-import { userProfileMeDto } from "@/app/_dto/fetch-profile/Profile.dto";
-import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "../../functions/web/verify-jwt";
-import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
-import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
-import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '../../functions/web/verify-jwt';
+import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
 
 export async function GET(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
-  const token = req.cookies.get("jwtToken")?.value;
+  const token = req.cookies.get('jwtToken')?.value;
 
   try {
     if (!token) {
-      return sendApiError(401, "No Auth Token");
+      return sendApiError(401, 'No Auth Token');
     }
     let handle: string;
     try {
       handle = (await verifyToken(token)).handle;
     } catch {
-      return sendApiError(401, "Token Verify Error");
+      return sendApiError(401, 'Token Verify Error');
     }
     const limiter = RateLimiterService.getLimiter();
     const limited = await limiter.limit(`fetch-my-profile-${handle}`, {
@@ -30,9 +30,9 @@ export async function GET(req: NextRequest) {
 
     const userProfile = await prisma.profile.findUnique({
       include: {
-          user: {
-            select: {hostName: true}
-          },
+        user: {
+          select: { hostName: true },
+        },
       },
       where: {
         handle: handle,
@@ -42,7 +42,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: `User not found` }, { status: 404 });
     }
     const host = userProfile.user.hostName;
-    const { instanceType } = await prisma.server.findUniqueOrThrow({where: {instances: host}, select: {instanceType: true}});
+    const { instanceType } = await prisma.server.findUniqueOrThrow({
+      where: { instances: host },
+      select: { instanceType: true },
+    });
 
     const questionCount = await prisma.profile.findUnique({
       where: {
@@ -71,9 +74,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(res);
   } catch (err) {
-    return NextResponse.json(
-      { message: `Bad Request: ${err}` },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: `Bad Request: ${err}` }, { status: 400 });
   }
 }

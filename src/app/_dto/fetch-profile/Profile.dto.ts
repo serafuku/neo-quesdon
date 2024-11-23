@@ -1,4 +1,4 @@
-import { $Enums } from "@prisma/client";
+import { $Enums } from '@prisma/client';
 export interface userProfileDto {
   handle: string;
   name: string[];

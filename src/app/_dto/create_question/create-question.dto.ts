@@ -1,10 +1,10 @@
-import { IsString, ValidateIf } from "class-validator";
+import { IsString, ValidateIf } from 'class-validator';
 
 export class CreateQuestionDto {
   @IsString()
   question: string;
 
-  @ValidateIf((o,v) => v)
+  @ValidateIf((o, v) => v)
   @IsString()
   questioner: string | null;
 

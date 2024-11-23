@@ -22,10 +22,9 @@ async function fetchProfile(handle: string) {
       throw new Error(`프로필을 불러오는데 실패했습니다! ${await res.text()}`);
     }
   } catch (err) {
-    alert(err)
+    alert(err);
     return undefined;
   }
-
 }
 
 export default function Profile() {
@@ -74,7 +73,7 @@ export default function Profile() {
     const res = await fetch('/api/db/create-question', {
       method: 'POST',
       body: JSON.stringify(q),
-    })
+    });
     try {
       if (res.ok) {
         return res;
@@ -123,7 +122,7 @@ export default function Profile() {
         questioner: user_handle,
         questionee: profileHandle,
       };
-      reset()
+      reset();
       const res = await mkQuestionCreateApi(req);
       if (res.status === 200) {
         questionSuccessModalRef.current?.showModal();
@@ -154,7 +153,7 @@ export default function Profile() {
         reset();
         const res = await mkQuestionCreateApi(req);
         if (res.status === 200) {
-          questionSuccessModalRef.current?.showModal()
+          questionSuccessModalRef.current?.showModal();
         }
       }
     }

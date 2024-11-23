@@ -1,25 +1,19 @@
-import {
-  userProfileDto,
-  userProfileWithHostnameDto,
-} from "@/app/_dto/fetch-profile/Profile.dto";
-import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
-import { getIpFromRequest } from "@/utils/getIp/get-ip-from-Request";
-import { getIpHash } from "@/utils/getIp/get-ip-hash";
-import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
-import { Logger } from "@/utils/logger/Logger";
-import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
-import { NextRequest, NextResponse } from "next/server";
+import { userProfileDto, userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { getIpFromRequest } from '@/utils/getIp/get-ip-from-Request';
+import { getIpHash } from '@/utils/getIp/get-ip-hash';
+import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { Logger } from '@/utils/logger/Logger';
+import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
+import { NextRequest, NextResponse } from 'next/server';
 
-const logger = new Logger('fetch-profile/handle')
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ handle?: string }> }
-) {
+const logger = new Logger('fetch-profile/handle');
+export async function GET(req: NextRequest, { params }: { params: Promise<{ handle?: string }> }) {
   const prisma = GetPrismaClient.getClient();
   const userHandle = (await params).handle;
   try {
     if (!userHandle) {
-      return sendApiError(400, "userHandle empty");
+      return sendApiError(400, 'userHandle empty');
     }
     const limiter = RateLimiterService.getLimiter();
     const ipHash = getIpHash(getIpFromRequest(req));
@@ -51,9 +45,9 @@ export async function GET(
       },
     });
     if (!profile) {
-      return sendApiError(404, '그런 유저는 없습니다!')
+      return sendApiError(404, '그런 유저는 없습니다!');
     }
-    const { instanceType } = await prisma.server.findUniqueOrThrow({where: {instances: profile.user.hostName}});
+    const { instanceType } = await prisma.server.findUniqueOrThrow({ where: { instances: profile.user.hostName } });
     const resBody: userProfileWithHostnameDto = {
       handle: profile.handle,
       name: profile.name,
@@ -70,11 +64,11 @@ export async function GET(
     return NextResponse.json(resBody, {
       status: 200,
       headers: {
-        "Cache-Control": "public, max-age=10",
+        'Cache-Control': 'public, max-age=10',
       },
     });
   } catch (err) {
     logger.error(err);
-    return sendApiError(500, "Error");
+    return sendApiError(500, 'Error');
   }
 }

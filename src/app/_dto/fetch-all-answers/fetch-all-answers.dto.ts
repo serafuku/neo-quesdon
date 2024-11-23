@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class FetchAllAnswersReqDto {
   @IsOptional()
@@ -10,8 +10,8 @@ export class FetchAllAnswersReqDto {
   untilId?: string;
 
   @IsOptional()
-  @IsEnum(["ASC", "DESC"])
-  sort?: "ASC" | "DESC";
+  @IsEnum(['ASC', 'DESC'])
+  sort?: 'ASC' | 'DESC';
 
   @IsOptional()
   @IsInt()

@@ -1,12 +1,12 @@
-import { DeleteAnswerDto } from "@/app/_dto/delete-answer/delete-answer.dto";
-import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
-import { validateStrict } from "@/utils/validator/strictValidator";
-import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "../../functions/web/verify-jwt";
-import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
-import { Logger } from "@/utils/logger/Logger";
-import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { DeleteAnswerDto } from '@/app/_dto/delete-answer/delete-answer.dto';
+import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { validateStrict } from '@/utils/validator/strictValidator';
+import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '../../functions/web/verify-jwt';
+import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { Logger } from '@/utils/logger/Logger';
+import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
 
 const logger = new Logger('delete-answer');
 export async function POST(req: NextRequest) {
@@ -18,13 +18,13 @@ export async function POST(req: NextRequest) {
   }
   const prisma = GetPrismaClient.getClient();
   const cookieStore = await cookies();
-  const token = cookieStore.get("jwtToken")?.value;
+  const token = cookieStore.get('jwtToken')?.value;
   let tokenPayload;
   // JWT 토큰 검증
   try {
     tokenPayload = await verifyToken(token);
   } catch {
-    return sendApiError(401, "Unauthorized");
+    return sendApiError(401, 'Unauthorized');
   }
 
   const limiter = RateLimiterService.getLimiter();
@@ -41,20 +41,17 @@ export async function POST(req: NextRequest) {
   });
   if (!willBeDeletedAnswer) {
     // 그런 답변이 없음
-    return sendApiError(404, "Not Found");
+    return sendApiError(404, 'Not Found');
   }
   if (willBeDeletedAnswer.answeredPersonHandle !== tokenPayload.handle) {
     // 너의 답변이 아님
-    return sendApiError(403, "This is Not Your Answer!");
+    return sendApiError(403, 'This is Not Your Answer!');
   }
   try {
     logger.log(`Delete answer... : ${data.id}`);
     await prisma.answer.delete({ where: { id: data.id } });
 
-    return NextResponse.json(
-      { message: "Delete Answer Successful" },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: 'Delete Answer Successful' }, { status: 200 });
   } catch (err) {
     logger.error('Error: Delete answer:', err);
     return sendApiError(500, `Error ${JSON.stringify(err)}`);

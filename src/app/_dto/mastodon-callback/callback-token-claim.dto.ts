@@ -1,4 +1,4 @@
-import { IsString } from "class-validator";
+import { IsString } from 'class-validator';
 
 export class mastodonCallbackTokenClaimPayload {
   /** Mastodon code를 요청할 mastodon의 host (예: planet.moe) */

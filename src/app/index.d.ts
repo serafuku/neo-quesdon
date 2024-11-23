@@ -1,5 +1,5 @@
-import type { profile, user } from "@prisma/client";
-import { MiUser } from "./api/misskey-entities/user";
+import type { profile, user } from '@prisma/client';
+import { MiUser } from './api/misskey-entities/user';
 
 interface MiAuthSession {
   token: string;
@@ -11,7 +11,7 @@ interface MiApiError {
     message: string;
     code: string;
     id: string;
-    kind: "client" | "server";
+    kind: 'client' | 'server';
   };
 }
 
@@ -33,19 +33,19 @@ export interface questions {
 export interface typedAnswer {
   answer: string;
   nsfwedAnswer: boolean;
-  visibility: "public" | "home" | "followers";
+  visibility: 'public' | 'home' | 'followers';
 }
 
 export interface MkNoteAnswers {
   cw: string;
   text: string;
-  visibility: "public" | "home" | "followers";
+  visibility: 'public' | 'home' | 'followers';
 }
 
 export interface mastodonTootAnswers {
   spoiler_text: string;
   status: string;
-  visibility: "public" | "unlisted" | "private";
+  visibility: 'public' | 'unlisted' | 'private';
 }
 
 export interface postQuestion {

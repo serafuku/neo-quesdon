@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "../../functions/web/verify-jwt";
-import { sendApiError } from "@/utils/apiErrorResponse/sendApiError";
-import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
-import { RateLimiterService } from "@/utils/ratelimiter/rateLimiter";
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '../../functions/web/verify-jwt';
+import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
 
 export async function GET(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
-  const cookie = req.cookies.get("jwtToken");
+  const cookie = req.cookies.get('jwtToken');
 
   try {
     if (cookie) {
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
           },
           orderBy: {
             id: 'desc',
-          }
+          },
         });
         return NextResponse.json(questions);
       } else {

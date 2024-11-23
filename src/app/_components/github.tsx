@@ -1,11 +1,17 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 export default function GithubRepoLink() {
   return (
     <div className="flex flex-col gap-2">
-      <Link href='https://github.com/serafuku/neo-quesdon' className="flex items-center gap-2 opacity-70">
+      <Link href="https://github.com/serafuku/neo-quesdon" className="flex items-center gap-2 opacity-70">
         <div>
-          <svg width="15" height="15" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" className="fill-black dark:fill-white">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 1024 1024"
+            xmlns="http://www.w3.org/2000/svg"
+            className="fill-black dark:fill-white"
+          >
             <path
               fillRule="evenodd"
               clipRule="evenodd"
@@ -17,8 +23,8 @@ export default function GithubRepoLink() {
         <div className="text-xs underline">Github</div>
       </Link>
       <div className="flex flex-col text-xs font-thin opacity-70">
-      <span>AGPL-3.0 License</span>
-      <span>Serafuku.moe</span>
+        <span>AGPL-3.0 License</span>
+        <span>Serafuku.moe</span>
       </div>
     </div>
   );

@@ -1,27 +1,22 @@
-"use server";
+'use server';
 
-import { validateStrict } from "@/utils/validator/strictValidator";
-import { mastodonCallbackTokenClaimPayload } from "../_dto/mastodon-callback/callback-token-claim.dto";
-import { fetchNameWithEmoji } from "../api/functions/web/fetchUsername";
-import { DBpayload } from "../misskey-callback/page";
-import { cookies } from "next/headers";
-import { SignJWT } from "jose";
-import { GetPrismaClient } from "@/utils/getPrismaClient/get-prisma-client";
-import { Logger } from "@/utils/logger/Logger";
+import { validateStrict } from '@/utils/validator/strictValidator';
+import { mastodonCallbackTokenClaimPayload } from '../_dto/mastodon-callback/callback-token-claim.dto';
+import { fetchNameWithEmoji } from '../api/functions/web/fetchUsername';
+import { DBpayload } from '../misskey-callback/page';
+import { cookies } from 'next/headers';
+import { SignJWT } from 'jose';
+import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { Logger } from '@/utils/logger/Logger';
 
 const logger = new Logger('Mastodon-callback');
-export async function login(
-  loginReqestData: mastodonCallbackTokenClaimPayload
-) {
+export async function login(loginReqestData: mastodonCallbackTokenClaimPayload) {
   const prisma = GetPrismaClient.getClient();
 
   //Class Validator로 들어온 로그인 정보 검증
   let loginReq: mastodonCallbackTokenClaimPayload;
   try {
-    loginReq = await validateStrict(
-      mastodonCallbackTokenClaimPayload,
-      loginReqestData
-    );
+    loginReq = await validateStrict(mastodonCallbackTokenClaimPayload, loginReqestData);
   } catch (err) {
     throw new Error(JSON.stringify(err));
   }
@@ -37,15 +32,13 @@ export async function login(
     const mastodonApiResponse = await requestMastodonAccessCodeAndUserInfo(
       loginReq,
       serverInfo.client_id,
-      serverInfo.client_secret
+      serverInfo.client_secret,
     );
 
     const user_handle = `@${mastodonApiResponse.profile.username}@${loginReq.mastodonHost}`;
 
     let nameWithEmoji = await fetchNameWithEmoji({
-      name:
-        mastodonApiResponse.profile.display_name ??
-        mastodonApiResponse.profile.username,
+      name: mastodonApiResponse.profile.display_name ?? mastodonApiResponse.profile.username,
       baseUrl: loginReq.mastodonHost,
       emojis: mastodonApiResponse.profile.emojis,
     });
@@ -60,7 +53,7 @@ export async function login(
       hostName: loginReq.mastodonHost,
       handle: user_handle,
       name: nameWithEmoji,
-      avatarUrl: mastodonApiResponse.profile.avatar ?? "",
+      avatarUrl: mastodonApiResponse.profile.avatar ?? '',
       accessToken: mastodonApiResponse.token,
       userId: mastodonApiResponse.profile.id,
     };
@@ -68,7 +61,7 @@ export async function login(
     try {
       await pushDB(dbPayload);
     } catch (err) {
-      logger.error("Fail to push user to DB", err);
+      logger.error('Fail to push user to DB', err);
       throw err;
     }
 
@@ -77,22 +70,22 @@ export async function login(
       const cookieStore = await cookies();
       const jwtToken = await generateJwt(loginReq.mastodonHost, user_handle);
       logger.log(`Send JWT to Frontend... ${jwtToken}`);
-      cookieStore.set("jwtToken", jwtToken, {
+      cookieStore.set('jwtToken', jwtToken, {
         expires: Date.now() + 1000 * 60 * 60 * 6,
         httpOnly: true,
       });
-      cookieStore.set("server", loginReq.mastodonHost, {
+      cookieStore.set('server', loginReq.mastodonHost, {
         expires: Date.now() + 1000 * 60 * 60 * 6,
         httpOnly: true,
       });
     } catch (err) {
-      logger.error("Make JWT or Set cookie Failed! ", err);
+      logger.error('Make JWT or Set cookie Failed! ', err);
       throw err;
     }
 
     return { user: mastodonApiResponse };
   } else {
-    throw new Error("there is no server");
+    throw new Error('there is no server');
   }
 }
 
@@ -103,7 +96,7 @@ export async function login(
 async function requestMastodonAccessCodeAndUserInfo(
   payload: mastodonCallbackTokenClaimPayload,
   client_id: string,
-  client_secret: string
+  client_secret: string,
 ) {
   const prisma = GetPrismaClient.getClient();
 
@@ -115,10 +108,10 @@ async function requestMastodonAccessCodeAndUserInfo(
 
   if (checkInstances) {
     const res = await fetch(`https://${payload.mastodonHost}/oauth/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        grant_type: "authorization_code",
+        grant_type: 'authorization_code',
         redirect_uri: `${process.env.WEB_URL}/mastodon-callback`,
         client_id: client_id,
         client_secret: client_secret,
@@ -127,21 +120,18 @@ async function requestMastodonAccessCodeAndUserInfo(
       }),
     }).then((r) => r.json());
 
-    const myProfile = await fetch(
-      `https://${payload.mastodonHost}/api/v1/accounts/verify_credentials`,
-      {
-        headers: { Authorization: `Bearer ${res.access_token}` },
-      }
-    ).then((r) => r.json());
+    const myProfile = await fetch(`https://${payload.mastodonHost}/api/v1/accounts/verify_credentials`, {
+      headers: { Authorization: `Bearer ${res.access_token}` },
+    }).then((r) => r.json());
 
     return { profile: myProfile, token: res.access_token };
   } else {
-    throw new Error("there is no instances");
+    throw new Error('there is no instances');
   }
 }
 
 async function generateJwt(hostname: string, handle: string) {
-  const alg = "HS256";
+  const alg = 'HS256';
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
   const webUrl = process.env.WEB_URL;
@@ -152,8 +142,8 @@ async function generateJwt(hostname: string, handle: string) {
     .setProtectedHeader({ alg })
     .setIssuedAt()
     .setIssuer(`${webUrl}`)
-    .setAudience("urn:example:audience")
-    .setExpirationTime("6h")
+    .setAudience('urn:example:audience')
+    .setExpirationTime('6h')
     .sign(secret);
   return jwtToken;
 }
