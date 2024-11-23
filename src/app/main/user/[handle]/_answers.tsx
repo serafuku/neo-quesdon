@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import Answer from "@/app/_components/answer";
-import { userProfileWithHostnameDto } from "@/app/_dto/fetch-profile/Profile.dto";
-import { AnswerDto } from "@/app/_dto/Answers.dto";
-import { FetchUserAnswersDto } from "@/app/_dto/fetch-user-answers/fetch-user-answers.dto";
-import DialogModalTwoButton from "@/app/_components/modalTwoButton";
+import { useParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import Answer from '@/app/_components/answer';
+import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { AnswerDto } from '@/app/_dto/Answers.dto';
+import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
+import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 
 type ResponseType = {
   answers: AnswerDto[];
@@ -24,7 +24,7 @@ async function fetchProfile(handle: string) {
 
 export default function UserPage() {
   const { handle } = useParams() as { handle: string };
-  const profileHandle = handle.toString().replace(/(?:%40)/g, "@");
+  const profileHandle = decodeURIComponent(handle);
 
   const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto>();
   const [answers, setAnswers] = useState<AnswerDto[] | null>(null);
@@ -32,28 +32,24 @@ export default function UserPage() {
   const [untilId, setUntilId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
-  const [id, setId] = useState<string>("");
+  const [id, setId] = useState<string>('');
   const answerDeleteModalRef = useRef<HTMLDialogElement>(null);
 
-  const fetchUserAnswers = async (
-    q: FetchUserAnswersDto
-  ): Promise<ResponseType> => {
-    const res = await fetch("/api/db/fetch-user-answers", {
-      method: "POST",
+  const fetchUserAnswers = async (q: FetchUserAnswersDto): Promise<ResponseType> => {
+    const res = await fetch('/api/db/fetch-user-answers', {
+      method: 'POST',
       body: JSON.stringify(q),
     });
     if (res.ok) {
       return res.json();
     } else {
-      throw new Error(
-        `fetch-user-answers fail! ${res.status}, ${res.statusText}`
-      );
+      throw new Error(`fetch-user-answers fail! ${res.status}, ${res.statusText}`);
     }
   };
 
   const handleDeleteAnswer = async (id: string) => {
-    await fetch("/api/db/delete-answer", {
-      method: "POST",
+    await fetch('/api/db/delete-answer', {
+      method: 'POST',
       body: JSON.stringify({ id: id }),
     });
     if (answers && count) {
@@ -73,7 +69,7 @@ export default function UserPage() {
     if (userProfile) {
       fetchUserAnswers({
         answeredPersonHandle: userProfile.handle,
-        sort: "DESC",
+        sort: 'DESC',
         limit: 20,
       }).then(({ answers, count }: ResponseType) => {
         if (answers.length === 0) {
@@ -93,7 +89,7 @@ export default function UserPage() {
       ([e]) => {
         if (e.isIntersecting && untilId !== null && answers !== null) {
           fetchUserAnswers({
-            sort: "DESC",
+            sort: 'DESC',
             limit: 20,
             untilId: untilId,
             answeredPersonHandle: profileHandle,
@@ -102,16 +98,14 @@ export default function UserPage() {
               setLoading(false);
               return;
             }
-            setAnswers((prev_answers) =>
-              prev_answers ? [...prev_answers, ...r.answers] : null
-            );
+            setAnswers((prev_answers) => (prev_answers ? [...prev_answers, ...r.answers] : null));
             setUntilId(r.answers[r.answers.length - 1].id);
           });
         }
       },
       {
         threshold: 0.7,
-      }
+      },
     );
     if (mounted) observer.observe(mounted);
     return () => {
@@ -133,18 +127,10 @@ export default function UserPage() {
                 <div className="flex flex-col">
                   {answers.map((el) => (
                     <div key={el.id}>
-                      <Answer
-                        value={el}
-                        id={el.id}
-                        idState={setId}
-                        ref={answerDeleteModalRef}
-                      />
+                      <Answer value={el} id={el.id} idState={setId} ref={answerDeleteModalRef} />
                     </div>
                   ))}
-                  <div
-                    className="w-full h-16 flex justify-center items-center"
-                    ref={(ref) => setMounted(ref)}
-                  >
+                  <div className="w-full h-16 flex justify-center items-center" ref={(ref) => setMounted(ref)}>
                     {loading ? (
                       <div>
                         <span className="loading loading-spinner loading-lg" />
@@ -170,10 +156,10 @@ export default function UserPage() {
         </div>
       )}
       <DialogModalTwoButton
-        title={"답변 지우기"}
-        body={"답변을 지울까요...?"}
-        confirmButtonText={"확인"}
-        cancelButtonText={"취소"}
+        title={'답변 지우기'}
+        body={'답변을 지울까요...?'}
+        confirmButtonText={'확인'}
+        cancelButtonText={'취소'}
         ref={answerDeleteModalRef}
         onClick={() => handleDeleteAnswer(id)}
       />

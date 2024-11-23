@@ -32,7 +32,7 @@ export default function Answer({ value, idState, ref }: askProps) {
   const [userInfo, setUserInfo] = useState<userProfileDto>();
   const [localHandle, setLocalHandle] = useState<string | null>();
 
-  const profileHandle = handle !== undefined ? handle.toString().replace(/(?:%40)/g, '@') : '';
+  const profileHandle = handle !== undefined ? decodeURIComponent(handle) : '';
 
   useEffect(() => {
     setLocalHandle(localStorage.getItem('user_handle'));

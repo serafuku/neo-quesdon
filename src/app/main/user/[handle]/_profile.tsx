@@ -1,12 +1,12 @@
-import DialogModalOneButton from "@/app/_components/modalOneButton";
-import NameComponents from "@/app/_components/NameComponents";
-import { CreateQuestionDto } from "@/app/_dto/create_question/create-question.dto";
-import { userProfileWithHostnameDto } from "@/app/_dto/fetch-profile/Profile.dto";
-import josa from "@/app/api/functions/josa";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import DialogModalOneButton from '@/app/_components/modalOneButton';
+import NameComponents from '@/app/_components/NameComponents';
+import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
+import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import josa from '@/app/api/functions/josa';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { SubmitHandler, useForm } from 'react-hook-form';
 
 type FormValue = {
   question: string;
@@ -24,10 +24,10 @@ async function fetchProfile(handle: string) {
 
 export default function Profile() {
   const { handle } = useParams() as { handle: string };
-  const profileHandle = handle.toString().replace(/(?:%40)/g, "@");
+  const profileHandle = decodeURIComponent(handle);
 
   const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto>();
-  const [localHandle, setLocalHandle] = useState<string>("");
+  const [localHandle, setLocalHandle] = useState<string>('');
   const questionSuccessModalRef = useRef<HTMLDialogElement>(null);
 
   const {
@@ -42,15 +42,15 @@ export default function Profile() {
     formState: { errors },
   } = useForm<FormValue>({
     defaultValues: {
-      question: "",
+      question: '',
       questioner: false,
     },
   });
 
-  const questioner = watch("questioner");
+  const questioner = watch('questioner');
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       const isValid = await trigger();
 
       if (isValid === false) {
@@ -65,43 +65,41 @@ export default function Profile() {
     }
   };
 
-  const mkQuestionCreateApi = async (
-    q: CreateQuestionDto
-  ): Promise<Response> => {
-    const res = await fetch("/api/db/create-question", {
-      method: "POST",
+  const mkQuestionCreateApi = async (q: CreateQuestionDto): Promise<Response> => {
+    const res = await fetch('/api/db/create-question', {
+      method: 'POST',
       body: JSON.stringify(q),
     });
     return res;
   };
 
   const shareUrl = () => {
-    const server = localStorage.getItem("server");
+    const server = localStorage.getItem('server');
     const text = `저의 ${josa(
       userProfile?.questionBoxName,
-      "이에요!",
-      "예요!"
+      '이에요!',
+      '예요!',
     )} #neo-quesdon ${location.origin}/main/user/${userProfile?.handle}`;
     return `https://${server}/share?text=${encodeURIComponent(text)}`;
   };
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
-    const user_handle = localStorage.getItem("user_handle");
+    const user_handle = localStorage.getItem('user_handle');
     const detectWhiteSpaces = new RegExp(/^\s+$/);
 
     // 작성자 공개
     if (questioner === true) {
       if (user_handle === null) {
-        setError("questioner", {
-          type: "notLoggedIn",
-          message: "작성자 공개를 하려면 로그인을 해주세요!",
+        setError('questioner', {
+          type: 'notLoggedIn',
+          message: '작성자 공개를 하려면 로그인을 해주세요!',
         });
         return;
       }
       if (detectWhiteSpaces.test(e.question) === true) {
-        setError("question", {
-          type: "questionOnlyWhiteSpace",
-          message: "아무것도 없는 질문을 보내시려구요...?",
+        setError('question', {
+          type: 'questionOnlyWhiteSpace',
+          message: '아무것도 없는 질문을 보내시려구요...?',
         });
         return;
       }
@@ -109,7 +107,7 @@ export default function Profile() {
       if (questionSuccessModalRef.current) {
         questionSuccessModalRef.current.showModal();
       } else {
-        alert("오류에요!!!");
+        alert('오류에요!!!');
       }
 
       const req: CreateQuestionDto = {
@@ -126,16 +124,16 @@ export default function Profile() {
     // 작성자 비공개
     else {
       if (userProfile?.stopAnonQuestion === true) {
-        setError("questioner", {
-          type: "stopAnonQuestion",
-          message: "익명 질문은 받지 않고 있어요...",
+        setError('questioner', {
+          type: 'stopAnonQuestion',
+          message: '익명 질문은 받지 않고 있어요...',
         });
         return;
       } else {
         if (detectWhiteSpaces.test(e.question) === true) {
-          setError("question", {
-            type: "questionOnlyWhiteSpace",
-            message: "아무것도 없는 질문을 보내시려구요...?",
+          setError('question', {
+            type: 'questionOnlyWhiteSpace',
+            message: '아무것도 없는 질문을 보내시려구요...?',
           });
           return;
         }
@@ -143,7 +141,7 @@ export default function Profile() {
         if (questionSuccessModalRef.current) {
           questionSuccessModalRef.current.showModal();
         } else {
-          alert("오류에요!!!");
+          alert('오류에요!!!');
         }
 
         const req: CreateQuestionDto = {
@@ -163,7 +161,7 @@ export default function Profile() {
     fetchProfile(profileHandle).then((r) => {
       setUserProfile(r);
     });
-    setLocalHandle(localStorage.getItem("user_handle") ?? "");
+    setLocalHandle(localStorage.getItem('user_handle') ?? '');
   }, [profileHandle]);
 
   return (
@@ -172,9 +170,7 @@ export default function Profile() {
         <div className="flex flex-col items-center gap-2 py-2">
           {userProfile && userProfile.avatarUrl ? (
             <div className="flex w-full h-24">
-              <Link
-                href={`https://${userProfile.hostname}/${userProfile.handle}`}
-              >
+              <Link href={`https://${userProfile.hostname}/${userProfile.handle}`}>
                 <img
                   src={userProfile.avatarUrl}
                   alt="User Avatar"
@@ -195,70 +191,55 @@ export default function Profile() {
           <div className="flex items-center text-xl">
             {userProfile?.stopNewQuestion ? (
               <div className="flex flex-col items-center desktop:flex-row">
-                <NameComponents
-                  username={userProfile.name}
-                  width={32}
-                  height={32}
-                />
+                <NameComponents username={userProfile.name} width={32} height={32} />
                 <span>님은 지금 질문을 받지 않고 있어요...</span>
               </div>
             ) : (
               <div className="flex flex-col items-center desktop:flex-row window:flex-row window:text-2xl">
-                <NameComponents
-                  username={userProfile?.name}
-                  width={32}
-                  height={32}
-                />
-                <span>
-                  님의 {josa(userProfile?.questionBoxName, "이에요!", "예요!")}
-                </span>
+                <NameComponents username={userProfile?.name} width={32} height={32} />
+                <span>님의 {josa(userProfile?.questionBoxName, '이에요!', '예요!')}</span>
               </div>
             )}
           </div>
         </div>
-        <form
-          className="w-full flex flex-col items-center"
-          onSubmit={handleSubmit(onSubmit)}
-        >
+        <form className="w-full flex flex-col items-center" onSubmit={handleSubmit(onSubmit)}>
           <textarea
-            {...register("question", {
-              required: "required",
+            {...register('question', {
+              required: 'required',
             })}
             placeholder="질문 내용을 입력해 주세요"
             className={`w-[90%] my-2 font-thin leading-loose textarea ${
-              errors.question ? "textarea-error" : "textarea-bordered"
+              errors.question ? 'textarea-error' : 'textarea-bordered'
             }`}
             onKeyDown={onCtrlEnter}
             disabled={userProfile?.stopNewQuestion === true ? true : false}
           />
-          {errors.questioner &&
-            errors.questioner.type === "stopAnonQuestion" && (
-              <div
-                className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
-                data-tip={errors.questioner.message}
-              />
-            )}
-          {errors.questioner && errors.questioner.type === "notLoggedIn" && (
+          {errors.questioner && errors.questioner.type === 'stopAnonQuestion' && (
             <div
               className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
               data-tip={errors.questioner.message}
             />
           )}
-          {errors.question &&
-            errors.question.type === "questionOnlyWhiteSpace" && (
-              <div
-                className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
-                data-tip={errors.question.message}
-              />
-            )}
+          {errors.questioner && errors.questioner.type === 'notLoggedIn' && (
+            <div
+              className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
+              data-tip={errors.questioner.message}
+            />
+          )}
+          {errors.question && errors.question.type === 'questionOnlyWhiteSpace' && (
+            <div
+              className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
+              data-tip={errors.question.message}
+            />
+          )}
           <div className="w-[90%] flex justify-between">
             <div className="flex gap-2 items-center">
               <input
                 type="checkbox"
                 className="toggle toggle-accent"
-                onClick={() => setValue("questioner", !questioner)}
+                onClick={() => setValue('questioner', !questioner)}
               />
-              <input type="hidden" {...register("questioner")} />
+              <input type="hidden" {...register('questioner')} />
               <span>작성자 공개</span>
             </div>
             <button type="submit" className="btn btn-primary">
@@ -270,16 +251,11 @@ export default function Profile() {
       {localHandle === profileHandle && (
         <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
           <a className="link" href={shareUrl()} target="_blank" rel="noreferrer">
-            Misskey에 질문상자 페이지를 공유
+            {userProfile?.instanceType}에 질문상자 페이지를 공유
           </a>
         </div>
       )}
-      <DialogModalOneButton
-        title={"성공!"}
-        body={"질문했어요!"}
-        buttonText={"닫기"}
-        ref={questionSuccessModalRef}
-      />
+      <DialogModalOneButton title={'성공!'} body={'질문했어요!'} buttonText={'닫기'} ref={questionSuccessModalRef} />
     </div>
   );
 }

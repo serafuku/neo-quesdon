@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import UserPage from "./_answers";
-import Profile from "./_profile";
-import { useParams } from "next/navigation";
-import { userProfileWithHostnameDto } from "@/app/_dto/fetch-profile/Profile.dto";
+import { useEffect, useState } from 'react';
+import UserPage from './_answers';
+import Profile from './_profile';
+import { useParams } from 'next/navigation';
+import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
 
 async function fetchProfile(handle: string) {
   const profile = await fetch(`/api/db/fetch-profile/${handle}`);
@@ -17,10 +17,9 @@ async function fetchProfile(handle: string) {
 
 export default function ProfilePage() {
   const { handle } = useParams() as { handle: string };
-  const profileHandle = handle.toString().replace(/(?:%40)/g, "@");
+  const profileHandle = decodeURIComponent(handle);
 
-  const [userProfile, setUserProfile] =
-    useState<userProfileWithHostnameDto | null>();
+  const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto | null>();
 
   useEffect(() => {
     fetchProfile(profileHandle).then((r) => {
