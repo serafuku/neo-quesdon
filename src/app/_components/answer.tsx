@@ -1,17 +1,11 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import {
-  Dispatch,
-  RefObject,
-  SetStateAction,
-  useEffect,
-  useState,
-} from "react";
-import NameComponents from "./NameComponents";
-import { AnswerDto, AnswerWithProfileDto } from "../_dto/Answers.dto";
-import { userProfileDto } from "../_dto/fetch-profile/Profile.dto";
-import { useParams } from "next/navigation";
+import Link from 'next/link';
+import { Dispatch, RefObject, SetStateAction, useEffect, useState } from 'react';
+import NameComponents from './NameComponents';
+import { AnswerDto, AnswerWithProfileDto } from '../_dto/Answers.dto';
+import { userProfileDto } from '../_dto/fetch-profile/Profile.dto';
+import { useParams } from 'next/navigation';
 
 interface askProps {
   value: AnswerDto;
@@ -38,11 +32,10 @@ export default function Answer({ value, idState, ref }: askProps) {
   const [userInfo, setUserInfo] = useState<userProfileDto>();
   const [localHandle, setLocalHandle] = useState<string | null>();
 
-  const profileHandle =
-    handle !== undefined ? handle.toString().replace(/(?:%40)/g, "@") : "";
+  const profileHandle = handle !== undefined ? handle.toString().replace(/(?:%40)/g, '@') : '';
 
   useEffect(() => {
-    setLocalHandle(localStorage.getItem("user_handle"));
+    setLocalHandle(localStorage.getItem('user_handle'));
   }, [profileHandle]);
 
   useEffect(() => {
@@ -61,16 +54,14 @@ export default function Answer({ value, idState, ref }: askProps) {
         </div>
       )}
 
-      <div className={`${!showNsfw && "blur"} w-full h-full`}>
+      <div className={`${!showNsfw && 'blur'} w-full h-full`}>
         <div className="chat chat-start flex ml-2 desktop:ml-0 justify-between">
           <div className="w-full">
             <div className="chat-header">
               {value.questioner ? (
-                <Link href={`/main/user/${value.questioner}`}>
-                  {value.questioner}
-                </Link>
+                <Link href={`/main/user/${value.questioner}`}>{value.questioner}</Link>
               ) : (
-                "익명의 질문자"
+                '익명의 질문자'
               )}
             </div>
             <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble text-slate-200">
@@ -103,21 +94,15 @@ export default function Answer({ value, idState, ref }: askProps) {
           </div>
           <div className="chat-header">
             <Link href={`/main/user/${value.answeredPersonHandle}`}>
-              <NameComponents
-                username={userInfo?.name}
-                width={16}
-                height={16}
-              />
+              <NameComponents username={userInfo?.name} width={16} height={16} />
             </Link>
           </div>
           <div className="flex items-center text-sm break-all window:text-xl desktop:text-2xl chat-bubble bg-green-600 text-slate-200">
-            <Link href={`/main/user/${value.answeredPersonHandle}`}>
-              {value.answer}
-            </Link>
+            <Link href={`/main/user/${value.answeredPersonHandle}`}>{value.answer}</Link>
           </div>
-          <div className="chat-footer font-thin text-xs mt-2 underline text-blue-900 dark:text-blue-400">
+          <div className="chat-footer font-thin text-xs mt-2 underline text-blue-900 dark:text-slate-200">
             <Link href={`/main/user/${value.answeredPersonHandle}/${value.id}`}>
-              {new Date(value.answeredAt).toLocaleString('ko-kr', {hour12: false})}
+              {new Date(value.answeredAt).toLocaleString('ko-kr', { hour12: false })}
             </Link>
           </div>
         </div>
