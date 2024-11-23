@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import detectInstance from "./api/functions/web/detectInstance";
 import { loginReqDto } from "./_dto/web/login/login.dto";
+import GithubRepoLink from "./_components/github";
 
 interface FormValue {
   address: string;
@@ -125,8 +126,8 @@ export default function Home() {
   }, [ setFormValue ]);
 
   return (
-    <div className="w-screen h-screen absolute flex items-center justify-center p-8">
-      <main className="w-full flex flex-col justify-center items-center">
+    <div className="w-screen h-screen absolute flex flex-col items-center justify-center">
+      <main className="w-full h-full flex flex-col justify-center items-center p-6">
         <div className="mb-4 flex flex-col items-center">
           <div className="relative text-7xl font-bold z-10">
             <h1 className="absolute -inset-0 -z-10 bg-gradient-to-r text-transparent from-red-500 via-fuchsia-500 to-green-500 bg-clip-text blur-lg">
@@ -166,7 +167,7 @@ export default function Home() {
                 required: "required",
               })}
               placeholder="serafuku.moe"
-              className="input input-bordered text-lg desktop:text-3xl mb-4 desktop:mb-0"
+              className="w-full input input-bordered text-lg desktop:text-3xl mb-4 desktop:mb-0"
             />
           </form>
           <div className="flex flex-row items-center">
@@ -199,7 +200,9 @@ export default function Home() {
           </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center"></footer>
+      <footer className="w-full row-start-3 flex gap-6 flex-wrap items-center justify-end">
+        <GithubRepoLink />
+      </footer>
     </div>
   );
 }

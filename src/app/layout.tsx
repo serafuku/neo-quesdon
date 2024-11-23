@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${theJamsil.variable} antialiased font-[family-name:var(--font-the-jamsil)] bg-transparent w-[100vw] h-[100vh] `}
+        className={`${theJamsil.variable} antialiased font-[family-name:var(--font-the-jamsil)] bg-transparent w-[100vw] h-[100vh]`}
       >
         {children}
         <div className="fixed top-0 left-0 bg-transparent w-[100vw] h-[100vh] -z-10">
