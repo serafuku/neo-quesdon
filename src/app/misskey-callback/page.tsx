@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { login } from './actions';
-import { MiUser as MiUser } from '../api/misskey-entities/user';
+import { MiUser as MiUser } from '../api/_misskey-entities/user';
 import { misskeyCallbackTokenClaimPayload } from '../_dto/misskey-callback/callback-token-claim.dto';
 import { misskeyUserInfoPayload } from '../_dto/misskey-callback/user-info.dto';
 import type { profile, user } from '@prisma/client';

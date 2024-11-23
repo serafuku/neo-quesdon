@@ -1,6 +1,6 @@
 'use server';
 
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 
 export async function fetchAnswer(id: string) {
   const prisma = GetPrismaClient.getClient();

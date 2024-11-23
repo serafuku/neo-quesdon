@@ -1,13 +1,12 @@
 import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import { sendErrorResponse } from '../../functions/web/errorResponse';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
-import { getIpHash } from '@/utils/getIp/get-ip-hash';
-import { getIpFromRequest } from '@/utils/getIp/get-ip-from-Request';
-import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
+import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
+import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
+import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
+import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 
 const logger = new Logger('fetch-user-answer');
 export async function POST(req: NextRequest) {
@@ -17,7 +16,7 @@ export async function POST(req: NextRequest) {
     try {
       data = await validateStrict(FetchUserAnswersDto, await req.json());
     } catch (err) {
-      return sendErrorResponse(400, `${err}`);
+      return sendApiError(400, `${err}`);
     }
 
     const limiter = RateLimiterService.getLimiter();

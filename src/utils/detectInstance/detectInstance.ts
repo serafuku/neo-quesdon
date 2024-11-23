@@ -1,4 +1,4 @@
-'use server'
+'use server';
 
 import { Logger } from '@/utils/logger/Logger';
 

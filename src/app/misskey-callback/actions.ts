@@ -4,12 +4,12 @@ import { DBpayload } from './page';
 import { cookies } from 'next/headers';
 import { SignJWT } from 'jose';
 import { misskeyAccessKeyApiResponse } from '..';
-import { MiUser } from '../api/misskey-entities/user';
-import { fetchNameWithEmoji } from '../api/functions/web/fetchUsername';
+import { MiUser } from '../api/_misskey-entities/user';
+import { fetchNameWithEmoji } from '../api/_utils/fetchUsername';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { misskeyCallbackTokenClaimPayload } from '../_dto/misskey-callback/callback-token-claim.dto';
 import { misskeyUserInfoPayload } from '../_dto/misskey-callback/user-info.dto';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 
 const logger = new Logger('misskey-callback');

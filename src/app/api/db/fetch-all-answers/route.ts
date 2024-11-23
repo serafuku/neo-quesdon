@@ -1,10 +1,10 @@
 import { AnswerDto } from '@/app/_dto/Answers.dto';
 import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
-import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
-import { getIpFromRequest } from '@/utils/getIp/get-ip-from-Request';
-import { getIpHash } from '@/utils/getIp/get-ip-hash';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
-import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
+import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
+import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
+import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
+import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
 

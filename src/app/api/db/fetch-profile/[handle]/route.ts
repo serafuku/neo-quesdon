@@ -1,10 +1,10 @@
-import { userProfileDto, userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
-import { sendApiError } from '@/utils/apiErrorResponse/sendApiError';
-import { getIpFromRequest } from '@/utils/getIp/get-ip-from-Request';
-import { getIpHash } from '@/utils/getIp/get-ip-hash';
-import { GetPrismaClient } from '@/utils/getPrismaClient/get-prisma-client';
+import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
+import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
+import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { RateLimiterService } from '@/utils/ratelimiter/rateLimiter';
+import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
 import { NextRequest, NextResponse } from 'next/server';
 
 const logger = new Logger('fetch-profile/handle');
