@@ -90,7 +90,7 @@ export default function Question({
   return (
     <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
       <div className="text-2xl chat chat-start">
-        <div className="chat-header">
+        <div className="chat-header dark:text-slate-100">
           {singleQuestion.questioner ? (
             <Link href={`/main/user/${singleQuestion.questioner}`}>
               {singleQuestion.questioner}
@@ -102,7 +102,7 @@ export default function Question({
         <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl text-slate-200">
           {singleQuestion.question}
         </div>
-        <div className="chat-footer opacity-50">
+        <div className="chat-footer opacity-50 dark:text-slate-100 dark:opacity-80">
           {new Date(singleQuestion.questionedAt).toLocaleString('ko-KR', {hour12: false})}
           <span
             className="text-red-500 font-bold ml-2 cursor-pointer"
