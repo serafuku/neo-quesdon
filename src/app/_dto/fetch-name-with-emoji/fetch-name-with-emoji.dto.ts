@@ -22,8 +22,9 @@ export class fetchNameWithEmojiReqDto {
   @IsString()
   baseUrl: string;
 
-  // 마스토돈의 경우 닉네임에 들어간 커모지를
-  // 배열로 따로 주기 때문에 그것에 대한 Validation이 필요함
+  /** 마스토돈의 경우 닉네임에 들어간 커모지를
+  배열로 따로 주기 때문에 그것에 대한 Validation이 필요함
+  */
   @IsArray()
   @IsOptional()
   emojis: mastodonEmojiModel[] | null;
