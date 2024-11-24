@@ -2,7 +2,6 @@
 
 import { DBpayload } from './page';
 import { cookies } from 'next/headers';
-import { SignJWT } from 'jose';
 import { misskeyAccessKeyApiResponse } from '..';
 import { MiUser } from '../api/_misskey-entities/user';
 import { fetchNameWithEmoji } from '../api/_utils/fetchUsername';
@@ -11,6 +10,7 @@ import { misskeyCallbackTokenClaimPayload } from '../_dto/misskey-callback/callb
 import { misskeyUserInfoPayload } from '../_dto/misskey-callback/user-info.dto';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
+import { generateJwt } from '../api/_utils/jwt/generate-jwt';
 
 const logger = new Logger('misskey-callback');
 export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): Promise<misskeyUserInfoPayload> {
@@ -67,14 +67,16 @@ export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): 
   try {
     // 프론트 쿠키스토어에 쿠키 저장
     const cookieStore = await cookies();
-    const jwtToken = await generateJwt(loginReq.misskeyHost, user_handle);
+    const prisma = GetPrismaClient.getClient();
+    const user = await prisma.user.findUniqueOrThrow({where: {handle: user_handle}});
+    const jwtToken = await generateJwt(loginReq.misskeyHost, user_handle, user.jwtIndex);
     logger.log(`Send JWT to Frontend... ${jwtToken}`);
     cookieStore.set('jwtToken', jwtToken, {
-      expires: Date.now() + 1000 * 60 * 60 * 6,
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
       httpOnly: true,
     });
     cookieStore.set('server', loginReq.misskeyHost, {
-      expires: Date.now() + 1000 * 60 * 60 * 6,
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
       httpOnly: true,
     });
   } catch (err) {
@@ -126,23 +128,6 @@ async function requestMiAccessTokenAndUserInfo(payload: misskeyCallbackTokenClai
   }
 }
 
-async function generateJwt(hostname: string, handle: string) {
-  const alg = 'HS256';
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-
-  const webUrl = process.env.WEB_URL;
-  const jwtToken = await new SignJWT({
-    server: hostname,
-    handle: handle,
-  })
-    .setProtectedHeader({ alg })
-    .setIssuedAt()
-    .setIssuer(`${webUrl}`)
-    .setAudience('urn:example:audience')
-    .setExpirationTime('6h')
-    .sign(secret);
-  return jwtToken;
-}
 
 async function pushDB(payload: DBpayload) {
   const prisma = GetPrismaClient.getClient();

@@ -5,7 +5,7 @@ import { mastodonCallbackTokenClaimPayload } from '../_dto/mastodon-callback/cal
 import { fetchNameWithEmoji } from '../api/_utils/fetchUsername';
 import { DBpayload } from '../misskey-callback/page';
 import { cookies } from 'next/headers';
-import { SignJWT } from 'jose';
+import { generateJwt } from '../api/_utils/jwt/generate-jwt';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 
@@ -68,7 +68,9 @@ export async function login(loginReqestData: mastodonCallbackTokenClaimPayload) 
     try {
       //프론트 쿠키스토어에 쿠키 저장
       const cookieStore = await cookies();
-      const jwtToken = await generateJwt(loginReq.mastodonHost, user_handle);
+      const prisma = GetPrismaClient.getClient();
+      const user = await prisma.user.findUniqueOrThrow({where: {handle: user_handle}});
+      const jwtToken = await generateJwt(loginReq.mastodonHost, user_handle, user.jwtIndex);
       logger.log(`Send JWT to Frontend... ${jwtToken}`);
       cookieStore.set('jwtToken', jwtToken, {
         expires: Date.now() + 1000 * 60 * 60 * 6,
@@ -130,23 +132,6 @@ async function requestMastodonAccessCodeAndUserInfo(
   }
 }
 
-async function generateJwt(hostname: string, handle: string) {
-  const alg = 'HS256';
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-
-  const webUrl = process.env.WEB_URL;
-  const jwtToken = await new SignJWT({
-    server: hostname,
-    handle: handle,
-  })
-    .setProtectedHeader({ alg })
-    .setIssuedAt()
-    .setIssuer(`${webUrl}`)
-    .setAudience('urn:example:audience')
-    .setExpirationTime('6h')
-    .sign(secret);
-  return jwtToken;
-}
 
 async function pushDB(payload: DBpayload) {
   const prisma = GetPrismaClient.getClient();
