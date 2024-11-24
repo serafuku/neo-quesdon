@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsFQDN, IsNotEmpty, IsString } from 'class-validator';
 
 export class loginReqDto {
   @Transform((param) => {
@@ -16,5 +16,6 @@ export class loginReqDto {
   })
   @IsString()
   @IsNotEmpty()
+  @IsFQDN()
   host: string;
 }

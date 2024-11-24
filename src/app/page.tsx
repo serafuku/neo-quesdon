@@ -113,9 +113,13 @@ export default function Home() {
             });
           break;
         default:
-          window.alert('인스턴스 타입 감지에 실패했어요!');
+          setErrorMessage(`알 수 없는 인스턴스 타입 '${type}' 이에요!`);
+          errModalRef.current?.showModal();
           console.log('아무것도 없는뎁쇼?');
       }
+    }).catch((err) => {
+      setErrorMessage(err);
+      errModalRef.current?.showModal();
     });
   };
 

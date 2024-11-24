@@ -96,7 +96,7 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
           miUser = miResponse as MiUser;
         }
       } catch (err) {
-        logger.log('미스키 AUTHENTICATION_FAILED... TODO: 유저 JWT무효화 처리');
+        logger.log('미스키 AUTHENTICATION_FAILED... ');
         //인증 실패의 경우 여기서 throw
         throw err;
       }
@@ -133,7 +133,7 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
         }
       } catch (err) {
         // 인증 실패의 경우 여기서 throw
-        logger.log('마스토돈 AUTHENTICATION_FAILED... TODO: 유저 JWT무효화 처리');
+        logger.log('마스토돈 AUTHENTICATION_FAILED... ');
         throw err;
       }
       try {
