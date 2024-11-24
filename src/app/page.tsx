@@ -52,18 +52,18 @@ const mastodonAuth = async ({ host }: loginReqDto) => {
 
 /**
  * https://example.com/ 같은 URL 형식으로 온 경우 Host 형식으로 변환
- * host형식으로 온 경우 그대로 반환
+ * 소문자 처리
  * @param urlOrHost
  * @returns
  */
-function urlToHost(urlOrHost: string) {
+function convertHost(urlOrHost: string) {
   const re = /\/\/[^/@\s]+(:[0-9]{1,5})?\/?/;
   const matched_str = urlOrHost.match(re)?.[0];
   if (matched_str) {
     console.log(`URL ${urlOrHost} replaced with ${matched_str.replaceAll('/', '')}`);
-    return matched_str.replaceAll('/', '');
+    return matched_str.replaceAll('/', '').toLowerCase();
   }
-  return urlOrHost;
+  return urlOrHost.toLowerCase();
 }
 
 export default function Home() {
@@ -80,7 +80,7 @@ export default function Home() {
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     setIsLoading(true);
-    const host = urlToHost(e.address);
+    const host = convertHost(e.address);
     localStorage.setItem('server', host);
 
     detectInstance(host).then((type) => {
@@ -89,20 +89,7 @@ export default function Home() {
       };
       switch (type) {
         case 'misskey':
-          localStorage.setItem('server', host);
-          misskeyAuth(payload)
-            .then((r) => {
-              setIsLoading(false);
-              router.replace(r.url);
-            })
-            .catch((err) => {
-              setIsLoading(false);
-              setErrorMessage(err);
-              errModalRef.current?.showModal();
-            });
-          break;
         case 'cherrypick':
-          localStorage.setItem('server', host);
           misskeyAuth(payload)
             .then((r) => {
               setIsLoading(false);
@@ -115,7 +102,6 @@ export default function Home() {
             });
           break;
         case 'mastodon':
-          localStorage.setItem('server', host);
           mastodonAuth(payload)
             .then((r) => {
               router.replace(r);

@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         if (!tokenPayload) {
           throw new Error(`No Auth Token`);
         }
-        if (tokenPayload.handle.toLowerCase() !== data.questioner.toLowerCase()) {
+        if (tokenPayload.handle !== data.questioner) {
           throw new Error(`Token and questioner not match`);
         }
       } catch (err) {
