@@ -141,6 +141,7 @@ async function mkMisskeyNote(
   }
 
   const newAnswerNote: MkNoteAnswers = {
+    i: i,
     cw: title,
     text: text,
     visibility: visibility,

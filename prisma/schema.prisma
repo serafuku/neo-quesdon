@@ -23,6 +23,7 @@ model user {
     token           String
     userId          String   @unique
     profile         profile?
+    jwtIndex        Int      @default(0)
 }
 
 model profile {

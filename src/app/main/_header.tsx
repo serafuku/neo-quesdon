@@ -6,6 +6,7 @@ import { FaUser } from 'react-icons/fa';
 import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
 import DialogModalTwoButton from '../_components/modalTwoButton';
 import DialogModalOneButton from '../_components/modalOneButton';
+import { RefreshTokenReqDto } from '../_dto/refresh-token/refresh-token.dto';
 
 const logout = async () => {
   await fetch('/api/web/logout');
@@ -20,6 +21,8 @@ export default function MainHeader() {
 
   const fetchMyProfile = async () => {
     const user_handle = localStorage.getItem('user_handle');
+    const last_token_refresh = Number.parseInt(localStorage.getItem('last_token_refresh') ?? '0');
+    const now = Math.ceil(Date.now() / 1000);
 
     if (user_handle) {
       const res = await fetch('/api/db/fetch-my-profile', {
@@ -30,6 +33,29 @@ export default function MainHeader() {
           forcedLogoutModalRef.current?.showModal();
         }
         return;
+      }
+      // FIXME: 3600초 대신 적당한 시간으로 고치기
+      if (now - last_token_refresh > 3600) {
+        localStorage.setItem('last_token_refresh', `${now}`);
+        try {
+          const req: RefreshTokenReqDto = {
+            handle: user_handle,
+            last_refreshed_time: last_token_refresh,
+          }
+          const res = await fetch('/api/web/refresh-token', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json'
+            },
+            body: JSON.stringify(req),
+          });
+          if (res.status === 401 || res.status === 403) {
+            alert(`마스토돈/미스키 에서 앱 인증이 해제되었어요! ${await res.text()}`);
+            await logout();
+          }
+        } catch (err) {
+          console.error(err);
+        }
       }
       const data = await res.json();
       return data;

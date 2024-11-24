@@ -37,6 +37,7 @@ export interface typedAnswer {
 }
 
 export interface MkNoteAnswers {
+  i: string;
   cw: string;
   text: string;
   visibility: 'public' | 'home' | 'followers';
