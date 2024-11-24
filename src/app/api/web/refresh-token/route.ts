@@ -12,6 +12,9 @@ import { MiUser } from '../../_misskey-entities/user';
 import { fetchNameWithEmoji } from '../../_utils/fetchUsername';
 import { generateJwt } from '../../_utils/jwt/generate-jwt';
 import { MastodonUser } from '../../_mastodon-entities/user';
+import { RateLimiterService } from '../../_utils/ratelimiter/rateLimiter';
+import { getIpFromRequest } from '../../_utils/getIp/get-ip-from-Request';
+import { getIpHash } from '../../_utils/getIp/get-ip-hash';
 
 const logger = new Logger('refresh-token');
 export async function POST(req: NextRequest) {
@@ -20,6 +23,15 @@ export async function POST(req: NextRequest) {
     data = await validateStrict(RefreshTokenReqDto, await req.json());
   } catch (err) {
     return sendApiError(400, `Bad Request! ${err}`);
+  }
+  const limiter = RateLimiterService.getLimiter();
+  const ipHash = getIpHash(getIpFromRequest(req));
+  const limited = await limiter.limit(`refresh-token-${ipHash}`, {
+    bucket_time: 600,
+    req_limit: 20,
+  });
+  if (limited) {
+    return sendApiError(429, '요청 제한에 도달했습니다!');
   }
   const cookieStore = await cookies();
   let tokenPayload;
