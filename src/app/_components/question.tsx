@@ -17,6 +17,7 @@ interface askProps {
   setId: React.Dispatch<React.SetStateAction<number>>;
   deleteRef: RefObject<HTMLDialogElement>;
   answerRef: RefObject<HTMLDialogElement>;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function Question({
@@ -26,6 +27,7 @@ export default function Question({
   setId,
   deleteRef,
   answerRef,
+  setIsLoading,
 }: askProps) {
   const {
     register,
@@ -81,8 +83,16 @@ export default function Question({
     const filteredQuestions = multipleQuestions.filter((el) => el.id !== questionId);
 
     setQuestions(filteredQuestions);
-    await postAnswer(questionId, typedAnswer);
+    setIsLoading(true);
     answerRef.current?.showModal();
+    try {
+      await postAnswer(questionId, typedAnswer);
+    } catch (err) {
+      answerRef.current?.close();
+      alert(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
