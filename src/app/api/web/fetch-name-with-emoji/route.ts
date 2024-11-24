@@ -21,26 +21,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ nameWithEmoji: [] });
   }
   const emojiInUsername = name.match(/:[\w]+:/g)?.map((el) => el.replaceAll(':', ''));
-  const nameArray = name.split(':').filter((el) => el !== '');
+  let nameArray = name.split(':').filter((el) => el !== '');
 
   const instanceType = await detectInstance(baseUrl);
 
   switch (instanceType) {
     case 'mastodon':
       try {
-        if (emojiInUsername && data.emojis) {
-          for (let i = 0; i < emojiInUsername.length; i++) {
-            usernameEmojiAddress.push(data.emojis[i].url);
-          }
-
-          for (const el in nameArray) {
-            usernameIndex.push(nameArray.indexOf(emojiInUsername[el]));
-          }
-          const filteredIndex = usernameIndex.filter((value) => value >= 0);
-
-          for (let i = 0; i < usernameEmojiAddress.length; i++) {
-            nameArray.splice(filteredIndex[i], 1, usernameEmojiAddress[i]);
-          }
+        if (emojiInUsername && data.emojis !== null) {
+          const emojis = data.emojis;
+          const newNameArray = nameArray.map((v) => {
+            const matched_emoji_url = emojis.find((emoji) => emoji.shortcode === v)?.url;
+            if (matched_emoji_url) {
+              return matched_emoji_url;
+            } else {
+              return v;
+            }
+          });
+          nameArray = newNameArray;
         }
         return NextResponse.json({ nameWithEmoji: nameArray });
       } catch (err) {
