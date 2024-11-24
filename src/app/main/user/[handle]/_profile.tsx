@@ -1,4 +1,4 @@
-import DialogModalOneButton from '@/app/_components/modalOneButton';
+import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
 import NameComponents from '@/app/_components/NameComponents';
 import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
 import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
@@ -33,7 +33,8 @@ export default function Profile() {
 
   const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto>();
   const [localHandle, setLocalHandle] = useState<string>('');
-  const questionSuccessModalRef = useRef<HTMLDialogElement>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const questionSendingModalRef = useRef<HTMLDialogElement>(null);
 
   const {
     register,
@@ -62,27 +63,29 @@ export default function Profile() {
         return;
       } else {
         const value = getValues();
-        if (value && !questionSuccessModalRef.current?.open) {
+        if (value && !questionSendingModalRef.current?.open) {
           await onSubmit(value);
         }
       }
     }
   };
 
+  /**
+   * @throws throw only when fetch throws exception
+   * @param q CreateQuestionDto
+   * @returns create question API 에서 받은 Response
+   */
   const mkQuestionCreateApi = async (q: CreateQuestionDto): Promise<Response> => {
-    const res = await fetch('/api/db/create-question', {
-      method: 'POST',
-      body: JSON.stringify(q),
-    });
     try {
-      if (res.ok) {
-        return res;
-      } else {
-        throw new Error(`질문을 보내는데 실패했어요! ${await res.text()}`);
-      }
-    } catch (err) {
-      alert(err);
+      const res = await fetch('/api/db/create-question', {
+        method: 'POST',
+        body: JSON.stringify(q),
+      });
       return res;
+    } catch (err) {
+      // fetch 자체가 throw 된 경우만 여기서 alert하고 status code가 성공이 아닌 경우는 별도로 핸들링
+      alert(`질문 생성 API호출 실패! ${err}`);
+      throw(err);
     }
   };
 
@@ -92,7 +95,7 @@ export default function Profile() {
       userProfile?.questionBoxName,
       '이에요!',
       '예요!',
-    )} #neo-quesdon ${location.origin}/main/user/${userProfile?.handle}`;
+    )} #neo_quesdon ${location.origin}/main/user/${userProfile?.handle}`;
     return `https://${server}/share?text=${encodeURIComponent(text)}`;
   };
 
@@ -123,9 +126,15 @@ export default function Profile() {
         questionee: profileHandle,
       };
       reset();
+      setIsLoading(true);
+      questionSendingModalRef.current?.showModal();
       const res = await mkQuestionCreateApi(req);
-      if (res.status === 200) {
-        questionSuccessModalRef.current?.showModal();
+
+      if (res.ok) {
+        setIsLoading(false);
+      } else {
+        questionSendingModalRef.current?.close();
+        alert(`질문을 보내는데 실패했어요! ${await res.text()}`);
       }
     }
     // 작성자 비공개
@@ -151,9 +160,14 @@ export default function Profile() {
           questionee: profileHandle,
         };
         reset();
+        setIsLoading(true);
+        questionSendingModalRef.current?.showModal();
         const res = await mkQuestionCreateApi(req);
-        if (res.status === 200) {
-          questionSuccessModalRef.current?.showModal();
+        if (res.ok) {
+          setIsLoading(false);
+        } else {
+          questionSendingModalRef.current?.close();
+          alert(`질문을 보내는데 실패했어요! ${await res.text()}`);
         }
       }
     }
@@ -179,7 +193,7 @@ export default function Profile() {
                   className={`w-24 h-24 object-cover absolute left-[calc(50%-3rem)] rounded-full`}
                 />
               </Link>
-              {userProfile.stopAnonQuestion && (
+              {userProfile.stopAnonQuestion && !userProfile.stopNewQuestion && (
                 <div className="chat chat-start w-32 window:w-full desktop:w-full relative left-[68%] window:left-[60%] deskstop:left-[57%]">
                   <div className="chat-bubble text-sm flex items-center bg-base-100 text-slate-700">
                     작성자 공개 질문만 받아요!
@@ -191,7 +205,7 @@ export default function Profile() {
             <div className="skeleton h-24 w-24 rounded-full" />
           )}
           <div className="flex items-center text-xl">
-            {userProfile?.stopNewQuestion ? (
+            {userProfile && userProfile.stopNewQuestion ? (
               <div className="flex flex-col items-center desktop:flex-row">
                 <NameComponents username={userProfile.name} width={32} height={32} />
                 <span>님은 지금 질문을 받지 않고 있어요...</span>
@@ -257,7 +271,16 @@ export default function Profile() {
           </a>
         </div>
       )}
-      <DialogModalOneButton title={'성공!'} body={'질문했어요!'} buttonText={'닫기'} ref={questionSuccessModalRef} />
+      <DialogModalLoadingOneButton
+        isLoading={isLoading}
+        title_loading={'보내는 중'}
+        title_done={'성공!'}
+        body_loading={'질문을 보내고 있어요...'}
+        body_done={'질문했어요!'}
+        loadingButtonText={'로딩중'}
+        doneButtonText={'닫기'}
+        ref={questionSendingModalRef}
+      />
     </div>
   );
 }
