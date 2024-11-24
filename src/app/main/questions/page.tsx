@@ -5,7 +5,7 @@ import Question from '@/app/_components/question';
 import { useEffect, useRef, useState } from 'react';
 import { deleteQuestion } from './action';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
-import DialogModalOneButton from '@/app/_components/modalOneButton';
+import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
 
 const fetchQuestions = async () => {
   const res = await fetch('/api/db/fetch-my-questions');
@@ -30,6 +30,7 @@ export default function Questions() {
   const [id, setId] = useState<number>(0);
   const deleteQuestionModalRef = useRef<HTMLDialogElement>(null);
   const answeredQuestionModalRef = useRef<HTMLDialogElement>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     fetchQuestions().then((r) => setQuestions(r));
@@ -57,6 +58,7 @@ export default function Questions() {
                         setQuestions={setQuestions}
                         answerRef={answeredQuestionModalRef}
                         deleteRef={deleteQuestionModalRef}
+                        setIsLoading={setIsLoading}
                       />
                     </div>
                   ))}
@@ -74,10 +76,14 @@ export default function Questions() {
           )}
         </div>
       )}
-      <DialogModalOneButton
-        title={'답변완료'}
-        body={'답변했어요!'}
-        buttonText={'확인'}
+      <DialogModalLoadingOneButton
+        isLoading={isLoading}
+        title_loading={'보내는 중'}
+        title_done={'답변완료'}
+        body_loading={'답변을 보내고 있어요...'}
+        body_done={'답변했어요!'}
+        loadingButtonText={'로딩중...'}
+        doneButtonText={'확인'}
         ref={answeredQuestionModalRef}
       />
       <DialogModalTwoButton
