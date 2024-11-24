@@ -1,6 +1,6 @@
 import { IsArray, IsBoolean, IsOptional, IsString, ValidateIf } from 'class-validator';
 
-class mastodonEmojiModel {
+export class mastodonEmojiModel {
   @IsString()
   shortcode: string;
 

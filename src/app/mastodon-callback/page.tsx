@@ -49,6 +49,8 @@ export default function CallbackPage() {
 
           const handle = `@${user.profile.username}@${server}`;
           localStorage.setItem('user_handle', handle);
+          const now = `${Math.ceil(Date.now() / 1000)}`;
+          localStorage.setItem('last_token_refresh', now);
 
           router.replace('/main');
         }
