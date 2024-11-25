@@ -51,19 +51,26 @@ const mastodonAuth = async ({ host }: loginReqDto) => {
 };
 
 /**
- * https://example.com/ 같은 URL 형식으로 온 경우 Host 형식으로 변환
- * 소문자 처리
- * @param urlOrHost
+ * https://example.com/ 같은 URL 형식이나 handle 형식으로 입력한 경우 host로 변환.
+ * host를 소문자 처리후 반환
+ * @param urlOrHostOrHandle
  * @returns
  */
-function convertHost(urlOrHost: string) {
-  const re = /\/\/[^/@\s]+(:[0-9]{1,5})?\/?/;
-  const matched_str = urlOrHost.match(re)?.[0];
-  if (matched_str) {
-    console.log(`URL ${urlOrHost} replaced with ${matched_str.replaceAll('/', '')}`);
-    return matched_str.replaceAll('/', '').toLowerCase();
+function convertHost(urlOrHostOrHandle: string) {
+  const url_regex = /\/\/[^/@\s]+(:[0-9]{1,5})?\/?/;
+  const matched_host_from_url = urlOrHostOrHandle.match(url_regex)?.[0];
+  const handle_regex = /(:?@)[^@\s\n\r\t]+$/g;
+  const matched_host_from_handle = urlOrHostOrHandle.match(handle_regex)?.[0];
+  if (matched_host_from_url) {
+    const replaceed = matched_host_from_url.replaceAll('/', '').toLowerCase();
+    console.log(`URL ${urlOrHostOrHandle} replaced with ${replaceed}`);
+    return replaceed;
+  } else if(matched_host_from_handle) {
+    const replaced = matched_host_from_handle.replaceAll('@', '').toLowerCase();
+    console.log(`Handle ${urlOrHostOrHandle} replaced with ${replaced}`);
+    return replaced;
   }
-  return urlOrHost.toLowerCase();
+  return urlOrHostOrHandle.toLowerCase();
 }
 
 export default function Home() {
