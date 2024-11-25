@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       req_limit: 10,
     });
     if (limited) {
-      return sendApiError(429, '요청 제한에 도달했습니다!');
+      return sendApiError(429, '요청 제한에 도달했습니다! 잠시후 다시 시도해 주세요!');
     }
   } else {
     const limiter = RateLimiterService.getLimiter();
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       req_limit: 10,
     });
     if (limited) {
-      return sendApiError(429, '요청 제한에 도달했습니다!');
+      return sendApiError(429, '요청 제한에 도달했습니다! 잠시후 다시 시도해 주세요!');
     }
   }
 
