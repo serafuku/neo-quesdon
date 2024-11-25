@@ -118,7 +118,7 @@ async function requestMiAccessTokenAndUserInfo(payload: misskeyCallbackTokenClai
       const resBody = await res.json();
       return resBody;
     } else {
-      logger.error(`Fail to get Misskey Access token`, res.status, res.statusText);
+      logger.warn(`Fail to get Misskey Access token. Misskey Response:`, res.status, await res.text());
       return null;
     }
   } else {

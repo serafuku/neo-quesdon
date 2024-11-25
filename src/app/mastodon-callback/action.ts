@@ -69,7 +69,7 @@ export async function login(loginReqestData: mastodonCallbackTokenClaimPayload) 
       //프론트 쿠키스토어에 쿠키 저장
       const cookieStore = await cookies();
       const prisma = GetPrismaClient.getClient();
-      const user = await prisma.user.findUniqueOrThrow({where: {handle: user_handle}});
+      const user = await prisma.user.findUniqueOrThrow({ where: { handle: user_handle } });
       const jwtToken = await generateJwt(loginReq.mastodonHost, user_handle, user.jwtIndex);
       cookieStore.set('jwtToken', jwtToken, {
         expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
@@ -108,29 +108,42 @@ async function requestMastodonAccessCodeAndUserInfo(
   });
 
   if (checkInstances) {
-    const res = await fetch(`https://${payload.mastodonHost}/oauth/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        grant_type: 'authorization_code',
-        redirect_uri: `${process.env.WEB_URL}/mastodon-callback`,
-        client_id: client_id,
-        client_secret: client_secret,
-        code: payload.callback_code,
-        state: payload.state,
-      }),
-    }).then((r) => r.json());
+    try {
+      const res_token = await fetch(`https://${payload.mastodonHost}/oauth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grant_type: 'authorization_code',
+          redirect_uri: `${process.env.WEB_URL}/mastodon-callback`,
+          client_id: client_id,
+          client_secret: client_secret,
+          code: payload.callback_code,
+          state: payload.state,
+        }),
+      });
+      if (!res_token.ok) {
+        logger.warn('Mastodon Login Fail!. Mastodon Response: ', await res_token.text());
+        throw new Error('Mastodon Login Fail!');
+      }
+      const tokenResponse = await res_token.json();
 
-    const myProfile = await fetch(`https://${payload.mastodonHost}/api/v1/accounts/verify_credentials`, {
-      headers: { Authorization: `Bearer ${res.access_token}` },
-    }).then((r) => r.json());
+      const res_verify = await fetch(`https://${payload.mastodonHost}/api/v1/accounts/verify_credentials`, {
+        headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+      });
+      if (!res_token.ok) {
+        logger.warn('Mastodon Login Fail(token Verify). Mastodon Response: ', await res_verify.text());
+        throw new Error('Mastodon Login Fail!');
+      }
+      const myProfile = await res_verify.json();
 
-    return { profile: myProfile, token: res.access_token };
+      return { profile: myProfile, token: tokenResponse.access_token };
+    } catch (err) {
+      throw err;
+    }
   } else {
     throw new Error('there is no instances');
   }
 }
-
 
 async function pushDB(payload: DBpayload) {
   const prisma = GetPrismaClient.getClient();
