@@ -49,7 +49,7 @@ export default function UserPage() {
       if (res.ok) {
         return res.json();
       } else {
-        throw new Error(`fetch-user-answers fail! ${res.status}, ${res.statusText}`);
+        throw new Error(`fetch-user-answers fail! ${res.status}, ${await res.text()}`);
       }
     } catch (err) {
       alert(err);

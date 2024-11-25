@@ -11,7 +11,7 @@ export async function fetchNameWithEmoji(fetchUserNameReq: fetchNameWithEmojiReq
     body: JSON.stringify(fetchUserNameReq),
   });
   if (!res.ok) {
-    logger.error(`fail to get username with emojis `, res.status, res.statusText);
+    logger.error(`fail to get username with emojis `, res.status, await res.text());
     throw new Error('fail to get username with emojis');
   }
   const body: fetchNameWithEmojiResDto = await res.json();

@@ -2,7 +2,9 @@
 
 import { SignJWT } from 'jose';
 import { jwtPayload } from './jwtPayload';
+import { Logger } from '@/utils/logger/Logger';
 
+const logger = new Logger('generateJwt');
 export async function generateJwt(hostname: string, handle: string, jwtIndex: number) {
   const alg = 'HS256';
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -20,5 +22,6 @@ export async function generateJwt(hostname: string, handle: string, jwtIndex: nu
     .setAudience('urn:example:audience')
     .setExpirationTime('7d')
     .sign(secret);
+  logger.log(`Make new JWT: ${JSON.stringify(jwtPayload)}`);
   return jwtToken;
 }
