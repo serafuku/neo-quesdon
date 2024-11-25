@@ -168,7 +168,7 @@ export default function Home() {
       setIsLoading(false);
     };
     fn();
-  });
+  }, []);
 
   return (
     <div className="w-screen h-screen absolute flex flex-col items-center justify-center">
