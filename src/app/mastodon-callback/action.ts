@@ -3,11 +3,11 @@
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { mastodonCallbackTokenClaimPayload } from '../_dto/mastodon-callback/callback-token-claim.dto';
 import { fetchNameWithEmoji } from '../api/_utils/fetchUsername';
-import { DBpayload } from '../misskey-callback/page';
 import { cookies } from 'next/headers';
 import { generateJwt } from '../api/_utils/jwt/generate-jwt';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
+import { DBpayload } from '..';
 
 const logger = new Logger('Mastodon-callback');
 export async function login(loginReqestData: mastodonCallbackTokenClaimPayload) {

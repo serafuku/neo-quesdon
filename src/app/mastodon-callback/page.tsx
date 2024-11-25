@@ -1,13 +1,20 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { mastodonCallbackTokenClaimPayload } from '../_dto/mastodon-callback/callback-token-claim.dto';
 import { login } from './action';
 import { useRouter } from 'next/navigation';
+import DialogModalOneButton from '../_components/modalOneButton';
+
+const onErrorModalClick = () => {
+  window.location.replace('/');
+};
 
 export default function CallbackPage() {
   const [id, setId] = useState<number>(0);
+  const errModalRef = useRef<HTMLDialogElement>(null);
+  const [errMessage, setErrorMessage] = useState<string>();
 
   const router = useRouter();
 
@@ -41,12 +48,9 @@ export default function CallbackPage() {
           try {
             res = await login(payload);
           } catch (err) {
-            console.error(`login failed!`, err);
             throw err;
           }
-
           const user = res.user;
-
           const handle = `@${user.profile.username}@${server}`;
           localStorage.setItem('user_handle', handle);
           const now = Math.ceil(Date.now() / 1000);
@@ -56,20 +60,26 @@ export default function CallbackPage() {
         }
       } catch (err) {
         console.error(err);
-        return (
-          <div className="w-full h-[100vh] flex flex-col gap-2 justify-center items-center text-3xl">
-            <span>로그인 중에 문제가 발생했어요... 다시 시도해 보세요</span>
-          </div>
-        );
+        setErrorMessage(`로그인 중에 문제가 발생했어요... 다시 시도해 보세요`);
+        errModalRef.current?.showModal();
       }
     };
     fn();
   }, []);
 
   return (
-    <div className="w-full h-[100vh] flex flex-col gap-2 justify-center items-center text-3xl">
-      <Image src={`/loading/${id}.gif`} width={64} height={64} alt="Login Loading" unoptimized />
-      <span>로그인하고 있어요...</span>
-    </div>
+    <>
+      <div className="w-full h-[100vh] flex flex-col gap-2 justify-center items-center text-3xl">
+        <Image src={`/loading/${id}.gif`} width={64} height={64} alt="Login Loading" unoptimized />
+        <span>로그인하고 있어요...</span>
+      </div>
+      <DialogModalOneButton
+        title={'오류'}
+        body={`${errMessage}`}
+        buttonText={'확인'}
+        ref={errModalRef}
+        onClick={onErrorModalClick}
+      />
+    </>
   );
 }
