@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
     });
   } catch (err) {
-    logger.warn('User가 미스키/마스토돈에서 앱 권한을 Revoke한것 같아요. JWT index를 올릴게요. 자세한 정보:', err);
+    logger.warn('User Revoked Access token. JWT를 Revoke합니다... Detail:', err);
     await prisma.user.update({where: {handle: user.handle}, data: {jwtIndex: (user.jwtIndex + 1)}});
     return sendApiError(401, `Refresh user failed!! ${err}`);
   }
