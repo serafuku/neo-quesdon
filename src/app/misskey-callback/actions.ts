@@ -1,8 +1,7 @@
 'use server';
-
-import { DBpayload } from './page';
+ 
 import { cookies } from 'next/headers';
-import { misskeyAccessKeyApiResponse } from '..';
+import { DBpayload, misskeyAccessKeyApiResponse } from '..';
 import { MiUser } from '../api/_misskey-entities/user';
 import { fetchNameWithEmoji } from '../api/_utils/fetchUsername';
 import { validateStrict } from '@/utils/validator/strictValidator';
@@ -70,7 +69,6 @@ export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): 
     const prisma = GetPrismaClient.getClient();
     const user = await prisma.user.findUniqueOrThrow({where: {handle: user_handle}});
     const jwtToken = await generateJwt(loginReq.misskeyHost, user_handle, user.jwtIndex);
-    logger.log(`Send JWT to Frontend... ${jwtToken}`);
     cookieStore.set('jwtToken', jwtToken, {
       expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
       httpOnly: true,
@@ -120,7 +118,7 @@ async function requestMiAccessTokenAndUserInfo(payload: misskeyCallbackTokenClai
       const resBody = await res.json();
       return resBody;
     } else {
-      logger.error(`Fail to get Misskey Access token`, res.status, res.statusText);
+      logger.warn(`Fail to get Misskey Access token. Misskey Response:`, res.status, await res.text());
       return null;
     }
   } else {

@@ -7,6 +7,8 @@ import detectInstance from '../utils/detectInstance/detectInstance';
 import { loginReqDto } from './_dto/web/login/login.dto';
 import GithubRepoLink from './_components/github';
 import DialogModalOneButton from './_components/modalOneButton';
+import { loginCheck } from '@/utils/checkLogin/fastLoginCheck';
+import { logout } from '@/utils/logout/logout';
 
 interface FormValue {
   address: string;
@@ -50,20 +52,33 @@ const mastodonAuth = async ({ host }: loginReqDto) => {
   return await res.json();
 };
 
+const goWithoutLogin = async () => {
+  try {
+    await logout();
+  } catch {}
+  window.location.replace('/main');
+};
 /**
- * https://example.com/ 같은 URL 형식으로 온 경우 Host 형식으로 변환
- * 소문자 처리
- * @param urlOrHost
+ * https://example.com/ 같은 URL 형식이나 handle 형식으로 입력한 경우 host로 변환.
+ * host를 소문자 처리후 반환
+ * @param urlOrHostOrHandle
  * @returns
  */
-function convertHost(urlOrHost: string) {
-  const re = /\/\/[^/@\s]+(:[0-9]{1,5})?\/?/;
-  const matched_str = urlOrHost.match(re)?.[0];
-  if (matched_str) {
-    console.log(`URL ${urlOrHost} replaced with ${matched_str.replaceAll('/', '')}`);
-    return matched_str.replaceAll('/', '').toLowerCase();
+function convertHost(urlOrHostOrHandle: string) {
+  const url_regex = /\/\/[^/@\s]+(:[0-9]{1,5})?\/?/;
+  const matched_host_from_url = urlOrHostOrHandle.match(url_regex)?.[0];
+  const handle_regex = /(:?@)[^@\s\n\r\t]+$/g;
+  const matched_host_from_handle = urlOrHostOrHandle.match(handle_regex)?.[0];
+  if (matched_host_from_url) {
+    const replaceed = matched_host_from_url.replaceAll('/', '').toLowerCase();
+    console.log(`URL ${urlOrHostOrHandle} replaced with ${replaceed}`);
+    return replaceed;
+  } else if (matched_host_from_handle) {
+    const replaced = matched_host_from_handle.replaceAll('@', '').toLowerCase();
+    console.log(`Handle ${urlOrHostOrHandle} replaced with ${replaced}`);
+    return replaced;
   }
-  return urlOrHost.toLowerCase();
+  return urlOrHostOrHandle.toLowerCase();
 }
 
 export default function Home() {
@@ -81,46 +96,60 @@ export default function Home() {
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     setIsLoading(true);
     const host = convertHost(e.address);
-    localStorage.setItem('server', host);
 
-    detectInstance(host).then((type) => {
-      const payload: loginReqDto = {
-        host: host,
-      };
-      switch (type) {
-        case 'misskey':
-        case 'cherrypick':
-          misskeyAuth(payload)
-            .then((r) => {
-              setIsLoading(false);
-              router.replace(r.url);
-            })
-            .catch((err) => {
-              setIsLoading(false);
-              setErrorMessage(err);
-              errModalRef.current?.showModal();
-            });
-          break;
-        case 'mastodon':
-          mastodonAuth(payload)
-            .then((r) => {
-              router.replace(r);
-            })
-            .catch((err) => {
-              setIsLoading(false);
-              setErrorMessage(err);
-              errModalRef.current?.showModal();
-            });
-          break;
-        default:
-          setErrorMessage(`알 수 없는 인스턴스 타입 '${type}' 이에요!`);
-          errModalRef.current?.showModal();
-          console.log('아무것도 없는뎁쇼?');
+    /// 이미 로그인 되어있는 경우 빠른 재 로그인 시도
+    const lastUsedHost = localStorage.getItem('server');
+    const lastUsedHandle = localStorage.getItem('user_handle');
+    if (lastUsedHost === host && lastUsedHandle != null) {
+      console.log('Try Fast Relogin...');
+      const relogin_success = await loginCheck();
+      if (relogin_success) {
+        console.log('Fast ReLogin OK!!');
+        router.replace('/main');
+        return;
       }
-    }).catch((err) => {
-      setErrorMessage(err);
-      errModalRef.current?.showModal();
-    });
+    }
+    localStorage.removeItem('handle');
+    localStorage.setItem('server', host);
+    await detectInstance(host)
+      .then((type) => {
+        const payload: loginReqDto = {
+          host: host,
+        };
+        switch (type) {
+          case 'misskey':
+          case 'cherrypick':
+            misskeyAuth(payload)
+              .then((r) => {
+                router.replace(r.url);
+              })
+              .catch((err) => {
+                setErrorMessage(err);
+                errModalRef.current?.showModal();
+              });
+            break;
+          case 'mastodon':
+            mastodonAuth(payload)
+              .then((r) => {
+                router.replace(r);
+              })
+              .catch((err) => {
+                setErrorMessage(err);
+                errModalRef.current?.showModal();
+              });
+            break;
+          default:
+            setErrorMessage(`알 수 없는 인스턴스 타입 '${type}' 이에요!`);
+            errModalRef.current?.showModal();
+        }
+      })
+      .catch(() => {
+        setErrorMessage('인스턴스 타입 감지에 실패했어요!');
+        errModalRef.current?.showModal();
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -183,11 +212,7 @@ export default function Home() {
                 </div>
               )}
             </button>
-            <button
-              type="button"
-              className={`btn ml-4 ${isLoading ? 'btn-disabled' : 'btn-outline'}`}
-              onClick={() => (window.location.href = '/main')}
-            >
+            <button type="button" className={`btn ml-4 ${isLoading ? 'btn-disabled' : 'btn-outline'}`} onClick={goWithoutLogin}>
               로그인 없이 즐기기
             </button>
           </div>

@@ -56,3 +56,14 @@ export interface postQuestion {
   answeredPerson: user;
   answeredPersonHandle: string;
 }
+
+export interface DBpayload {
+  account: user['account'];
+  accountLower: user['accountLower'];
+  hostName: user['hostName'];
+  handle: user['handle'];
+  name: profile['name'];
+  avatarUrl: profile['avatarUrl'];
+  accessToken: user['token'];
+  userId: user['userId'];
+};
