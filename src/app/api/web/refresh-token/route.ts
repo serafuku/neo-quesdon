@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUniqueOrThrow({ where: { handle: tokenPayload.handle } });
 
   try {
+    logger.log('Try refresh JWT...');
     await refreshAndReValidateToken(user);
     const jwtToken = await generateJwt(user.hostName, user.handle, user.jwtIndex);
     cookieStore.set('jwtToken', jwtToken, {

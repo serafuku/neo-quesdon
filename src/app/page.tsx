@@ -7,6 +7,7 @@ import detectInstance from '../utils/detectInstance/detectInstance';
 import { loginReqDto } from './_dto/web/login/login.dto';
 import GithubRepoLink from './_components/github';
 import DialogModalOneButton from './_components/modalOneButton';
+import { loginCheck } from '@/utils/checkLogin/fastLoginCheck';
 
 interface FormValue {
   address: string;
@@ -65,7 +66,7 @@ function convertHost(urlOrHostOrHandle: string) {
     const replaceed = matched_host_from_url.replaceAll('/', '').toLowerCase();
     console.log(`URL ${urlOrHostOrHandle} replaced with ${replaceed}`);
     return replaceed;
-  } else if(matched_host_from_handle) {
+  } else if (matched_host_from_handle) {
     const replaced = matched_host_from_handle.replaceAll('@', '').toLowerCase();
     console.log(`Handle ${urlOrHostOrHandle} replaced with ${replaced}`);
     return replaced;
@@ -88,46 +89,60 @@ export default function Home() {
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
     setIsLoading(true);
     const host = convertHost(e.address);
-    localStorage.setItem('server', host);
 
-    detectInstance(host).then((type) => {
-      const payload: loginReqDto = {
-        host: host,
-      };
-      switch (type) {
-        case 'misskey':
-        case 'cherrypick':
-          misskeyAuth(payload)
-            .then((r) => {
-              setIsLoading(false);
-              router.replace(r.url);
-            })
-            .catch((err) => {
-              setIsLoading(false);
-              setErrorMessage(err);
-              errModalRef.current?.showModal();
-            });
-          break;
-        case 'mastodon':
-          mastodonAuth(payload)
-            .then((r) => {
-              router.replace(r);
-            })
-            .catch((err) => {
-              setIsLoading(false);
-              setErrorMessage(err);
-              errModalRef.current?.showModal();
-            });
-          break;
-        default:
-          setErrorMessage(`알 수 없는 인스턴스 타입 '${type}' 이에요!`);
-          errModalRef.current?.showModal();
-          console.log('아무것도 없는뎁쇼?');
+    /// 이미 로그인 되어있는 경우 빠른 재 로그인 시도
+    const lastUsedHost = localStorage.getItem('server');
+    const lastUsedHandle = localStorage.getItem('user_handle');
+    if (lastUsedHost === host && lastUsedHandle != null) {
+      console.log('Try Fast Relogin...');
+      const relogin_success = await loginCheck();
+      if (relogin_success) {
+        console.log('Fast ReLogin OK!!');
+        router.replace('/main');
+        return;
       }
-    }).catch((err) => {
-      setErrorMessage(err);
-      errModalRef.current?.showModal();
-    });
+    }
+    localStorage.removeItem('handle');
+    localStorage.setItem('server', host);
+    await detectInstance(host)
+      .then((type) => {
+        const payload: loginReqDto = {
+          host: host,
+        };
+        switch (type) {
+          case 'misskey':
+          case 'cherrypick':
+            misskeyAuth(payload)
+              .then((r) => {
+                router.replace(r.url);
+              })
+              .catch((err) => {
+                setErrorMessage(err);
+                errModalRef.current?.showModal();
+              });
+            break;
+          case 'mastodon':
+            mastodonAuth(payload)
+              .then((r) => {
+                router.replace(r);
+              })
+              .catch((err) => {
+                setErrorMessage(err);
+                errModalRef.current?.showModal();
+              });
+            break;
+          default:
+            setErrorMessage(`알 수 없는 인스턴스 타입 '${type}' 이에요!`);
+            errModalRef.current?.showModal();
+        }
+      })
+      .catch(() => {
+        setErrorMessage('인스턴스 타입 감지에 실패했어요!');
+        errModalRef.current?.showModal();
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   useEffect(() => {
