@@ -70,7 +70,6 @@ export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): 
     const prisma = GetPrismaClient.getClient();
     const user = await prisma.user.findUniqueOrThrow({where: {handle: user_handle}});
     const jwtToken = await generateJwt(loginReq.misskeyHost, user_handle, user.jwtIndex);
-    logger.log(`Send JWT to Frontend... ${jwtToken}`);
     cookieStore.set('jwtToken', jwtToken, {
       expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
       httpOnly: true,
