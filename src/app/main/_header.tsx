@@ -16,7 +16,6 @@ export default function MainHeader() {
 
   const fetchMyProfile = async () => {
     const user_handle = localStorage.getItem('user_handle');
-    const now = Math.ceil(Date.now() / 1000);
 
     if (user_handle) {
       const res = await fetch('/api/db/fetch-my-profile', {
@@ -28,11 +27,6 @@ export default function MainHeader() {
         }
         return;
       }
-      // JWT 리프레시로부터 1시간이 지난 경우 refresh 시도
-      const last_token_refresh = Number.parseInt(localStorage.getItem('last_token_refresh') ?? '0');
-      if (now - last_token_refresh > 3600) {
-        await refreshJwt();
-      }
       const data = await res.json();
       return data;
     }
@@ -42,6 +36,17 @@ export default function MainHeader() {
     fetchMyProfile().then((r) => setUser(r));
   }, []);
 
+  useEffect(() => {
+    const fn = async () => {
+      const now = Math.ceil(Date.now() / 1000);
+      // JWT 리프레시로부터 1시간이 지난 경우 refresh 시도
+      const last_token_refresh = Number.parseInt(localStorage.getItem('last_token_refresh') ?? '0');
+      if (now - last_token_refresh > 3600) {
+        await refreshJwt();
+      }
+    };
+    fn();
+  }, []);
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] navbar bg-base-100 shadow rounded-box my-4">
       <div className="flex-1">
