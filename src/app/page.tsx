@@ -97,19 +97,6 @@ export default function Home() {
     setIsLoading(true);
     const host = convertHost(e.address);
 
-    /// 이미 로그인 되어있는 경우 빠른 재 로그인 시도
-    const lastUsedHost = localStorage.getItem('server');
-    const lastUsedHandle = localStorage.getItem('user_handle');
-    if (lastUsedHost === host && lastUsedHandle != null) {
-      console.log('Try Fast Relogin...');
-      const relogin_success = await loginCheck();
-      if (relogin_success) {
-        console.log('Fast ReLogin OK!!');
-        router.replace('/main');
-        return;
-      }
-    }
-    localStorage.removeItem('handle');
     localStorage.setItem('server', host);
     await detectInstance(host)
       .then((type) => {
@@ -160,6 +147,28 @@ export default function Home() {
       ele.focus();
     }
   }, [setFormValue]);
+
+  useEffect(() => {
+    const fn = async () => {
+      setIsLoading(true);
+      /// 이미 로그인 되어있는 경우 빠른 재 로그인 시도
+      const lastUsedHost = localStorage.getItem('server');
+      const lastUsedHandle = localStorage.getItem('user_handle');
+      if (lastUsedHost && lastUsedHandle != null) {
+        console.log('Try Fast Relogin...');
+        const relogin_success = await loginCheck();
+        if (relogin_success) {
+          console.log('Fast ReLogin OK!!');
+          router.replace('/main');
+          return;
+        } else {
+          localStorage.removeItem('handle');
+        }
+      }
+      setIsLoading(false);
+    };
+    fn();
+  });
 
   return (
     <div className="w-screen h-screen absolute flex flex-col items-center justify-center">
@@ -212,7 +221,11 @@ export default function Home() {
                 </div>
               )}
             </button>
-            <button type="button" className={`btn ml-4 ${isLoading ? 'btn-disabled' : 'btn-outline'}`} onClick={goWithoutLogin}>
+            <button
+              type="button"
+              className={`btn ml-4 ${isLoading ? 'btn-disabled' : 'btn-outline'}`}
+              onClick={goWithoutLogin}
+            >
               로그인 없이 즐기기
             </button>
           </div>
