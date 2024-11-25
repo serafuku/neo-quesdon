@@ -8,6 +8,7 @@ import { loginReqDto } from './_dto/web/login/login.dto';
 import GithubRepoLink from './_components/github';
 import DialogModalOneButton from './_components/modalOneButton';
 import { loginCheck } from '@/utils/checkLogin/fastLoginCheck';
+import { logout } from '@/utils/logout/logout';
 
 interface FormValue {
   address: string;
@@ -51,6 +52,12 @@ const mastodonAuth = async ({ host }: loginReqDto) => {
   return await res.json();
 };
 
+const goWithoutLogin = async () => {
+  try {
+    await logout();
+  } catch {}
+  window.location.replace('/main');
+};
 /**
  * https://example.com/ 같은 URL 형식이나 handle 형식으로 입력한 경우 host로 변환.
  * host를 소문자 처리후 반환
@@ -205,11 +212,7 @@ export default function Home() {
                 </div>
               )}
             </button>
-            <button
-              type="button"
-              className={`btn ml-4 ${isLoading ? 'btn-disabled' : 'btn-outline'}`}
-              onClick={() => (window.location.href = '/main')}
-            >
+            <button type="button" className={`btn ml-4 ${isLoading ? 'btn-disabled' : 'btn-outline'}`} onClick={goWithoutLogin}>
               로그인 없이 즐기기
             </button>
           </div>
