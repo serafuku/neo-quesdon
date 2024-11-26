@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsOptional, IsString, MaxLength } from "class-validator";
 
 
 export class UserSettingsDto {
@@ -33,5 +33,6 @@ export class UserSettingsUpdateDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(10)
   questionBoxName?: string;
 }

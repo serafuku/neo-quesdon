@@ -3,9 +3,10 @@
 import NameComponents from '@/app/_components/NameComponents';
 
 import { useEffect, useState } from 'react';
-import { fetchUser, updateSetting } from './action';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
+import { profile } from '@prisma/client';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -13,6 +14,41 @@ export type FormValue = {
   stopNotiNewQuestion: boolean;
   stopPostAnswer: boolean;
   questionBoxName: string;
+};
+async function updateUserSettings(value: FormValue) {
+  const body: UserSettingsUpdateDto = {
+    stopAnonQuestion: value.stopAnonQuestion,
+    stopNewQuestion: value.stopNewQuestion,
+    stopNotiNewQuestion: value.stopNotiNewQuestion,
+    stopPostAnswer: value.stopPostAnswer,
+    questionBoxName: value.questionBoxName || '질문함',
+  };
+  try {
+    const res = await fetch('/api/user/settings', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: {
+        'Content-type': 'application/json',
+      },
+    });
+    if (!res.ok) {
+      throw await res.text();
+    }
+  } catch (err) {
+    alert(`설정 업데이트에 실패했어요 ${err}`);
+    throw err;
+  }
+}
+
+const fetchMyProfile = async (): Promise<profile | null> => {
+  const res = await fetch('/api/db/fetch-my-profile', {
+    method: 'GET',
+  });
+  if (!res.ok) {
+    return null;
+  }
+  const data = await res.json();
+  return data;
 };
 
 export default function Settings() {
@@ -25,9 +61,9 @@ export default function Settings() {
     formState: { errors },
   } = useForm<FormValue>();
 
-  const onSubmit: SubmitHandler<FormValue> = async (e) => {
+  const onSubmit: SubmitHandler<FormValue> = async (value) => {
     if (userInfo) {
-      updateSetting(userInfo?.handle, e);
+      updateUserSettings(value);
       setButtonClicked(true);
       setTimeout(() => {
         setButtonClicked(false);
@@ -36,7 +72,7 @@ export default function Settings() {
   };
 
   useEffect(() => {
-    fetchUser().then((r) => setUserInfo(r));
+    fetchMyProfile().then((r) => setUserInfo(r));
   }, []);
 
   return (
