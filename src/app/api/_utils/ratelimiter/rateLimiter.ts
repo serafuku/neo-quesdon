@@ -38,10 +38,10 @@ export class RateLimiterService {
     const { bucket_time, req_limit } = option;
     const result = await this.redis
       .multi()
-      .setnx(`lastreset-${key}`, now)
-      .incr(key)
-      .getex(`lastreset-${key}`, 'EX', bucket_time)
-      .expire(key, bucket_time)
+      .setnx(`limit:lastreset-${key}`, now)
+      .incr(`limit:${key}`)
+      .getex(`limit:lastreset-${key}`, 'EX', bucket_time)
+      .expire(`limit:${key}`, bucket_time)
       .exec();
 
     let req_count = result?.[1][1] as number;
@@ -59,10 +59,14 @@ export class RateLimiterService {
       // '현재 카운터와 최대 리퀘스트값 중에 작은것' 의 이유: 카운터는 리밋에 걸린 이후에도 계속 요청마다 증가하지만, 거부된 요청은 리밋으로 카운트하지 않고 싶음.
       // 0보다 작은경우 0으로 처리하는 이유: 0이 토큰 버킷에서 토큰이 꽉 차있는 상태를 의미하기 때문에, 0보다 작아지면 안됨.
       const newCounter = Math.max(Math.min(req_count, req_limit) - refill_tokens, 0);
-      this.logger.debug(`토큰 리필:`, req_count - newCounter);
+      this.logger.debug(`토큰 리필: ${req_count - newCounter}, key: ${key}`);
       req_count = newCounter;
 
-      await this.redis.multi().setex(`lastreset-${key}`, bucket_time, now).setex(key, bucket_time, newCounter).exec();
+      await this.redis
+        .multi()
+        .setex(`limit:lastreset-${key}`, bucket_time, now)
+        .setex(`limit:${key}`, bucket_time, newCounter)
+        .exec();
     }
 
     this.logger.debug(
@@ -70,7 +74,7 @@ export class RateLimiterService {
       req_count,
       '/',
       req_limit,
-      `bucket-size: ${bucket_time}sec, lastReset: ${lastReset}`,
+      `bucket-size: ${bucket_time}sec, lastReset: ${lastReset}, key: ${key}`,
     );
     if (req_count >= req_limit) {
       return true;

@@ -13,6 +13,7 @@ export interface userProfileDto {
 export interface userProfileMeDto extends userProfileDto {
   questions: number | null;
   instanceType: $Enums.InstanceType;
+  defaultPostVisibility: $Enums.PostVisibility;
 }
 
 export interface userProfileWithHostnameDto extends userProfileDto {

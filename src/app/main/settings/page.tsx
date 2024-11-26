@@ -3,9 +3,10 @@
 import NameComponents from '@/app/_components/NameComponents';
 
 import { useEffect, useState } from 'react';
-import { fetchUser, updateSetting } from './action';
-import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
+import { $Enums } from '@prisma/client';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -13,10 +14,47 @@ export type FormValue = {
   stopNotiNewQuestion: boolean;
   stopPostAnswer: boolean;
   questionBoxName: string;
+  visibility: $Enums.PostVisibility;
+};
+async function updateUserSettings(value: FormValue) {
+  const body: UserSettingsUpdateDto = {
+    stopAnonQuestion: value.stopAnonQuestion,
+    stopNewQuestion: value.stopNewQuestion,
+    stopNotiNewQuestion: value.stopNotiNewQuestion,
+    stopPostAnswer: value.stopPostAnswer,
+    questionBoxName: value.questionBoxName || '질문함',
+    defaultPostVisibility: value.visibility,
+  };
+  try {
+    const res = await fetch('/api/user/settings', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: {
+        'Content-type': 'application/json',
+      },
+    });
+    if (!res.ok) {
+      throw await res.text();
+    }
+  } catch (err) {
+    alert(`설정 업데이트에 실패했어요 ${err}`);
+    throw err;
+  }
+}
+
+const fetchMyProfile = async (): Promise<userProfileMeDto | null> => {
+  const res = await fetch('/api/db/fetch-my-profile', {
+    method: 'GET',
+  });
+  if (!res.ok) {
+    return null;
+  }
+  const data = await res.json();
+  return data;
 };
 
 export default function Settings() {
-  const [userInfo, setUserInfo] = useState<userProfileDto | null>();
+  const [userInfo, setUserInfo] = useState<userProfileMeDto | null>();
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
 
   const {
@@ -25,9 +63,9 @@ export default function Settings() {
     formState: { errors },
   } = useForm<FormValue>();
 
-  const onSubmit: SubmitHandler<FormValue> = async (e) => {
+  const onSubmit: SubmitHandler<FormValue> = async (value) => {
     if (userInfo) {
-      updateSetting(userInfo?.handle, e);
+      updateUserSettings(value);
       setButtonClicked(true);
       setTimeout(() => {
         setButtonClicked(false);
@@ -36,7 +74,7 @@ export default function Settings() {
   };
 
   useEffect(() => {
-    fetchUser().then((r) => setUserInfo(r));
+    fetchMyProfile().then((r) => setUserInfo(r));
   }, []);
 
   return (
@@ -116,6 +154,16 @@ export default function Settings() {
                             errors.questionBoxName?.type === 'maxLength' && 'input-error'
                           }`}
                         />
+                        <span className="font-thin"> 답변을 올릴 때 기본 공개 범위</span>
+                        <select
+                          {...register('visibility')}
+                          className="select select-ghost select-sm w-fit"
+                          defaultValue={userInfo.defaultPostVisibility}
+                        >
+                          <option value="public">공개</option>
+                          <option value="home">홈</option>
+                          <option value="followers">팔로워</option>
+                        </select>
                       </div>
                       <div className="flex justify-end mt-2">
                         <button type="submit" className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-primary'}`}>
