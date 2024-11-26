@@ -26,6 +26,11 @@ model user {
     jwtIndex        Int      @default(0)
 }
 
+enum PostVisibility {
+  public
+  home
+  followers
+}
 model profile {
     id              Int     @default(autoincrement())   @id
     answer          answer[]
@@ -40,6 +45,7 @@ model profile {
     avatarUrl       String
     questionBoxName String      @default("질문함")
     user            user        @relation(fields: [handle], references: [handle])
+    defaultPostVisibility PostVisibility     @default(public)
   }
 
 model answer {
