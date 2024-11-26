@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import type { questions, typedAnswer } from '..';
 import { postAnswer } from '../main/questions/action';
-import { RefObject } from 'react';
+import { RefObject, useEffect } from 'react';
 
 interface formValue {
   answer: string;
@@ -18,6 +18,7 @@ interface askProps {
   deleteRef: RefObject<HTMLDialogElement>;
   answerRef: RefObject<HTMLDialogElement>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  defaultVisibility: 'public' | 'home' | 'followers' | undefined;
 }
 
 export default function Question({
@@ -28,6 +29,7 @@ export default function Question({
   deleteRef,
   answerRef,
   setIsLoading,
+  defaultVisibility
 }: askProps) {
   const {
     register,
@@ -38,11 +40,12 @@ export default function Question({
     watch,
     setError,
     formState: { errors },
+    reset
   } = useForm<formValue>({
     defaultValues: {
       answer: '',
       nsfw: false,
-      visibility: 'public',
+      visibility: defaultVisibility,
     },
   });
 
@@ -94,6 +97,10 @@ export default function Question({
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    reset({visibility: defaultVisibility});
+  }, [defaultVisibility])
 
   return (
     <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
@@ -148,7 +155,8 @@ export default function Question({
                   <input type="hidden" {...register('nsfw')} />
                   <span className="text-sm desktop:text-xl">NSFW로 체크</span>
                 </div>
-                <select {...register('visibility')} className="select select-ghost select-sm" defaultValue={'public'}>
+                <select {...register('visibility')} className="select select-ghost select-sm">
+                  <option className={'hidden'} value={undefined}>...</option>
                   <option value="public">공개</option>
                   <option value="home">홈</option>
                   <option value="followers">팔로워</option>

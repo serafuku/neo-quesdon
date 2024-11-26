@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { deleteQuestion } from './action';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 
 const fetchQuestions = async () => {
   const res = await fetch('/api/db/fetch-my-questions');
@@ -24,9 +25,20 @@ const fetchQuestions = async () => {
 
   return res;
 };
+const fetchMyProfile = async () => {
+  const res = await fetch('/api/db/fetch-my-profile', {
+    method: 'GET',
+  });
+  if (!res.ok) {
+    return;
+  }
+  const data = await res.json();
+  return data;
+};
 
 export default function Questions() {
   const [questions, setQuestions] = useState<questions[] | null>();
+  const [profile, setProfile] = useState<userProfileMeDto>();
   const [id, setId] = useState<number>(0);
   const deleteQuestionModalRef = useRef<HTMLDialogElement>(null);
   const answeredQuestionModalRef = useRef<HTMLDialogElement>(null);
@@ -34,6 +46,7 @@ export default function Questions() {
 
   useEffect(() => {
     fetchQuestions().then((r) => setQuestions(r));
+    fetchMyProfile().then((profile) => setProfile(profile));
   }, []);
 
   return (
@@ -59,6 +72,7 @@ export default function Questions() {
                         answerRef={answeredQuestionModalRef}
                         deleteRef={deleteQuestionModalRef}
                         setIsLoading={setIsLoading}
+                        defaultVisibility={profile?.defaultPostVisibility}
                       />
                     </div>
                   ))}
