@@ -1,14 +1,13 @@
 import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
 import type { user } from '@prisma/client';
 import { type NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '../../_utils/jwt/verify-jwt';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
-import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
-import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
+import { Auth, JwtPayload } from '../../_utils/jwt/decorator';
+import type { jwtPayload } from '../../_utils/jwt/jwtPayload';
+import { RateLimit } from '../../_utils/ratelimiter/decorator';
  
 
 
@@ -23,32 +22,12 @@ export class CreateQuestionApiService {
     return CreateQuestionApiService.instance;
   }
 
-  public async POST(req: NextRequest) {
+  @RateLimit({bucket_time: 100, req_limit: 10}, 'user-or-ip')
+  @Auth({isOptional: true})
+  public async CreateQuestion(req: NextRequest, 
+    @JwtPayload tokenPayload?: jwtPayload,
+  ) {
     const prisma = GetPrismaClient.getClient();
-    const token = req.cookies.get('jwtToken')?.value;
-    const tokenPayload = await verifyToken(token)
-      .then((payload) => payload)
-      .catch(() => {});
-    if (tokenPayload) {
-      const limiter = RateLimiterService.getLimiter();
-      const limited = await limiter.limit(`create-question-${tokenPayload.handle}`, {
-        bucket_time: 100,
-        req_limit: 10,
-      });
-      if (limited) {
-        return sendApiError(429, '요청 제한에 도달했습니다! 잠시후 다시 시도해 주세요!');
-      }
-    } else {
-      const limiter = RateLimiterService.getLimiter();
-      const ipHash = getIpHash(getIpFromRequest(req));
-      const limited = await limiter.limit(`create-question-${ipHash}`, {
-        bucket_time: 100,
-        req_limit: 10,
-      });
-      if (limited) {
-        return sendApiError(429, '요청 제한에 도달했습니다! 잠시후 다시 시도해 주세요!');
-      }
-    }
   
     try {
       let data;
