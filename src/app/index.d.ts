@@ -30,11 +30,6 @@ export interface questions {
   questionedAt: Date;
 }
 
-export interface typedAnswer {
-  answer: string;
-  nsfwedAnswer: boolean;
-  visibility: 'public' | 'home' | 'followers';
-}
 
 export interface MkNoteAnswers {
   i: string;

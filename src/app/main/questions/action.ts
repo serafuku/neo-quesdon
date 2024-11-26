@@ -1,6 +1,6 @@
 'use server';
 
-import type { mastodonTootAnswers, MkNoteAnswers, typedAnswer } from '@/app';
+import type { mastodonTootAnswers, MkNoteAnswers } from '@/app';
 import { verifyToken } from '@/app/api/_utils/jwt/verify-jwt';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
@@ -8,6 +8,8 @@ import { Logger } from '@/utils/logger/Logger';
 import { question, server, user } from '@prisma/client';
 import { createHash } from 'crypto';
 import { cookies } from 'next/headers';
+import { createAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
+import { validateStrict } from '@/utils/validator/strictValidator';
 
 export async function getQuestion(id: number) {
   const prisma = GetPrismaClient.getClient();
@@ -21,7 +23,7 @@ export async function getQuestion(id: number) {
   return findWithId;
 }
 
-export async function postAnswer(questionId: question['id'] | null, typedAnswer: typedAnswer) {
+export async function postAnswer(questionId: question['id'] | null, reqData: createAnswerDto) {
   const postLogger = new Logger('postAnswer');
   const prisma = GetPrismaClient.getClient();
   const cookieStore = await cookies();
@@ -36,6 +38,7 @@ export async function postAnswer(questionId: question['id'] | null, typedAnswer:
   if (!questionId) {
     return sendApiError(400, 'Bad Request');
   }
+  const typedAnswer = await validateStrict(createAnswerDto, reqData);
   const q = await prisma.question.findUniqueOrThrow({ where: { id: questionId } });
   if (q.questioneeHandle !== tokenPayload.handle) {
     throw new Error(`This question is not for you`);

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import type { questions, typedAnswer } from '..';
+import type { questions } from '..';
 import { postAnswer } from '../main/questions/action';
 import { RefObject, useEffect } from 'react';
+import { createAnswerDto } from '../_dto/create-answer/create-answer.dto';
 
 interface formValue {
   answer: string;
@@ -78,7 +79,7 @@ export default function Question({
     }
 
     const questionId = singleQuestion.id;
-    const typedAnswer: typedAnswer = {
+    const typedAnswer: createAnswerDto = {
       answer: e.answer,
       nsfwedAnswer: e.nsfw,
       visibility: e.visibility,
@@ -135,7 +136,7 @@ export default function Question({
               <div className="tooltip tooltip-open tooltip-error transition-opacity" data-tip={errors.answer.message} />
             )}
             <textarea
-              {...register('answer', { required: 'required' })}
+              {...register('answer', { required: 'required', maxLength: 2000 })}
               tabIndex={0}
               className={`textarea textarea-sm text-sm h-24 desktop:h-32 window:text-xl desktop:text-2xl bg-transparent ${
                 errors.answer && 'textarea-error'

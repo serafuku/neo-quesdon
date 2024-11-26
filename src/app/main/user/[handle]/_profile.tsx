@@ -221,7 +221,7 @@ export default function Profile() {
         <form className="w-full flex flex-col items-center" onSubmit={handleSubmit(onSubmit)}>
           <textarea
             {...register('question', {
-              required: 'required',
+              required: 'required', maxLength: 1000,
             })}
             placeholder="질문 내용을 입력해 주세요"
             className={`w-[90%] my-2 font-thin leading-loose textarea ${
