@@ -3,10 +3,10 @@
 import NameComponents from '@/app/_components/NameComponents';
 
 import { useEffect, useState } from 'react';
-import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
-import { profile } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -14,6 +14,7 @@ export type FormValue = {
   stopNotiNewQuestion: boolean;
   stopPostAnswer: boolean;
   questionBoxName: string;
+  visibility: $Enums.PostVisibility;
 };
 async function updateUserSettings(value: FormValue) {
   const body: UserSettingsUpdateDto = {
@@ -22,6 +23,7 @@ async function updateUserSettings(value: FormValue) {
     stopNotiNewQuestion: value.stopNotiNewQuestion,
     stopPostAnswer: value.stopPostAnswer,
     questionBoxName: value.questionBoxName || '질문함',
+    defaultPostVisibility: value.visibility,
   };
   try {
     const res = await fetch('/api/user/settings', {
@@ -40,7 +42,7 @@ async function updateUserSettings(value: FormValue) {
   }
 }
 
-const fetchMyProfile = async (): Promise<profile | null> => {
+const fetchMyProfile = async (): Promise<userProfileMeDto | null> => {
   const res = await fetch('/api/db/fetch-my-profile', {
     method: 'GET',
   });
@@ -52,7 +54,7 @@ const fetchMyProfile = async (): Promise<profile | null> => {
 };
 
 export default function Settings() {
-  const [userInfo, setUserInfo] = useState<userProfileDto | null>();
+  const [userInfo, setUserInfo] = useState<userProfileMeDto | null>();
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
 
   const {
@@ -152,6 +154,16 @@ export default function Settings() {
                             errors.questionBoxName?.type === 'maxLength' && 'input-error'
                           }`}
                         />
+                        <span className="font-thin"> 답변을 올릴 때 기본 공개 범위</span>
+                        <select
+                          {...register('visibility')}
+                          className="select select-ghost select-sm w-fit"
+                          defaultValue={userInfo.defaultPostVisibility}
+                        >
+                          <option value="public">공개</option>
+                          <option value="home">홈</option>
+                          <option value="followers">팔로워</option>
+                        </select>
                       </div>
                       <div className="flex justify-end mt-2">
                         <button type="submit" className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-primary'}`}>

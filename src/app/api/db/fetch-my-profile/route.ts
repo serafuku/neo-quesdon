@@ -70,6 +70,7 @@ export async function GET(req: NextRequest) {
       stopPostAnswer: userProfile.stopPostAnswer,
       questions: questionCount ? questionCount._count.questions : null,
       instanceType: instanceType,
+      defaultPostVisibility: userProfile.defaultPostVisibility,
     };
 
     return NextResponse.json(res);
