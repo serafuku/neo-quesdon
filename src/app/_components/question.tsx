@@ -99,7 +99,7 @@ export default function Question({
   };
 
   useEffect(() => {
-    reset({visibility: defaultVisibility});
+    reset({visibility: defaultVisibility, nsfw: false, answer: ''});
   }, [defaultVisibility])
 
   return (
