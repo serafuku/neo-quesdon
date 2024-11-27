@@ -149,7 +149,8 @@ export default function Settings() {
                             maxLength: 10,
                           })}
                           type="text"
-                          placeholder={userInfo?.questionBoxName}
+                          placeholder="질문함"
+                          defaultValue={userInfo?.questionBoxName}
                           className={`input input-bordered input-sm max-w-full min-w-40 ${
                             errors.questionBoxName?.type === 'maxLength' && 'input-error'
                           }`}
