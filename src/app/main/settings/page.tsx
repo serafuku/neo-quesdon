@@ -2,12 +2,11 @@
 
 import NameComponents from '@/app/_components/NameComponents';
 
-import { useContext, useEffect, useState } from 'react';
-import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { useContext, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { $Enums } from '@prisma/client';
-import { UserProfileContext } from '../_profileContext';
+import { MyProfileEv, UserProfileContext } from '../_profileContext';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -37,6 +36,7 @@ async function updateUserSettings(value: FormValue) {
     if (!res.ok) {
       throw await res.text();
     }
+    MyProfileEv.SendUpdateReq({...body});
   } catch (err) {
     alert(`설정 업데이트에 실패했어요 ${err}`);
     throw err;
