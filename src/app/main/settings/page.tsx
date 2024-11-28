@@ -36,13 +36,12 @@ async function updateUserSettings(value: FormValue) {
     if (!res.ok) {
       throw await res.text();
     }
-    MyProfileEv.SendUpdateReq({...body});
+    MyProfileEv.SendUpdateReq({ ...body });
   } catch (err) {
     alert(`설정 업데이트에 실패했어요 ${err}`);
     throw err;
   }
 }
-
 
 export default function Settings() {
   const userInfo = useContext(MyProfileContext);
@@ -51,8 +50,10 @@ export default function Settings() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormValue>();
+  const formValues = watch();
 
   const onSubmit: SubmitHandler<FormValue> = async (value) => {
     if (userInfo) {
@@ -63,8 +64,6 @@ export default function Settings() {
       }, 2000);
     }
   };
-
-
 
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] glass flex flex-col desktop:grid desktop:grid-cols-2 gap-4 rounded-box shadow p-2">
@@ -104,13 +103,6 @@ export default function Settings() {
                   {userInfo && (
                     <form onSubmit={handleSubmit(onSubmit)}>
                       <div className="grid grid-cols-2 gap-2">
-                        <span className="font-thin">익명 질문을 받지 않기</span>
-                        <input
-                          {...register('stopAnonQuestion')}
-                          type="checkbox"
-                          className="toggle toggle-success"
-                          defaultChecked={userInfo.stopAnonQuestion}
-                        />
                         <span className="font-thin">더 이상 질문을 받지 않기</span>
                         <input
                           {...register('stopNewQuestion')}
@@ -118,12 +110,21 @@ export default function Settings() {
                           className="toggle toggle-success"
                           defaultChecked={userInfo.stopNewQuestion}
                         />
+                        <span className="font-thin">익명 질문을 받지 않기</span>
+                        <input
+                          {...register('stopAnonQuestion')}
+                          type="checkbox"
+                          className="toggle toggle-success"
+                          defaultChecked={userInfo.stopAnonQuestion}
+                          disabled={formValues.stopNewQuestion}
+                        />
                         <span className="font-thin">새 질문 DM으로 받지 않기</span>
                         <input
                           {...register('stopNotiNewQuestion')}
                           type="checkbox"
                           className="toggle toggle-success"
                           defaultChecked={userInfo.stopNotiNewQuestion}
+                          disabled={formValues.stopNewQuestion}
                         />
                         <span className="font-thin">내 답변을 올리지 않기</span>
                         <input
@@ -132,6 +133,17 @@ export default function Settings() {
                           className="toggle toggle-success"
                           defaultChecked={userInfo.stopPostAnswer}
                         />
+                        <span className="font-thin"> 답변을 올릴 때 기본 공개 범위</span>
+                        <select
+                          {...register('visibility')}
+                          className="select select-ghost select-sm w-fit"
+                          defaultValue={userInfo.defaultPostVisibility}
+                          disabled={formValues.stopPostAnswer}
+                        >
+                          <option value="public">공개</option>
+                          <option value="home">홈</option>
+                          <option value="followers">팔로워</option>
+                        </select>
                         <span className="font-thin">질문함 이름 (10글자 이내)</span>
                         <input
                           {...register('questionBoxName', {
@@ -144,16 +156,6 @@ export default function Settings() {
                             errors.questionBoxName?.type === 'maxLength' && 'input-error'
                           }`}
                         />
-                        <span className="font-thin"> 답변을 올릴 때 기본 공개 범위</span>
-                        <select
-                          {...register('visibility')}
-                          className="select select-ghost select-sm w-fit"
-                          defaultValue={userInfo.defaultPostVisibility}
-                        >
-                          <option value="public">공개</option>
-                          <option value="home">홈</option>
-                          <option value="followers">팔로워</option>
-                        </select>
                       </div>
                       <div className="flex justify-end mt-2">
                         <button type="submit" className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-primary'}`}>
