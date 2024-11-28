@@ -1,5 +1,6 @@
 import { createContext } from 'react';
 import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
+import { Logger } from '@/utils/logger/Logger';
 
 export const UserProfileContext = createContext<userProfileMeDto | undefined>(undefined);
 
@@ -12,19 +13,20 @@ type ProfileUpdateReqData = Partial<userProfileMeDto>;
  */
 export class MyProfileEv {
   private constructor() {}
+  private static logger = new Logger('UpdateMyProfileContext', {noColor: true});
   static async SendUpdateReq(data: Partial<userProfileMeDto>) {
     const ev = new CustomEvent<ProfileUpdateReqData>(ProfileUpdateReqEvent, { bubbles: true, detail: data });
     window.dispatchEvent(ev);
-    console.log('Send My Profile Update Request Event...');
+    MyProfileEv.logger.debug('Send My Profile Update Request Event...');
   }
 
   static addEventListener(onEvent: (ev: CustomEvent<ProfileUpdateReqData>) => void) {
-    console.log('Add Profile Update Req EventListener');
+    MyProfileEv.logger.debug('add Profile Update EventListener');
     window.addEventListener(ProfileUpdateReqEvent, onEvent as EventListener);
   }
 
   static removeEventListener(onEvent: (ev: CustomEvent<ProfileUpdateReqData>) => void) {
-    console.log('Remove Profile Update Req EventListener');
+    MyProfileEv.logger.debug('Remove Profile Update Req EventListener');
     window.removeEventListener(ProfileUpdateReqEvent, onEvent as EventListener);
   }
 }

@@ -9,6 +9,7 @@ import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
 import { logout } from '@/utils/logout/logout';
 import { UserProfileContext, MyProfileEv } from './_profileContext';
 import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
+import { Logger } from '@/utils/logger/Logger';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -38,10 +39,11 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   };
 
   const onProfileUpdateEvent = (ev: CustomEvent<Partial<userProfileMeDto>>) => {
+    const logger = new Logger('onProfileUpdateEvent', {noColor: true});
     setUserProfile((prev) => {
       if (prev) {
         const newData = {...prev, ...ev.detail};
-        console.log('My Profile Context Update With: ', ev.detail);
+        logger.log('My Profile Context Update With: ', ev.detail);
         return newData;
       }
     });
