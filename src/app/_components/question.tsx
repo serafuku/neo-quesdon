@@ -4,7 +4,7 @@ import type { questions, typedAnswer } from '..';
 import { postAnswer } from '../main/questions/action';
 import { RefObject, useContext, useEffect } from 'react';
 import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
-import { MyProfileEv, UserProfileContext } from '../main/_profileContext';
+import { MyProfileEv, MyProfileContext } from '../main/_profileContext';
 
 interface formValue {
   answer: string;
@@ -50,7 +50,7 @@ export default function Question({
       visibility: defaultVisibility,
     },
   });
-  const profile = useContext(UserProfileContext);
+  const profile = useContext(MyProfileContext);
 
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {

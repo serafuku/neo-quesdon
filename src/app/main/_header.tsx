@@ -7,7 +7,7 @@ import DialogModalTwoButton from '../_components/modalTwoButton';
 import DialogModalOneButton from '../_components/modalOneButton';
 import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
 import { logout } from '@/utils/logout/logout';
-import { UserProfileContext, MyProfileEv } from './_profileContext';
+import { MyProfileContext, MyProfileEv } from './_profileContext';
 import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
 import { Logger } from '@/utils/logger/Logger';
 
@@ -15,7 +15,7 @@ type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
 };
 export default function MainHeader({ setUserProfile }: headerProps) {
-  const profile = useContext(UserProfileContext);
+  const profile = useContext(MyProfileContext);
   const logoutModalRef = useRef<HTMLDialogElement>(null);
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
   const [questionsNum, setQuestions_num] = useState<number | null>(null);

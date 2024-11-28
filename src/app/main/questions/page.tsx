@@ -6,7 +6,7 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { deleteQuestion } from './action';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
-import { MyProfileEv, UserProfileContext } from '../_profileContext';
+import { MyProfileEv, MyProfileContext } from '../_profileContext';
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 
 const fetchQuestions = async (): Promise<questions[] | null> => {
@@ -28,7 +28,7 @@ const fetchQuestions = async (): Promise<questions[] | null> => {
 
 export default function Questions() {
   const [questions, setQuestions] = useState<questions[] | null>();
-  const profile = useContext(UserProfileContext);
+  const profile = useContext(MyProfileContext);
   const [id, setId] = useState<number>(0);
   const deleteQuestionModalRef = useRef<HTMLDialogElement>(null);
   const answeredQuestionModalRef = useRef<HTMLDialogElement>(null);

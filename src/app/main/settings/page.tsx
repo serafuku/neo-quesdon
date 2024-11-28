@@ -6,7 +6,7 @@ import { useContext, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { $Enums } from '@prisma/client';
-import { MyProfileEv, UserProfileContext } from '../_profileContext';
+import { MyProfileEv, MyProfileContext } from '../_profileContext';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -45,7 +45,7 @@ async function updateUserSettings(value: FormValue) {
 
 
 export default function Settings() {
-  const userInfo = useContext(UserProfileContext);
+  const userInfo = useContext(MyProfileContext);
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
 
   const {

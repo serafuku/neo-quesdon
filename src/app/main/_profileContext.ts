@@ -2,14 +2,14 @@ import { createContext } from 'react';
 import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
 import { Logger } from '@/utils/logger/Logger';
 
-export const UserProfileContext = createContext<userProfileMeDto | undefined>(undefined);
+export const MyProfileContext = createContext<userProfileMeDto | undefined>(undefined);
 
 const ProfileUpdateReqEvent = 'ProfileUpdateReqEvent';
 type ProfileUpdateReqEvent = typeof ProfileUpdateReqEvent;
 type ProfileUpdateReqData = Partial<userProfileMeDto>;
 
 /**
- * UserProfileContext 의 Update요청 Event들
+ * MyProfileContext 의 Update요청 Event들
  */
 export class MyProfileEv {
   private constructor() {}
