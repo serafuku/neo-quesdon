@@ -2,7 +2,7 @@
 
 import NameComponents from '@/app/_components/NameComponents';
 
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { $Enums } from '@prisma/client';
@@ -46,14 +46,30 @@ async function updateUserSettings(value: FormValue) {
 export default function Settings() {
   const userInfo = useContext(MyProfileContext);
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
-
+  const [defaultFormValue, setDefaultFormValue] = useState<FormValue>();
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<FormValue>();
+  } = useForm<FormValue>({
+    values: defaultFormValue,
+  });
+
   const formValues = watch();
+  useEffect(() => {
+    if (userInfo) {
+      const value = {
+        stopAnonQuestion: userInfo.stopAnonQuestion,
+        stopNewQuestion: userInfo.stopNewQuestion,
+        stopNotiNewQuestion: userInfo.stopNotiNewQuestion,
+        stopPostAnswer: userInfo.stopPostAnswer,
+        questionBoxName: userInfo.questionBoxName,
+        visibility: userInfo.defaultPostVisibility,
+      };
+      setDefaultFormValue(value);
+    }
+  }, [userInfo]);
 
   const onSubmit: SubmitHandler<FormValue> = async (value) => {
     if (userInfo) {
@@ -73,7 +89,7 @@ export default function Settings() {
         </div>
       ) : (
         <>
-          {userInfo === null ? (
+          {userInfo === null || defaultFormValue === undefined ? (
             <div className="w-full flex col-span-2 justify-center">
               <span className="text-2xl">로그인이 안 되어있어요!</span>
             </div>
@@ -104,18 +120,12 @@ export default function Settings() {
                     <form onSubmit={handleSubmit(onSubmit)}>
                       <div className="grid grid-cols-2 gap-2">
                         <span className="font-thin">더 이상 질문을 받지 않기</span>
-                        <input
-                          {...register('stopNewQuestion')}
-                          type="checkbox"
-                          className="toggle toggle-success"
-                          defaultChecked={userInfo.stopNewQuestion}
-                        />
+                        <input {...register('stopNewQuestion')} type="checkbox" className="toggle toggle-success" />
                         <span className="font-thin">익명 질문을 받지 않기</span>
                         <input
                           {...register('stopAnonQuestion')}
                           type="checkbox"
                           className="toggle toggle-success"
-                          defaultChecked={userInfo.stopAnonQuestion}
                           disabled={formValues.stopNewQuestion}
                         />
                         <span className="font-thin">새 질문 DM으로 받지 않기</span>
@@ -123,21 +133,14 @@ export default function Settings() {
                           {...register('stopNotiNewQuestion')}
                           type="checkbox"
                           className="toggle toggle-success"
-                          defaultChecked={userInfo.stopNotiNewQuestion}
                           disabled={formValues.stopNewQuestion}
                         />
                         <span className="font-thin">내 답변을 올리지 않기</span>
-                        <input
-                          {...register('stopPostAnswer')}
-                          type="checkbox"
-                          className="toggle toggle-success"
-                          defaultChecked={userInfo.stopPostAnswer}
-                        />
+                        <input {...register('stopPostAnswer')} type="checkbox" className="toggle toggle-success" />
                         <span className="font-thin"> 답변을 올릴 때 기본 공개 범위</span>
                         <select
                           {...register('visibility')}
                           className="select select-ghost select-sm w-fit"
-                          defaultValue={userInfo.defaultPostVisibility}
                           disabled={formValues.stopPostAnswer}
                         >
                           <option value="public">공개</option>
@@ -151,7 +154,6 @@ export default function Settings() {
                           })}
                           type="text"
                           placeholder="질문함"
-                          defaultValue={userInfo?.questionBoxName}
                           className={`input input-bordered input-sm max-w-full min-w-40 ${
                             errors.questionBoxName?.type === 'maxLength' && 'input-error'
                           }`}
