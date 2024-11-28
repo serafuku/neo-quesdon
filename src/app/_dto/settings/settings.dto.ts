@@ -39,5 +39,5 @@ export class UserSettingsUpdateDto {
   
   @IsOptional()
   @IsEnum($Enums.PostVisibility)
-  defaultPostVisibility: $Enums.PostVisibility;
+  defaultPostVisibility?: $Enums.PostVisibility;
 }

@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import type { questions, typedAnswer } from '..';
 import { postAnswer } from '../main/questions/action';
-import { RefObject, useEffect } from 'react';
+import { RefObject, useContext, useEffect } from 'react';
+import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
+import { MyProfileEv, MyProfileContext } from '../main/_profileContext';
 
 interface formValue {
   answer: string;
@@ -48,6 +50,8 @@ export default function Question({
       visibility: defaultVisibility,
     },
   });
+  const profile = useContext(MyProfileContext);
+
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -90,6 +94,12 @@ export default function Question({
     answerRef.current?.showModal();
     try {
       await postAnswer(questionId, typedAnswer);
+
+      // 답변 성공시 남은 질문 갯수 1줄이기
+      const req: Partial<userProfileMeDto> = {
+        questions: profile?.questions ? profile?.questions - 1 : null,
+      };
+      MyProfileEv.SendUpdateReq(req);
     } catch (err) {
       answerRef.current?.close();
       alert(err);
