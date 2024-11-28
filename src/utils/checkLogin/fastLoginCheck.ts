@@ -10,7 +10,6 @@ export async function loginCheck(): Promise<boolean> {
     } else {
       return true;
     }
-
   } catch (err) {
     console.log('로그인 체크 실패', err);
     return false;

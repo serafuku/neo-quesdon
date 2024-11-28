@@ -2,11 +2,12 @@
 
 import NameComponents from '@/app/_components/NameComponents';
 
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { $Enums } from '@prisma/client';
+import { UserProfileContext } from '../_profileContext';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -42,19 +43,9 @@ async function updateUserSettings(value: FormValue) {
   }
 }
 
-const fetchMyProfile = async (): Promise<userProfileMeDto | null> => {
-  const res = await fetch('/api/db/fetch-my-profile', {
-    method: 'GET',
-  });
-  if (!res.ok) {
-    return null;
-  }
-  const data = await res.json();
-  return data;
-};
 
 export default function Settings() {
-  const [userInfo, setUserInfo] = useState<userProfileMeDto | null>();
+  const userInfo = useContext(UserProfileContext);
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
 
   const {
@@ -73,9 +64,7 @@ export default function Settings() {
     }
   };
 
-  useEffect(() => {
-    fetchMyProfile().then((r) => setUserInfo(r));
-  }, []);
+
 
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] glass flex flex-col desktop:grid desktop:grid-cols-2 gap-4 rounded-box shadow p-2">

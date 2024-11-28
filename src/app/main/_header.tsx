@@ -1,16 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { Dispatch, SetStateAction, useContext, useEffect, useRef, useState } from 'react';
 import { FaUser } from 'react-icons/fa';
-import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
 import DialogModalTwoButton from '../_components/modalTwoButton';
 import DialogModalOneButton from '../_components/modalOneButton';
 import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
 import { logout } from '@/utils/logout/logout';
+import { UserProfileContext } from './_profileContext';
+import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
 
-export default function MainHeader() {
-  const [user, setUser] = useState<userProfileMeDto>();
+type headerProps = {
+  setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
+};
+export default function MainHeader({ setUserProfile }: headerProps) {
+  const profile = useContext(UserProfileContext);
   const logoutModalRef = useRef<HTMLDialogElement>(null);
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
 
@@ -33,8 +37,10 @@ export default function MainHeader() {
   };
 
   useEffect(() => {
-    fetchMyProfile().then((r) => setUser(r));
-  }, []);
+    if (setUserProfile) {
+      fetchMyProfile().then((r) => setUserProfile(r));
+    }
+  }, [setUserProfile]);
 
   useEffect(() => {
     const fn = async () => {
@@ -55,14 +61,10 @@ export default function MainHeader() {
         </Link>
       </div>
       <div className="dropdown dropdown-end">
-        <div
-          tabIndex={0}
-          role="button"
-          className={`btn btn-ghost btn-circle avatar ${user?.questions && user?.questions > 0 && 'online'}`}
-        >
+        <div tabIndex={0} role="button" className={`btn btn-ghost btn-circle avatar ${profile?.questions && profile.questions > 0 && 'online'}`}>
           <div className="w-10 rounded-full">
-            {user?.avatarUrl ? (
-              <img src={user.avatarUrl} alt="navbar avatar profile" />
+            {profile?.avatarUrl ? (
+              <img src={profile.avatarUrl} alt="navbar avatar profile" />
             ) : (
               <div className="w-10 h-10 flex justify-center items-center text-3xl">
                 <FaUser />
@@ -70,7 +72,7 @@ export default function MainHeader() {
             )}
           </div>
         </div>
-        {user === undefined ? (
+        {profile === undefined ? (
           <div>
             <ul
               tabIndex={0}
@@ -88,7 +90,7 @@ export default function MainHeader() {
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow"
             >
               <li>
-                <Link href={`/main/user/${user?.handle}`}>마이페이지</Link>
+                <Link href={`/main/user/${profile?.handle}`}>마이페이지</Link>
               </li>
               <li>
                 <Link href={'/main/questions'}>미답변 질문</Link>
