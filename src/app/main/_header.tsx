@@ -7,7 +7,7 @@ import DialogModalTwoButton from '../_components/modalTwoButton';
 import DialogModalOneButton from '../_components/modalOneButton';
 import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
 import { logout } from '@/utils/logout/logout';
-import { UserProfileContext } from './_profileContext';
+import { UserProfileContext, MyProfileEv } from './_profileContext';
 import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
 
 type headerProps = {
@@ -17,8 +17,9 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const profile = useContext(UserProfileContext);
   const logoutModalRef = useRef<HTMLDialogElement>(null);
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
+  const [questionsNum, setQuestions_num] = useState<number | null>(null);
 
-  const fetchMyProfile = async () => {
+  const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
     const user_handle = localStorage.getItem('user_handle');
 
     if (user_handle) {
@@ -36,11 +37,34 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     }
   };
 
+  const onProfileUpdateEvent = (ev: CustomEvent<Partial<userProfileMeDto>>) => {
+    setUserProfile((prev) => {
+      if (prev) {
+        const newData = {...prev, ...ev.detail};
+        console.log('My Profile Context Update With: ', ev.detail);
+        return newData;
+      }
+    });
+    setQuestions_num(ev.detail.questions ?? null);
+  };
+  
+
   useEffect(() => {
     if (setUserProfile) {
-      fetchMyProfile().then((r) => setUserProfile(r));
+      fetchMyProfile().then((r) => {
+        setUserProfile(r);
+        setQuestions_num(r?.questions ?? null);
+      });
     }
   }, [setUserProfile]);
+
+  useEffect(() => {
+    MyProfileEv.addEventListener(onProfileUpdateEvent);
+
+    return () => {
+      MyProfileEv.removeEventListener(onProfileUpdateEvent);
+    };
+  }, []);
 
   useEffect(() => {
     const fn = async () => {
@@ -61,7 +85,11 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         </Link>
       </div>
       <div className="dropdown dropdown-end">
-        <div tabIndex={0} role="button" className={`btn btn-ghost btn-circle avatar ${profile?.questions && profile.questions > 0 && 'online'}`}>
+        <div
+          tabIndex={0}
+          role="button"
+          className={`btn btn-ghost btn-circle avatar ${questionsNum && questionsNum > 0 && 'online'}`}
+        >
           <div className="w-10 rounded-full">
             {profile?.avatarUrl ? (
               <img src={profile.avatarUrl} alt="navbar avatar profile" />

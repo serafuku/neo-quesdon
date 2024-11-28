@@ -6,9 +6,10 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { deleteQuestion } from './action';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
-import { UserProfileContext } from '../_profileContext';
+import { MyProfileEv, UserProfileContext } from '../_profileContext';
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 
-const fetchQuestions = async () => {
+const fetchQuestions = async (): Promise<questions[] | null> => {
   const res = await fetch('/api/db/fetch-my-questions');
 
   try {
@@ -21,9 +22,8 @@ const fetchQuestions = async () => {
     }
   } catch (err) {
     alert(err);
+    return null;
   }
-
-  return res;
 };
 
 export default function Questions() {
@@ -35,7 +35,17 @@ export default function Questions() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    fetchQuestions().then((r) => setQuestions(r));
+    fetchQuestions().then((r) => {
+      setQuestions(r);
+
+      // 메인헤더에서 알고있는 질문의 갯수는 0개지만, 페이지 로드 이후 새 질문이 들어온 경우에는 질문 페이지로 왔을때서야 새 질문이 있다는 사실을 알 수 있음.
+      // 이 경우 메인헤더가 새 질문 뱃지를 보여주기 위해서 알려줘야 함
+      // TODO: 웹소켓 등으로 애초에 실시간으로 데이터를 받도록 바꾸기
+      const req = {
+        questions: r?.length,
+      };
+      MyProfileEv.SendUpdateReq(req);
+    });
   }, []);
 
   return (
@@ -98,6 +108,12 @@ export default function Questions() {
         onClick={() => {
           deleteQuestion(id);
           setQuestions((prevQuestions) => (prevQuestions ? [...prevQuestions.filter((prev) => prev.id !== id)] : null));
+
+          // 질문 삭제할때 남은 질문 갯수 1줄이기
+          const req: Partial<userProfileMeDto> = {
+            questions: profile?.questions ? profile?.questions - 1 : null,
+          };
+          MyProfileEv.SendUpdateReq(req);
         }}
       />
     </div>
