@@ -47,7 +47,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         return newData;
       }
     });
-    setQuestions_num(ev.detail.questions ?? null);
+    setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
   
 
