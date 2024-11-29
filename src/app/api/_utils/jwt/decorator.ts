@@ -7,7 +7,7 @@ import 'reflect-metadata';
 import { Logger } from '@/utils/logger/Logger';
 
 export function Auth(options?: { isOptional: boolean }) {
-  return function (target: unknown, methodName: string, descriptor: PropertyDescriptor) {
+  return function (target: any, methodName: string, descriptor: PropertyDescriptor) {
     const originMethod = descriptor.value as Function;
     const __logger = new Logger(methodName);
     descriptor.value = async function (...args: unknown[]) {
@@ -25,7 +25,11 @@ export function Auth(options?: { isOptional: boolean }) {
       }
 
       // 메타데이터에서 인자 위치 추출
-      const targetIndex = Reflect.getMetadata('jwt_body_target', originMethod);
+      const targetIndex = Reflect.getMetadata('jwt_body_target', target, methodName);
+      __logger.debug('jwtBody target param index', targetIndex);
+      if (!targetIndex) {
+        throw new Error('JWT Body targetIndex 찾을 수 없음');
+      }
       args[targetIndex] = jwtBody;
       __logger.debug(`${jwtBody?.handle ?? '익명'} Call method '${methodName}'`);
       return await originMethod.apply(this, args);
@@ -35,5 +39,5 @@ export function Auth(options?: { isOptional: boolean }) {
 
 export function JwtPayload(target: any, name: string, index: number) {
   // JWT 페이로드를 넣어 줘야할 매개변수의 인덱스 정보를 메타데이터로 저장
-  Reflect.defineMetadata('jwt_body_target', index, target[name]);
+  Reflect.defineMetadata('jwt_body_target', index, target, name);
 }
