@@ -5,7 +5,13 @@ import type { jwtPayload } from '../../_utils/jwt/jwtPayload';
 import { PrismaClient } from '@prisma/client';
 import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
 import { validateStrict } from '@/utils/validator/strictValidator';
-import { Block, CreateBlockDto, DeleteBlockDto, GetBlockListReqDto } from '@/app/_dto/blocking/blocking.dto';
+import {
+  Block,
+  CreateBlockDto,
+  DeleteBlockDto,
+  GetBlockListReqDto,
+  SearchBlockListReqDto,
+} from '@/app/_dto/blocking/blocking.dto';
 import { sendApiError } from '../../_utils/apiErrorResponse/sendApiError';
 
 export class BlockingService {
@@ -30,9 +36,9 @@ export class BlockingService {
     } catch {
       return sendApiError(400, 'Bad request');
     }
-    
+
     const user = await this.prisma.user.findUnique({ where: { handle: tokenBody!.handle } });
-    const targetUser = await this.prisma.user.findUnique({where: {handle: data.targetHandle }});
+    const targetUser = await this.prisma.user.findUnique({ where: { handle: data.targetHandle } });
     if (user === null || targetUser === null) {
       return sendApiError(400, 'Bad Request. User not found');
     }
@@ -90,6 +96,23 @@ export class BlockingService {
   }
 
   @Auth()
+  @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
+  public async searchInBlockListByHandle(req: NextRequest, @JwtPayload tokenBody?: jwtPayload) {
+    let data;
+    try {
+      data = await validateStrict(SearchBlockListReqDto, await req.json());
+    } catch {
+      return sendApiError(400, 'Bad Request');
+    }
+    const currentUserBlockList = await this.prisma.blocking.findMany({ where: { blockerHandle: tokenBody!.handle } });
+    if (currentUserBlockList.length <= 0) return NextResponse.json({ isBlocked: false }, { status: 200 });
+
+    const isTargetUserBlocked = currentUserBlockList.some((el) => el.blockeeHandle === data.targetHandle);
+
+    return NextResponse.json({ isBlocked: isTargetUserBlocked }, { status: 200 });
+  }
+
+  @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 60 }, 'user')
   public async deleteBlock(req: NextRequest, @JwtPayload tokenBody?: jwtPayload) {
     let data;
@@ -109,6 +132,6 @@ export class BlockingService {
         },
       },
     });
-    return NextResponse.json({}, {status: 200});
+    return NextResponse.json({}, { status: 200 });
   }
 }

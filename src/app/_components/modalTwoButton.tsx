@@ -22,7 +22,7 @@ export default function DialogModalTwoButton({
       <dialog ref={ref} className="modal">
         <div className="modal-box">
           <h3 className="font-bold text-lg">{title}</h3>
-          <p className="py-4">{body}</p>
+          <p className="py-4 whitespace-pre-line">{body}</p>
           <div className="modal-action">
             <form method="dialog">
               <div className="flex gap-2">
