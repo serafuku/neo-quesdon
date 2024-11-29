@@ -85,7 +85,7 @@ export default function Profile() {
     } catch (err) {
       // fetch 자체가 throw 된 경우만 여기서 alert하고 status code가 성공이 아닌 경우는 별도로 핸들링
       alert(`질문 생성 API호출 실패! ${err}`);
-      throw(err);
+      throw err;
     }
   };
 
@@ -184,6 +184,14 @@ export default function Profile() {
     <div className="w-full h-fit desktop:sticky top-2 flex flex-col">
       <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
         <div className="flex flex-col items-center gap-2 py-2">
+          <div className="flex w-10 absolute left-[85%] w-full">
+            <details className="dropdown dropdown-end">
+              <summary className="flex btn btn-ghost text-xs text-slate-600 dark:text-slate-200"> 유저 메뉴</summary>
+              <ul tabIndex={0} className="flex dropdown-content menu bg-base-100 rounded-box w-40 p-2 shadow">
+                <li> <button className='w-full' onClick={(e) => alert('test...')}> 차단 </button> </li>
+              </ul>
+            </details>
+          </div>
           {userProfile && userProfile.avatarUrl ? (
             <div className="flex w-full h-24">
               <Link href={`https://${userProfile.hostname}/${userProfile.handle.match(/^@([^@ ]){1,100}/g)?.[0]}`}>
@@ -221,7 +229,8 @@ export default function Profile() {
         <form className="w-full flex flex-col items-center" onSubmit={handleSubmit(onSubmit)}>
           <textarea
             {...register('question', {
-              required: 'required', maxLength: 1000,
+              required: 'required',
+              maxLength: 1000,
             })}
             placeholder="질문 내용을 입력해 주세요"
             className={`w-[90%] my-2 font-thin leading-loose textarea ${
