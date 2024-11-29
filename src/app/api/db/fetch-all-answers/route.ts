@@ -8,6 +8,8 @@ import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '../../_utils/jwt/verify-jwt';
+import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { profile } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
@@ -66,7 +68,7 @@ export async function POST(req: NextRequest) {
       answer: answer.answer,
       answeredAt: answer.answeredAt,
       answeredPersonHandle: answer.answeredPersonHandle,
-      answeredPerson: answer.answeredPerson,
+      answeredPerson: profileToDto(answer.answeredPerson),
       nsfwedAnswer: answer.nsfwedAnswer,
     };
     return data;
@@ -88,8 +90,8 @@ export async function POST(req: NextRequest) {
 
 async function filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
   const prisma = GetPrismaClient.getClient();
-  const blockList = await prisma.blocking.findMany({ where: { blockerHandle: myHandle } });
-  const blockedList = await prisma.blocking.findMany({ where: { blockeeHandle: myHandle } });
+  const blockList = await prisma.blocking.findMany({ where: { blockerHandle: myHandle, hidden: false } });
+  const blockedList = await prisma.blocking.findMany({ where: { blockeeHandle: myHandle, hidden: false } });
   const filteredAnswers = answers.filter((ans) => {
     if (blockList.find((b) => b.blockeeHandle === ans.answeredPersonHandle || b.blockeeHandle === ans.questioner)) {
       return false;
@@ -101,4 +103,17 @@ async function filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
   });
 
   return filteredAnswers;
+}
+
+function profileToDto(profile: profile): userProfileDto {
+  const data: userProfileDto = {
+    handle: profile.handle,
+    name: profile.name,
+    stopNewQuestion: profile.stopNewQuestion,
+    stopAnonQuestion: profile.stopAnonQuestion,
+    stopNotiNewQuestion: profile.stopNotiNewQuestion,
+    avatarUrl: profile.avatarUrl,
+    questionBoxName: profile.questionBoxName,
+  }
+  return data;
 }

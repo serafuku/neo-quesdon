@@ -1,4 +1,4 @@
-import { profile } from '@prisma/client';
+import { userProfileDto } from './fetch-profile/Profile.dto';
 
 export interface AnswerDto {
   id: string;
@@ -11,7 +11,7 @@ export interface AnswerDto {
 }
 
 export interface AnswerWithProfileDto extends AnswerDto {
-  answeredPerson?: profile;
+  answeredPerson?: userProfileDto;
 }
 
 export interface AnswerListWithProfileDto {
