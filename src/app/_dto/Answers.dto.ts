@@ -13,3 +13,7 @@ export interface AnswerDto {
 export interface AnswerWithProfileDto extends AnswerDto {
   answeredPerson?: profile;
 }
+
+export interface AnswerListWithProfileDto {
+  answersList: AnswerWithProfileDto[];
+}

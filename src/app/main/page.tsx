@@ -5,6 +5,7 @@ import Answer from '../_components/answer';
 import { FaExclamationCircle } from 'react-icons/fa';
 import { answer } from '@prisma/client';
 import { FetchAllAnswersReqDto } from '../_dto/fetch-all-answers/fetch-all-answers.dto';
+import { AnswerListWithProfileDto } from '../_dto/Answers.dto';
 
 async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
   const res = await fetch('/api/db/fetch-all-answers', {
@@ -16,13 +17,14 @@ async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
   });
   try {
     if (res.ok) {
-      return (await res.json()) as answer[];
+      const answers = (await res.json() as AnswerListWithProfileDto).answersList;
+      return answers;
     } else {
       throw new Error(`답변을 불러오는데 실패했어요!: ${await res.text()}`);
     }
   } catch (err) {
     alert(err);
-    return [];
+    throw err;
   }
 }
 export default function MainBody() {

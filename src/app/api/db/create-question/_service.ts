@@ -56,6 +56,13 @@ export class CreateQuestionApiService {
         this.logger.debug('User stops NewQuestion');
         throw new Error('User stops NewQuestion');
       }
+      // 블락 여부 검사
+      if (tokenPayload?.handle) {
+        const blocked = await prisma.blocking.findFirst({where: {blockeeHandle: tokenPayload.handle, blockerHandle: questionee_user.handle}});
+        if (blocked) {
+          return sendApiError(403, '이 사용자에게 질문을 보낼 수 없습니다!');
+        }
+      }
   
       // 제시된 questioner 핸들이 JWT토큰의 핸들과 일치하는지 검사
       if (data.questioner) {
