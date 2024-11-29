@@ -1,11 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl"]
 }
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL") // uses connection pooling
+  url      = env("DATABASE_URL") // uses connection pooling
 }
 
 enum InstanceType {
@@ -13,17 +13,20 @@ enum InstanceType {
   misskey
   cherrypick
 }
+
 model user {
-    id              Int      @default(autoincrement())    @id
-    account         String
-    accountLower    String
-    hostName        String
-    handle          String   @unique
-    name            String[]
-    token           String
-    userId          String   @unique
-    profile         profile?
-    jwtIndex        Int      @default(0)
+  id           Int      @id @default(autoincrement())
+  account      String
+  accountLower String
+  hostName     String
+  handle       String   @unique
+  name         String[]
+  token        String
+  userId       String   @unique
+  profile      profile?
+  jwtIndex     Int      @default(0)
+
+  blocking blocking[] @relation("blocks")
 }
 
 enum PostVisibility {
@@ -31,49 +34,61 @@ enum PostVisibility {
   home
   followers
 }
+
 model profile {
-    id              Int     @default(autoincrement())   @id
-    answer          answer[]
-    questions       question[]
-    account         String
-    handle          String      @unique
-    name            String[]
-    stopNewQuestion Boolean    @default(false)
-    stopAnonQuestion  Boolean   @default(false)
-    stopNotiNewQuestion Boolean @default(false)
-    stopPostAnswer  Boolean     @default(false)
-    avatarUrl       String
-    questionBoxName String      @default("질문함")
-    user            user        @relation(fields: [handle], references: [handle])
-    defaultPostVisibility PostVisibility     @default(public)
-  }
+  id                    Int            @id @default(autoincrement())
+  answer                answer[]
+  questions             question[]
+  account               String
+  handle                String         @unique
+  name                  String[]
+  stopNewQuestion       Boolean        @default(false)
+  stopAnonQuestion      Boolean        @default(false)
+  stopNotiNewQuestion   Boolean        @default(false)
+  stopPostAnswer        Boolean        @default(false)
+  avatarUrl             String
+  questionBoxName       String         @default("질문함")
+  user                  user           @relation(fields: [handle], references: [handle])
+  defaultPostVisibility PostVisibility @default(public)
+}
 
 model answer {
-    id              String      @default(cuid())  @id
-    question        String
-    questioner      String?
-    answer          String
-    answeredAt      DateTime    @default(now())
-    answeredPersonHandle  String  
-    answeredPerson  profile       @relation(fields: [answeredPersonHandle], references: [handle])
-    nsfwedAnswer    Boolean
-
+  id                   String   @id @default(cuid())
+  question             String
+  questioner           String?
+  answer               String
+  answeredAt           DateTime @default(now())
+  answeredPersonHandle String
+  answeredPerson       profile  @relation(fields: [answeredPersonHandle], references: [handle])
+  nsfwedAnswer         Boolean
 }
 
 model question {
-    id              Int     @default(autoincrement())   @id
-    question        String
-    questioner      String?
-    questionee      profile     @relation(fields: [questioneeHandle], references: [handle])
-    questioneeHandle  String
-    questionedAt    DateTime    @default(now())
+  id               Int      @id @default(autoincrement())
+  question         String
+  questioner       String?
+  questionee       profile  @relation(fields: [questioneeHandle], references: [handle])
+  questioneeHandle String
+  questionedAt     DateTime @default(now())
 }
 
 model server {
-    id              Int         @default(autoincrement())   @id
-    instances       String      @unique         /// Server 의 Hostname
-    instanceType    InstanceType @default(misskey)
-    appSecret       String?     /// Misskey App인증의 Secret Key
-    client_id       String?     /// Mastodon OAuth2 client ID
-    client_secret   String?     /// Mastodon OAuth2 client secret
+  id            Int          @id @default(autoincrement())
+  instances     String       @unique /// Server 의 Hostname
+  instanceType  InstanceType @default(misskey)
+  appSecret     String? /// Misskey App인증의 Secret Key
+  client_id     String? /// Mastodon OAuth2 client ID
+  client_secret String? /// Mastodon OAuth2 client secret
+}
+
+model blocking {
+  id            String   @id @default(cuid())
+  blockeeHandle String   @db.VarChar(500)
+  blockerHandle String   @db.VarChar(500)
+  blocker       user     @relation("blocks", fields: [blockerHandle], references: [handle], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  hidden        Boolean  @default(false)
+
+  @@unique([blockeeHandle, blockerHandle, hidden])
+  @@index([blockerHandle, blockeeHandle, hidden, createdAt(sort: Desc)])
 }
