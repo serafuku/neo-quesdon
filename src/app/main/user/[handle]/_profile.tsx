@@ -1,5 +1,7 @@
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
+import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import NameComponents from '@/app/_components/NameComponents';
+import { SearchBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
 import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
 import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import josa from '@/app/api/_utils/josa';
@@ -7,6 +9,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { FaEllipsisVertical } from 'react-icons/fa6';
 
 type FormValue = {
   question: string;
@@ -34,7 +37,12 @@ export default function Profile() {
   const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto>();
   const [localHandle, setLocalHandle] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
   const questionSendingModalRef = useRef<HTMLDialogElement>(null);
+  const blockConfirmModalRef = useRef<HTMLDialogElement>(null);
+  const blockSuccessModalRef = useRef<HTMLDialogElement>(null);
+  const unblockConfirmModalRef = useRef<HTMLDialogElement>(null);
+  const unblockSuccessModalRef = useRef<HTMLDialogElement>(null);
 
   const {
     register,
@@ -97,6 +105,38 @@ export default function Profile() {
       '예요!',
     )} #neo_quesdon ${location.origin}/main/user/${userProfile?.handle}`;
     return `https://${server}/share?text=${encodeURIComponent(text)}`;
+  };
+
+  // 차단하는 함수
+  const handleBlock = async () => {
+    setIsLoading(true);
+    blockSuccessModalRef.current?.showModal();
+    const res = await fetch('/api/user/blocking/create', {
+      method: 'POST',
+      body: JSON.stringify({ targetHandle: profileHandle }),
+    });
+    if (!res.ok) {
+      alert(await res.text());
+      setIsLoading(false);
+    }
+    setIsUserBlocked(true);
+    setIsLoading(false);
+  };
+
+  // 차단 해제하는 함수
+  const handleUnBlock = async () => {
+    setIsLoading(true);
+    unblockSuccessModalRef.current?.showModal();
+    const res = await fetch('/api/user/blocking/delete', {
+      method: 'POST',
+      body: JSON.stringify({ targetHandle: profileHandle }),
+    });
+    if (!res.ok) {
+      alert(await res.text());
+      setIsLoading(false);
+    }
+    setIsUserBlocked(false);
+    setIsLoading(false);
   };
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
@@ -178,20 +218,43 @@ export default function Profile() {
       setUserProfile(r);
     });
     setLocalHandle(localStorage.getItem('user_handle') ?? '');
-  }, [profileHandle]);
+    (async () => {
+      const res = await fetch('/api/user/blocking/find', {
+        method: 'POST',
+        body: JSON.stringify({ targetHandle: profileHandle }),
+      });
+      if (!res.ok) alert('차단여부를 불러오는데 오류가 발생했어요!');
+      const data = (await res.json()) as SearchBlockListResDto;
+      setIsUserBlocked(data.isBlocked);
+    })();
+  }, []);
 
   return (
     <div className="w-full h-fit desktop:sticky top-2 flex flex-col">
       <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
         <div className="flex flex-col items-center gap-2 py-2">
-          <div className="flex w-10 absolute left-[85%] w-full">
-            <details className="dropdown dropdown-end">
-              <summary className="flex btn btn-ghost text-xs text-slate-600 dark:text-slate-200"> 유저 메뉴</summary>
+          {localHandle !== profileHandle && localHandle !== '' && (
+            <div tabIndex={0} className="dropdown dropdown-end absolute size-fit right-[2rem]">
+              <div className="flex btn btn-ghost btn-circle text-slate-600 dark:text-slate-200">
+                <FaEllipsisVertical size={20} />
+              </div>
               <ul tabIndex={0} className="flex dropdown-content menu bg-base-100 rounded-box w-40 p-2 shadow">
-                <li> <button className='w-full' onClick={(e) => alert('test...')}> 차단 </button> </li>
+                {isUserBlocked ? (
+                  <li>
+                    <a className="w-full" onClick={() => unblockConfirmModalRef.current?.showModal()}>
+                      차단 해제
+                    </a>
+                  </li>
+                ) : (
+                  <li>
+                    <a className="w-full hover:bg-red-500" onClick={() => blockConfirmModalRef.current?.showModal()}>
+                      차단
+                    </a>
+                  </li>
+                )}
               </ul>
-            </details>
-          </div>
+            </div>
+          )}
           {userProfile && userProfile.avatarUrl ? (
             <div className="flex w-full h-24">
               <Link href={`https://${userProfile.hostname}/${userProfile.handle.match(/^@([^@ ]){1,100}/g)?.[0]}`}>
@@ -289,6 +352,44 @@ export default function Profile() {
         loadingButtonText={'로딩중'}
         doneButtonText={'닫기'}
         ref={questionSendingModalRef}
+      />
+      <DialogModalTwoButton
+        title={'차단'}
+        body={
+          '정말 차단하시겠어요...?\n차단 이후에는 서로의 답변이 숨겨지고 차단한 사람이 나에게 질문을 할 수 없게 되어요.'
+        }
+        confirmButtonText={'확인'}
+        onClick={handleBlock}
+        cancelButtonText={'취소'}
+        ref={blockConfirmModalRef}
+      />
+      <DialogModalLoadingOneButton
+        isLoading={isLoading}
+        title_loading={'차단'}
+        title_done={'차단'}
+        body_loading={'차단하는 중...'}
+        body_done={'차단되었어요!'}
+        loadingButtonText={'로딩중'}
+        doneButtonText={'닫기'}
+        ref={blockSuccessModalRef}
+      />
+      <DialogModalTwoButton
+        title={'차단 해제'}
+        body={'차단 해제하시겠어요?'}
+        confirmButtonText={'확인'}
+        onClick={handleUnBlock}
+        cancelButtonText={'취소'}
+        ref={unblockConfirmModalRef}
+      />
+      <DialogModalLoadingOneButton
+        isLoading={isLoading}
+        title_loading={'차단 해제'}
+        title_done={'차단 해제'}
+        body_loading={'차단 해제하는 중...'}
+        body_done={'차단 해제되었어요!'}
+        loadingButtonText={'로딩중'}
+        doneButtonText={'닫기'}
+        ref={unblockSuccessModalRef}
       />
     </div>
   );

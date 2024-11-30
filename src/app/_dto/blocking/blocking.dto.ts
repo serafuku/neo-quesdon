@@ -1,11 +1,10 @@
-import { IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from "class-validator";
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateBlockDto {
   @IsString()
   @MaxLength(500)
   targetHandle: string;
 }
-
 
 export class Block {
   id: string;
@@ -37,6 +36,16 @@ export class GetBlockListReqDto {
 
 export class GetBlockListResDto {
   blockList: Block[];
+}
+
+export class SearchBlockListReqDto {
+  @IsString()
+  targetHandle: string;
+}
+
+export class SearchBlockListResDto {
+  @IsBoolean()
+  isBlocked: boolean;
 }
 
 export class DeleteBlockDto {

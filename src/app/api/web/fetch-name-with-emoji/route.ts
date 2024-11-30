@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         }
         return NextResponse.json({ nameWithEmoji: nameArray });
       } catch (err) {
-        return NextResponse.json({ asdf: 'asdf' }, { status: 500 });
+        return NextResponse.json(err, { status: 500 });
       }
 
     case 'misskey':
