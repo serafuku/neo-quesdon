@@ -245,7 +245,7 @@ export default function Profile() {
               <div className="flex btn btn-ghost btn-circle text-slate-600 dark:text-slate-200">
                 <FaEllipsisVertical size={20} />
               </div>
-              <ul tabIndex={0} className="flex dropdown-content menu bg-base-100 rounded-box w-40 p-2 shadow">
+              <ul tabIndex={0} className="flex dropdown-content menu bg-base-100 z-10 rounded-box w-40 p-2 shadow">
                 {isUserBlocked ? (
                   <li>
                     <a className="w-full" onClick={() => unblockConfirmModalRef.current?.showModal()}>
