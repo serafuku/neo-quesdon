@@ -1,6 +1,5 @@
-import { IsBoolean, IsEnum, IsOptional, IsString, MaxLength } from "class-validator";
-import { $Enums } from "@prisma/client";
-
+import { IsBoolean, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { $Enums } from '@prisma/client';
 
 export class UserSettingsDto {
   @IsBoolean()
@@ -36,7 +35,7 @@ export class UserSettingsUpdateDto {
   @IsString()
   @MaxLength(10)
   questionBoxName?: string;
-  
+
   @IsOptional()
   @IsEnum($Enums.PostVisibility)
   defaultPostVisibility?: $Enums.PostVisibility;

@@ -56,7 +56,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ hand
       avatarUrl: profile.avatarUrl,
       questionBoxName: profile.questionBoxName,
       stopNotiNewQuestion: profile.stopNotiNewQuestion,
-      stopPostAnswer: profile.stopPostAnswer,
       hostname: profile.user.hostName,
       instanceType: instanceType,
     };

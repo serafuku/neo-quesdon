@@ -32,7 +32,7 @@ export default function Question({
   deleteRef,
   answerRef,
   setIsLoading,
-  defaultVisibility
+  defaultVisibility,
 }: askProps) {
   const {
     register,
@@ -43,7 +43,7 @@ export default function Question({
     watch,
     setError,
     formState: { errors },
-    reset
+    reset,
   } = useForm<formValue>({
     defaultValues: {
       answer: '',
@@ -52,7 +52,6 @@ export default function Question({
     },
   });
   const profile = useContext(MyProfileContext);
-
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -110,8 +109,8 @@ export default function Question({
   };
 
   useEffect(() => {
-    reset({visibility: defaultVisibility, nsfw: false, answer: ''});
-  }, [defaultVisibility])
+    reset({ visibility: defaultVisibility, nsfw: false, answer: '' });
+  }, [defaultVisibility]);
 
   return (
     <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
@@ -123,7 +122,7 @@ export default function Question({
             '익명의 질문자'
           )}
         </div>
-        <div className="chat-bubble flex items-center text-sm window:text-xl desktop:text-2xl text-slate-200">
+        <div className="chat-bubble flex items-center text-sm break-all window:text-xl desktop:text-2xl text-slate-200">
           {singleQuestion.question}
         </div>
         <div className="chat-footer opacity-50 dark:text-slate-100 dark:opacity-80">
@@ -167,7 +166,9 @@ export default function Question({
                   <span className="text-sm desktop:text-xl">NSFW로 체크</span>
                 </div>
                 <select {...register('visibility')} className="select select-ghost select-sm">
-                  <option className={'hidden'} value={undefined}>...</option>
+                  <option className={'hidden'} value={undefined}>
+                    ...
+                  </option>
                   <option value="public">공개</option>
                   <option value="home">홈</option>
                   <option value="followers">팔로워</option>

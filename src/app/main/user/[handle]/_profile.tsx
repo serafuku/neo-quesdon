@@ -1,5 +1,7 @@
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
+import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import NameComponents from '@/app/_components/NameComponents';
+import { SearchBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
 import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
 import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import josa from '@/app/api/_utils/josa';
@@ -7,6 +9,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
+import { FaEllipsisVertical } from 'react-icons/fa6';
 
 type FormValue = {
   question: string;
@@ -32,9 +35,18 @@ export default function Profile() {
   const profileHandle = decodeURIComponent(handle);
 
   const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto>();
-  const [localHandle, setLocalHandle] = useState<string>('');
+  const [localHandle, setLocalHandle] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
+  const [questionSendingDoneMessage, setQuestionSendingDoneMessage] = useState<{ title: string; body: string }>({
+    title: '성공',
+    body: '질문했어요!',
+  });
   const questionSendingModalRef = useRef<HTMLDialogElement>(null);
+  const blockConfirmModalRef = useRef<HTMLDialogElement>(null);
+  const blockSuccessModalRef = useRef<HTMLDialogElement>(null);
+  const unblockConfirmModalRef = useRef<HTMLDialogElement>(null);
+  const unblockSuccessModalRef = useRef<HTMLDialogElement>(null);
 
   const {
     register,
@@ -84,8 +96,9 @@ export default function Profile() {
       return res;
     } catch (err) {
       // fetch 자체가 throw 된 경우만 여기서 alert하고 status code가 성공이 아닌 경우는 별도로 핸들링
-      alert(`질문 생성 API호출 실패! ${err}`);
-      throw(err);
+      setIsLoading(false);
+      setQuestionSendingDoneMessage({ title: '에러', body: `질문을 보내는데 실패했어요! ${err}` });
+      throw err;
     }
   };
 
@@ -97,6 +110,38 @@ export default function Profile() {
       '예요!',
     )} #neo_quesdon ${location.origin}/main/user/${userProfile?.handle}`;
     return `https://${server}/share?text=${encodeURIComponent(text)}`;
+  };
+
+  // 차단하는 함수
+  const handleBlock = async () => {
+    setIsLoading(true);
+    blockSuccessModalRef.current?.showModal();
+    const res = await fetch('/api/user/blocking/create', {
+      method: 'POST',
+      body: JSON.stringify({ targetHandle: profileHandle }),
+    });
+    if (!res.ok) {
+      alert(await res.text());
+      setIsLoading(false);
+    }
+    setIsUserBlocked(true);
+    setIsLoading(false);
+  };
+
+  // 차단 해제하는 함수
+  const handleUnBlock = async () => {
+    setIsLoading(true);
+    unblockSuccessModalRef.current?.showModal();
+    const res = await fetch('/api/user/blocking/delete', {
+      method: 'POST',
+      body: JSON.stringify({ targetHandle: profileHandle }),
+    });
+    if (!res.ok) {
+      alert(await res.text());
+      setIsLoading(false);
+    }
+    setIsUserBlocked(false);
+    setIsLoading(false);
   };
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {
@@ -133,8 +178,8 @@ export default function Profile() {
       if (res.ok) {
         setIsLoading(false);
       } else {
-        questionSendingModalRef.current?.close();
-        alert(`질문을 보내는데 실패했어요! ${await res.text()}`);
+        setIsLoading(false);
+        setQuestionSendingDoneMessage({ title: '에러', body: `질문을 보내는데 실패했어요! ${await res.text()}` });
       }
     }
     // 작성자 비공개
@@ -166,8 +211,8 @@ export default function Profile() {
         if (res.ok) {
           setIsLoading(false);
         } else {
-          questionSendingModalRef.current?.close();
-          alert(`질문을 보내는데 실패했어요! ${await res.text()}`);
+          setIsLoading(false);
+          setQuestionSendingDoneMessage({ title: '에러', body: `질문을 보내는데 실패했어요! ${await res.text()}` });
         }
       }
     }
@@ -177,13 +222,46 @@ export default function Profile() {
     fetchProfile(profileHandle).then((r) => {
       setUserProfile(r);
     });
-    setLocalHandle(localStorage.getItem('user_handle') ?? '');
-  }, [profileHandle]);
+    setLocalHandle(localStorage.getItem('user_handle'));
+    if (localHandle) {
+      (async () => {
+        const res = await fetch('/api/user/blocking/find', {
+          method: 'POST',
+          body: JSON.stringify({ targetHandle: profileHandle }),
+        });
+        if (!res.ok) alert('차단여부를 불러오는데 오류가 발생했어요!');
+        const data = (await res.json()) as SearchBlockListResDto;
+        setIsUserBlocked(data.isBlocked);
+      })();
+    }
+  }, []);
 
   return (
     <div className="w-full h-fit desktop:sticky top-2 flex flex-col">
       <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
         <div className="flex flex-col items-center gap-2 py-2">
+          {localHandle !== profileHandle && localHandle !== null && (
+            <div tabIndex={0} className="dropdown dropdown-end absolute size-fit right-[2rem]">
+              <div className="flex btn btn-ghost btn-circle text-slate-600 dark:text-slate-200">
+                <FaEllipsisVertical size={20} />
+              </div>
+              <ul tabIndex={0} className="flex dropdown-content menu bg-base-100 rounded-box w-40 p-2 shadow">
+                {isUserBlocked ? (
+                  <li>
+                    <a className="w-full" onClick={() => unblockConfirmModalRef.current?.showModal()}>
+                      차단 해제
+                    </a>
+                  </li>
+                ) : (
+                  <li>
+                    <a className="w-full hover:bg-red-500" onClick={() => blockConfirmModalRef.current?.showModal()}>
+                      차단
+                    </a>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
           {userProfile && userProfile.avatarUrl ? (
             <div className="flex w-full h-24">
               <Link href={`https://${userProfile.hostname}/${userProfile.handle.match(/^@([^@ ]){1,100}/g)?.[0]}`}>
@@ -221,7 +299,8 @@ export default function Profile() {
         <form className="w-full flex flex-col items-center" onSubmit={handleSubmit(onSubmit)}>
           <textarea
             {...register('question', {
-              required: 'required', maxLength: 1000,
+              required: 'required',
+              maxLength: 1000,
             })}
             placeholder="질문 내용을 입력해 주세요"
             className={`w-[90%] my-2 font-thin leading-loose textarea ${
@@ -274,12 +353,50 @@ export default function Profile() {
       <DialogModalLoadingOneButton
         isLoading={isLoading}
         title_loading={'보내는 중'}
-        title_done={'성공!'}
+        title_done={questionSendingDoneMessage.title}
         body_loading={'질문을 보내고 있어요...'}
-        body_done={'질문했어요!'}
+        body_done={questionSendingDoneMessage.body}
         loadingButtonText={'로딩중'}
         doneButtonText={'닫기'}
         ref={questionSendingModalRef}
+      />
+      <DialogModalTwoButton
+        title={'차단'}
+        body={
+          '정말 차단하시겠어요...?\n차단 이후에는 서로의 답변이 숨겨지고 차단한 사람이 나에게 질문을 할 수 없게 되어요.'
+        }
+        confirmButtonText={'확인'}
+        onClick={handleBlock}
+        cancelButtonText={'취소'}
+        ref={blockConfirmModalRef}
+      />
+      <DialogModalLoadingOneButton
+        isLoading={isLoading}
+        title_loading={'차단'}
+        title_done={'차단'}
+        body_loading={'차단하는 중...'}
+        body_done={'차단되었어요!'}
+        loadingButtonText={'로딩중'}
+        doneButtonText={'닫기'}
+        ref={blockSuccessModalRef}
+      />
+      <DialogModalTwoButton
+        title={'차단 해제'}
+        body={'차단 해제하시겠어요?'}
+        confirmButtonText={'확인'}
+        onClick={handleUnBlock}
+        cancelButtonText={'취소'}
+        ref={unblockConfirmModalRef}
+      />
+      <DialogModalLoadingOneButton
+        isLoading={isLoading}
+        title_loading={'차단 해제'}
+        title_done={'차단 해제'}
+        body_loading={'차단 해제하는 중...'}
+        body_done={'차단 해제되었어요!'}
+        loadingButtonText={'로딩중'}
+        doneButtonText={'닫기'}
+        ref={unblockSuccessModalRef}
       />
     </div>
   );

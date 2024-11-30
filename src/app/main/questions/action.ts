@@ -32,7 +32,7 @@ export async function postAnswer(questionId: question['id'] | null, reqData: cre
   // JWT 토큰 검증
   try {
     tokenPayload = await verifyToken(jwtToken);
-  } catch (err) {
+  } catch {
     return sendApiError(401, 'Unauthorized');
   }
   if (!questionId) {
@@ -92,7 +92,10 @@ export async function postAnswer(questionId: question['id'] | null, reqData: cre
       switch (server.instanceType) {
         case 'misskey':
         case 'cherrypick':
-          await mkMisskeyNote({ user: answeredUser, server: server }, { title: title, text: text, visibility: typedAnswer.visibility });
+          await mkMisskeyNote(
+            { user: answeredUser, server: server },
+            { title: title, text: text, visibility: typedAnswer.visibility },
+          );
           break;
         case 'mastodon':
           await mastodonToot({ user: answeredUser }, { title: title, text: text, visibility: typedAnswer.visibility });
@@ -118,15 +121,22 @@ export async function postAnswer(questionId: question['id'] | null, reqData: cre
 }
 
 async function mkMisskeyNote(
-  { user, server }: {
-    user: user,
-    server: server,
+  {
+    user,
+    server,
+  }: {
+    user: user;
+    server: server;
   },
-  { title, text, visibility }: {
-    title: string,
-    text: string,
-    visibility: MkNoteAnswers['visibility'],
-  }
+  {
+    title,
+    text,
+    visibility,
+  }: {
+    title: string;
+    text: string;
+    visibility: MkNoteAnswers['visibility'];
+  },
 ) {
   const NoteLogger = new Logger('mkMisskeyNote');
   // 미스키 CW길이제한 처리
@@ -154,10 +164,9 @@ async function mkMisskeyNote(
     if (res.status === 401 || res.status === 403) {
       NoteLogger.warn('User Revoked Access token. JWT를 Revoke합니다... Detail:', await res.text());
       const prisma = GetPrismaClient.getClient();
-      await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: (user.jwtIndex + 1) } });
+      await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: user.jwtIndex + 1 } });
       throw new Error('Note Create Fail! (Token Revoked)');
-    }
-    else if (!res.ok) {
+    } else if (!res.ok) {
       throw new Error(`Note Create Fail! ${await res.text()}`);
     } else {
       NoteLogger.log(`Note Created! ${res.statusText}`);
@@ -169,14 +178,20 @@ async function mkMisskeyNote(
 }
 
 async function mastodonToot(
-  { user }: {
-    user: user,
+  {
+    user,
+  }: {
+    user: user;
   },
-  { title, text, visibility }: {
-    title: string,
-    text: string,
-    visibility: MkNoteAnswers['visibility'],
-  }
+  {
+    title,
+    text,
+    visibility,
+  }: {
+    title: string;
+    text: string;
+    visibility: MkNoteAnswers['visibility'];
+  },
 ) {
   const tootLogger = new Logger('mastodonToot');
   let newVisibility: 'public' | 'unlisted' | 'private';
@@ -211,10 +226,9 @@ async function mastodonToot(
     if (res.status === 401 || res.status === 403) {
       tootLogger.warn('User Revoked Access token. JWT를 Revoke합니다.. Detail:', await res.text());
       const prisma = GetPrismaClient.getClient();
-      await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: (user.jwtIndex + 1) } });
+      await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: user.jwtIndex + 1 } });
       throw new Error('Toot Create Fail! (Token Revoked)');
-    }
-    else if (!res.ok) {
+    } else if (!res.ok) {
       throw new Error(`HTTP Error! status:${await res.text()}`);
     } else {
       tootLogger.log(`Toot Created! ${res.statusText}`);

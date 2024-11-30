@@ -1,4 +1,4 @@
-import { AnswerDto } from '@/app/_dto/Answers.dto';
+import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
 import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
@@ -7,6 +7,9 @@ import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-cli
 import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '../../_utils/jwt/verify-jwt';
+import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { profile } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();
@@ -19,6 +22,13 @@ export async function POST(req: NextRequest) {
   });
   if (limited) {
     return sendApiError(429, '요청 제한에 도달했습니다!');
+  }
+  let tokenPayload;
+  try {
+    const token = req.cookies.get('jwtToken')?.value;
+    tokenPayload = await verifyToken(token);
+  } catch {
+    // no login
   }
 
   let data;
@@ -50,6 +60,60 @@ export async function POST(req: NextRequest) {
     },
     take: query_limit,
   });
+  let list: AnswerWithProfileDto[] = answersWithProfile.map((answer) => {
+    const data: AnswerWithProfileDto = {
+      id: answer.id,
+      question: answer.question,
+      questioner: answer.questioner,
+      answer: answer.answer,
+      answeredAt: answer.answeredAt,
+      answeredPersonHandle: answer.answeredPersonHandle,
+      answeredPerson: profileToDto(answer.answeredPerson),
+      nsfwedAnswer: answer.nsfwedAnswer,
+    };
+    return data;
+  });
 
-  return NextResponse.json(answersWithProfile as unknown as AnswerDto);
+  if (tokenPayload?.handle) {
+    // 로그인 상태면 블락 필터링
+    list = await filterBlock(list, tokenPayload.handle);
+  }
+
+  const return_data: AnswerListWithProfileDto = {
+    answersList: list,
+  };
+
+  return NextResponse.json(return_data, {
+    headers: { 'Content-type': 'application/json', 'Cache-Control': 'private, no-store, max-age=0' },
+  });
+}
+
+async function filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
+  const prisma = GetPrismaClient.getClient();
+  const blockList = await prisma.blocking.findMany({ where: { blockerHandle: myHandle, hidden: false } });
+  const blockedList = await prisma.blocking.findMany({ where: { blockeeHandle: myHandle, hidden: false } });
+  const filteredAnswers = answers.filter((ans) => {
+    if (blockList.find((b) => b.blockeeHandle === ans.answeredPersonHandle || b.blockeeHandle === ans.questioner)) {
+      return false;
+    }
+    if (blockedList.find((b) => b.blockerHandle === ans.answeredPersonHandle || b.blockerHandle === ans.questioner)) {
+      return false;
+    }
+    return true;
+  });
+
+  return filteredAnswers;
+}
+
+function profileToDto(profile: profile): userProfileDto {
+  const data: userProfileDto = {
+    handle: profile.handle,
+    name: profile.name,
+    stopNewQuestion: profile.stopNewQuestion,
+    stopAnonQuestion: profile.stopAnonQuestion,
+    stopNotiNewQuestion: profile.stopNotiNewQuestion,
+    avatarUrl: profile.avatarUrl,
+    questionBoxName: profile.questionBoxName,
+  }
+  return data;
 }
