@@ -4,7 +4,7 @@ type username = {
   height: number;
 };
 
-export default function NameComponents({ username, width, height }: username) {
+export default function NameComponents({ username, height }: username) {
   return (
     <div className="flex items-center">
       {username && username.length > 0 ? (
@@ -20,7 +20,9 @@ export default function NameComponents({ username, width, height }: username) {
                   key={key}
                 />
               ) : (
-                <span className="break-keep" key={key}>{el}</span>
+                <span className="break-keep" key={key}>
+                  {el}
+                </span>
               )}
             </div>
           ))}

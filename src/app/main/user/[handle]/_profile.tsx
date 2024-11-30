@@ -1,7 +1,7 @@
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import NameComponents from '@/app/_components/NameComponents';
-import { GetBlockListReqDto, SearchBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
+import { SearchBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
 import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
 import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import josa from '@/app/api/_utils/josa';
@@ -119,6 +119,7 @@ export default function Profile() {
       alert(await res.text());
       setIsLoading(false);
     }
+    setIsUserBlocked(true);
     setIsLoading(false);
   };
 
@@ -134,6 +135,7 @@ export default function Profile() {
       alert(await res.text());
       setIsLoading(false);
     }
+    setIsUserBlocked(false);
     setIsLoading(false);
   };
 
