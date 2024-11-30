@@ -11,6 +11,10 @@ export default function BlockList() {
   const [unblockHandle, setUnblockHandle] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [mounted, setMounted] = useState<HTMLTableRowElement | null>(null);
+  const [loadingDoneModalText, setLoadingDoneModalText] = useState<{ title: string; body: string }>({
+    title: '완료',
+    body: '차단 해제되었어요!',
+  });
   const unblockConfirmModalRef = useRef<HTMLDialogElement>(null);
   const unblockSuccessModalRef = useRef<HTMLDialogElement>(null);
 
@@ -22,8 +26,12 @@ export default function BlockList() {
       body: JSON.stringify({ targetHandle: handle }),
     });
     if (!res.ok) {
-      alert(await res.text());
       setIsLoading(false);
+      setLoadingDoneModalText({
+        title: '오류',
+        body: `차단 해제중 오류가 발생했어요! ${await res.text()}`,
+      });
+      return;
     }
     setBlockList((prevList) => (prevList ? [...prevList.filter((prev) => prev.targetHandle !== handle)] : []));
     setIsLoading(false);
@@ -136,9 +144,9 @@ export default function BlockList() {
       <DialogModalLoadingOneButton
         isLoading={isLoading}
         title_loading={'차단 해제'}
-        title_done={'차단 해제'}
+        title_done={loadingDoneModalText.title}
         body_loading={'차단 해제하는 중...'}
-        body_done={'차단 해제되었어요!'}
+        body_done={loadingDoneModalText.body}
         loadingButtonText={'로딩중'}
         doneButtonText={'닫기'}
         ref={unblockSuccessModalRef}
