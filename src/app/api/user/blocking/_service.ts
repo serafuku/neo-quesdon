@@ -89,10 +89,13 @@ export class BlockingService {
       return d;
     });
 
-    return NextResponse.json(return_data, {
-      status: 200,
-      headers: { 'Cache-Control': 'private, no-store, max-age=0' },
-    });
+    return NextResponse.json(
+      { blockList: return_data },
+      {
+        status: 200,
+        headers: { 'Cache-Control': 'private, no-store, max-age=0' },
+      },
+    );
   }
 
   @Auth()

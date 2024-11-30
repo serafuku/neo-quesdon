@@ -356,7 +356,7 @@ export default function Profile() {
       <DialogModalTwoButton
         title={'차단'}
         body={
-          '정말 차단하시겠어요...?\n차단이후에는 이 유저의 답변을 볼 수 없고 이 유저도 당신의 답변을 볼 수 없습니다.'
+          '정말 차단하시겠어요...?\n차단 이후에는 서로의 답변이 숨겨지고 차단한 사람이 나에게 질문을 할 수 없게 되어요.'
         }
         confirmButtonText={'확인'}
         onClick={handleBlock}

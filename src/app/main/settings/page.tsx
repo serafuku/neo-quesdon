@@ -7,6 +7,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { $Enums } from '@prisma/client';
 import { MyProfileEv, MyProfileContext } from '../_profileContext';
+import BlockList from './_table';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -120,60 +121,65 @@ export default function Settings() {
                   <span>우리만의 비밀설정창</span>
                 </div>
                 <Divider />
-                <div className="w-full window:w-[70%] desktop:w-full">
+                <div className="w-full window:w-[70%] flex flex-col desktop:w-full gap-2 desktop:grid desktop:grid-cols-2">
                   {userInfo && (
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                      <div className="grid grid-cols-[20%_80%] desktop:grid-cols-[12%_88%] gap-2 items-center p-2">
-                        <input {...register('stopNewQuestion')} type="checkbox" className="toggle toggle-success" />
-                        <span className="font-thin">더 이상 질문을 받지 않기</span>
-                        <input
-                          {...register('stopAnonQuestion')}
-                          type="checkbox"
-                          className="toggle toggle-success"
-                          disabled={formValues.stopNewQuestion}
-                        />
-                        <span className="font-thin">익명 질문을 받지 않기</span>
-                        <input
-                          {...register('stopNotiNewQuestion')}
-                          type="checkbox"
-                          className="toggle toggle-success"
-                          disabled={formValues.stopNewQuestion}
-                        />
-                        <span className="font-thin">새 질문 DM으로 받지 않기</span>
-                        <input {...register('stopPostAnswer')} type="checkbox" className="toggle toggle-success" />
-                        <span className="font-thin">내 답변을 올리지 않기</span>
-                        <div className="w-full col-span-2 desktop:grid desktop:grid-cols-subgrid flex flex-col-reverse justify-center desktop:items-center gap-2 ml-[calc(20%+8px)] desktop:ml-0">
-                          <select
-                            {...register('visibility')}
-                            className="select select-ghost select-sm w-fit"
-                            disabled={formValues.stopPostAnswer}
-                          >
-                            <option value="public">공개</option>
-                            <option value="home">홈</option>
-                            <option value="followers">팔로워</option>
-                          </select>
-                          <span className="font-thin"> 답변을 올릴 때 기본 공개 범위</span>
-                        </div>
-                        <div className="col-start-2 flex flex-col-reverse gap-2">
+                    <>
+                      <form onSubmit={handleSubmit(onSubmit)}>
+                        <div className="grid grid-cols-[20%_80%] desktop:grid-cols-[30%_70%] gap-2 items-center p-2">
+                          <input {...register('stopNewQuestion')} type="checkbox" className="toggle toggle-success" />
+                          <span className="font-thin">더 이상 질문을 받지 않기</span>
                           <input
-                            {...register('questionBoxName', {
-                              maxLength: 10,
-                            })}
-                            type="text"
-                            placeholder="질문함"
-                            className={`input input-bordered input-sm w-48 ${
-                              errors.questionBoxName?.type === 'maxLength' && 'input-error'
-                            }`}
+                            {...register('stopAnonQuestion')}
+                            type="checkbox"
+                            className="toggle toggle-success"
+                            disabled={formValues.stopNewQuestion}
                           />
-                          <span className="font-thin">질문함 이름 (10글자 이내)</span>
+                          <span className="font-thin">익명 질문을 받지 않기</span>
+                          <input
+                            {...register('stopNotiNewQuestion')}
+                            type="checkbox"
+                            className="toggle toggle-success"
+                            disabled={formValues.stopNewQuestion}
+                          />
+                          <span className="font-thin">새 질문 DM으로 받지 않기</span>
+                          <input {...register('stopPostAnswer')} type="checkbox" className="toggle toggle-success" />
+                          <span className="font-thin">내 답변을 올리지 않기</span>
+                          <div className="w-fit col-span-2 desktop:grid desktop:grid-cols-subgrid flex flex-col-reverse justify-center desktop:items-center gap-2 ml-[calc(20%+8px)] desktop:ml-0">
+                            <select
+                              {...register('visibility')}
+                              className="select select-ghost select-sm w-fit"
+                              disabled={formValues.stopPostAnswer}
+                            >
+                              <option value="public">공개</option>
+                              <option value="home">홈</option>
+                              <option value="followers">팔로워</option>
+                            </select>
+                            <span className="font-thin"> 답변을 올릴 때 기본 공개 범위</span>
+                          </div>
+                          <div className="col-start-2 flex flex-col-reverse gap-2">
+                            <input
+                              {...register('questionBoxName', {
+                                maxLength: 10,
+                              })}
+                              type="text"
+                              placeholder="질문함"
+                              className={`input input-bordered input-sm w-48 ${
+                                errors.questionBoxName?.type === 'maxLength' && 'input-error'
+                              }`}
+                            />
+                            <span className="font-thin">질문함 이름 (10글자 이내)</span>
+                          </div>
                         </div>
+                        <div className="flex justify-end mt-2">
+                          <button type="submit" className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-primary'}`}>
+                            {buttonClicked ? '저장했어요!' : '저장'}
+                          </button>
+                        </div>
+                      </form>
+                      <div className="flex justify-center mb-2">
+                        <BlockList />
                       </div>
-                      <div className="flex justify-end mt-2">
-                        <button type="submit" className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-primary'}`}>
-                          {buttonClicked ? '저장했어요!' : '저장'}
-                        </button>
-                      </div>
-                    </form>
+                    </>
                   )}
                 </div>
               </div>
