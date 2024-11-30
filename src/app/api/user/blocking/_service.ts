@@ -48,7 +48,11 @@ export class BlockingService {
       blockeeHandle: targetHandle,
       blockerHandle: user.handle,
     };
-    await this.prisma.blocking.create({ data: dbData });
+    try {
+      await this.prisma.blocking.create({ data: dbData });
+    } catch {
+      return sendApiError(400, '이미 차단된 사용자입니다!');
+    }
 
     return NextResponse.json({}, { status: 200 });
   }
@@ -75,6 +79,7 @@ export class BlockingService {
           ...(data.sinceId ? { gt: data.sinceId } : {}),
           ...(data.untilId ? { lt: data.untilId } : {}),
         },
+        hidden: false,
       },
       orderBy: { id: orderBy },
       take: data.limit ?? 10,
@@ -134,15 +139,20 @@ export class BlockingService {
     }
     const user = await this.prisma.user.findUniqueOrThrow({ where: { handle: tokenBody!.handle } });
 
-    await this.prisma.blocking.delete({
-      where: {
-        blockeeHandle_blockerHandle_hidden: {
-          blockeeHandle: data.targetHandle,
-          blockerHandle: user.handle,
-          hidden: false,
+    try {
+      await this.prisma.blocking.delete({
+        where: {
+          blockeeHandle_blockerHandle_hidden: {
+            blockeeHandle: data.targetHandle,
+            blockerHandle: user.handle,
+            hidden: false,
+          },
         },
-      },
-    });
+      });
+    } catch {
+      return sendApiError(400, '이미 차단 해제된 사용자입니다!');
+    }
+
     return NextResponse.json({}, { status: 200 });
   }
 }
