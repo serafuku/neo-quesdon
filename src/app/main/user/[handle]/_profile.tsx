@@ -35,7 +35,7 @@ export default function Profile() {
   const profileHandle = decodeURIComponent(handle);
 
   const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto>();
-  const [localHandle, setLocalHandle] = useState<string>('');
+  const [localHandle, setLocalHandle] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
   const [questionSendingDoneMessage, setQuestionSendingDoneMessage] = useState<{ title: string; body: string }>({
@@ -222,23 +222,25 @@ export default function Profile() {
     fetchProfile(profileHandle).then((r) => {
       setUserProfile(r);
     });
-    setLocalHandle(localStorage.getItem('user_handle') ?? '');
-    (async () => {
-      const res = await fetch('/api/user/blocking/find', {
-        method: 'POST',
-        body: JSON.stringify({ targetHandle: profileHandle }),
-      });
-      if (!res.ok) alert('차단여부를 불러오는데 오류가 발생했어요!');
-      const data = (await res.json()) as SearchBlockListResDto;
-      setIsUserBlocked(data.isBlocked);
-    })();
+    setLocalHandle(localStorage.getItem('user_handle'));
+    if (localHandle) {
+      (async () => {
+        const res = await fetch('/api/user/blocking/find', {
+          method: 'POST',
+          body: JSON.stringify({ targetHandle: profileHandle }),
+        });
+        if (!res.ok) alert('차단여부를 불러오는데 오류가 발생했어요!');
+        const data = (await res.json()) as SearchBlockListResDto;
+        setIsUserBlocked(data.isBlocked);
+      })();
+    }
   }, []);
 
   return (
     <div className="w-full h-fit desktop:sticky top-2 flex flex-col">
       <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
         <div className="flex flex-col items-center gap-2 py-2">
-          {localHandle !== profileHandle && localHandle !== '' && (
+          {localHandle !== profileHandle && localHandle !== null && (
             <div tabIndex={0} className="dropdown dropdown-end absolute size-fit right-[2rem]">
               <div className="flex btn btn-ghost btn-circle text-slate-600 dark:text-slate-200">
                 <FaEllipsisVertical size={20} />
