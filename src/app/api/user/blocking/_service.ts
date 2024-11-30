@@ -107,12 +107,20 @@ export class BlockingService {
     } catch {
       return sendApiError(400, 'Bad Request');
     }
-    const currentUserBlockList = await this.prisma.blocking.findMany({ where: { blockerHandle: tokenBody!.handle } });
-    if (currentUserBlockList.length <= 0) return NextResponse.json({ isBlocked: false }, { status: 200 });
+    if (!tokenBody) {
+      return sendApiError(401, '');
+    }
+    const isBlocked = await this.prisma.blocking.findUnique({
+      where: {
+        blockeeHandle_blockerHandle_hidden: {
+          blockerHandle: tokenBody.handle,
+          blockeeHandle: data.targetHandle,
+          hidden: false,
+        },
+      },
+    });
 
-    const isTargetUserBlocked = currentUserBlockList.some((el) => el.blockeeHandle === data.targetHandle);
-
-    return NextResponse.json({ isBlocked: isTargetUserBlocked }, { status: 200 });
+    return NextResponse.json({ isBlocked: isBlocked ? true : false }, { status: 200 });
   }
 
   @Auth()

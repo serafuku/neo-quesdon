@@ -38,6 +38,10 @@ export default function Profile() {
   const [localHandle, setLocalHandle] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);
+  const [questionSendingDoneMessage, setQuestionSendingDoneMessage] = useState<{ title: string; body: string }>({
+    title: '성공',
+    body: '질문했어요!',
+  });
   const questionSendingModalRef = useRef<HTMLDialogElement>(null);
   const blockConfirmModalRef = useRef<HTMLDialogElement>(null);
   const blockSuccessModalRef = useRef<HTMLDialogElement>(null);
@@ -92,7 +96,8 @@ export default function Profile() {
       return res;
     } catch (err) {
       // fetch 자체가 throw 된 경우만 여기서 alert하고 status code가 성공이 아닌 경우는 별도로 핸들링
-      alert(`질문 생성 API호출 실패! ${err}`);
+      setIsLoading(false);
+      setQuestionSendingDoneMessage({ title: '에러', body: `질문을 보내는데 실패했어요! ${err}` });
       throw err;
     }
   };
@@ -173,8 +178,8 @@ export default function Profile() {
       if (res.ok) {
         setIsLoading(false);
       } else {
-        questionSendingModalRef.current?.close();
-        alert(`질문을 보내는데 실패했어요! ${await res.text()}`);
+        setIsLoading(false);
+        setQuestionSendingDoneMessage({ title: '에러', body: `질문을 보내는데 실패했어요! ${await res.text()}` });
       }
     }
     // 작성자 비공개
@@ -206,8 +211,8 @@ export default function Profile() {
         if (res.ok) {
           setIsLoading(false);
         } else {
-          questionSendingModalRef.current?.close();
-          alert(`질문을 보내는데 실패했어요! ${await res.text()}`);
+          setIsLoading(false);
+          setQuestionSendingDoneMessage({ title: '에러', body: `질문을 보내는데 실패했어요! ${await res.text()}` });
         }
       }
     }
@@ -346,9 +351,9 @@ export default function Profile() {
       <DialogModalLoadingOneButton
         isLoading={isLoading}
         title_loading={'보내는 중'}
-        title_done={'성공!'}
+        title_done={questionSendingDoneMessage.title}
         body_loading={'질문을 보내고 있어요...'}
-        body_done={'질문했어요!'}
+        body_done={questionSendingDoneMessage.body}
         loadingButtonText={'로딩중'}
         doneButtonText={'닫기'}
         ref={questionSendingModalRef}
