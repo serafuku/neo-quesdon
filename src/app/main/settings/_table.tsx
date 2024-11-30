@@ -59,7 +59,7 @@ export default function BlockList() {
     const observer = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting) {
-          fetchBlocklist({ limit: 1, ...(untilId ? { untilId: untilId } : {}), sort: 'DESC' }).then((list) => {
+          fetchBlocklist({ limit: 30, ...(untilId ? { untilId: untilId } : {}), sort: 'DESC' }).then((list) => {
             if (list.length === 0) {
               setIsLoading(false);
               return;
