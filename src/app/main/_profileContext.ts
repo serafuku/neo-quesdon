@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
+import { userProfileMeDto } from '@/app//_dto/fetch-profile/Profile.dto';
 import { Logger } from '@/utils/logger/Logger';
 
 export const MyProfileContext = createContext<userProfileMeDto | undefined>(undefined);

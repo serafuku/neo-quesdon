@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendApiError } from '../../_utils/apiErrorResponse/sendApiError';
-import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
+import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
+import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { UserSettingsDto, UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
-import { Auth, JwtPayload } from '../../_utils/jwt/decorator';
-import type { jwtPayload } from '../../_utils/jwt/jwtPayload';
-import { RateLimit } from '../../_utils/ratelimiter/decorator';
+import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
+import type { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
+import { RateLimit } from '@/api/_utils/ratelimiter/decorator';
 
 export class UserSettingsService {
   private constructor() {}

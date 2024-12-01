@@ -27,6 +27,7 @@ model user {
   jwtIndex     Int      @default(0)
 
   blocking blocking[] @relation("blocks")
+  following following[] @relation("user")
 }
 
 enum PostVisibility {
@@ -48,6 +49,7 @@ model profile {
   stopPostAnswer        Boolean        @default(false)
   avatarUrl             String
   questionBoxName       String         @default("질문함")
+  lastFollowRefreshed   DateTime       @default("1996-12-19T16:39:57-08:00")
   user                  user           @relation(fields: [handle], references: [handle])
   defaultPostVisibility PostVisibility @default(public)
 }
@@ -91,4 +93,15 @@ model blocking {
 
   @@unique([blockeeHandle, blockerHandle, hidden])
   @@index([blockerHandle, blockeeHandle, hidden, createdAt(sort: Desc)])
+}
+
+model following {
+  id           String   @id @default(cuid())
+  followerHandle String  @db.VarChar(500)
+  follower       user    @relation("user", fields: [followerHandle], references: [handle], onDelete: Cascade)
+  followeeHandle String  @db.VarChar(500)
+  createdAt      DateTime @default(now())
+
+  @@unique([followerHandle, followeeHandle])
+  @@index([followeeHandle, followerHandle])
 }

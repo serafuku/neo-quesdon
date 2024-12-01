@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { Dispatch, SetStateAction, useContext, useEffect, useRef, useState } from 'react';
 import { FaUser } from 'react-icons/fa';
-import DialogModalTwoButton from '../_components/modalTwoButton';
-import DialogModalOneButton from '../_components/modalOneButton';
+import DialogModalTwoButton from '@/app/_components/modalTwoButton';
+import DialogModalOneButton from '@/app/_components/modalOneButton';
 import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
 import { logout } from '@/utils/logout/logout';
-import { MyProfileContext, MyProfileEv } from './_profileContext';
-import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
+import { MyProfileContext, MyProfileEv } from '@/app/main/_profileContext';
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { Logger } from '@/utils/logger/Logger';
 
 type headerProps = {
@@ -39,17 +39,16 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   };
 
   const onProfileUpdateEvent = (ev: CustomEvent<Partial<userProfileMeDto>>) => {
-    const logger = new Logger('onProfileUpdateEvent', {noColor: true});
+    const logger = new Logger('onProfileUpdateEvent', { noColor: true });
     setUserProfile((prev) => {
       if (prev) {
-        const newData = {...prev, ...ev.detail};
+        const newData = { ...prev, ...ev.detail };
         logger.log('My Profile Context Update With: ', ev.detail);
         return newData;
       }
     });
     setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
-  
 
   useEffect(() => {
     if (setUserProfile) {
@@ -124,6 +123,9 @@ export default function MainHeader({ setUserProfile }: headerProps) {
               </li>
               <li>
                 <Link href={'/main/questions'}>미답변 질문</Link>
+              </li>
+              <li>
+                <Link href={'/main/social'}>소셜(베타)</Link>
               </li>
               <li>
                 <Link href={'/main/settings'}>설정</Link>

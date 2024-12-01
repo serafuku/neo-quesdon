@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { login } from './actions';
-import { MiUser as MiUser } from '../api/_misskey-entities/user';
-import { misskeyCallbackTokenClaimPayload } from '../_dto/misskey-callback/callback-token-claim.dto';
-import { misskeyUserInfoPayload } from '../_dto/misskey-callback/user-info.dto';
-import DialogModalOneButton from '../_components/modalOneButton';
+import { login } from '@/app/misskey-callback/actions';
+import { MiUser as MiUser } from '@/api/_misskey-entities/user';
+import { misskeyCallbackTokenClaimPayload } from '@/app/_dto/misskey-callback/callback-token-claim.dto';
+import { misskeyUserInfoPayload } from '@/app/_dto/misskey-callback/user-info.dto';
+import DialogModalOneButton from '@/app/_components/modalOneButton';
 
 const onErrorModalClick = () => {
   window.location.replace('/');

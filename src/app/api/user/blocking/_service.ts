@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Auth, JwtPayload } from '../../_utils/jwt/decorator';
-import { RateLimit } from '../../_utils/ratelimiter/decorator';
-import type { jwtPayload } from '../../_utils/jwt/jwtPayload';
+import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
+import { RateLimit } from '@/api/_utils/ratelimiter/decorator';
+import type { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
 import { PrismaClient } from '@prisma/client';
-import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import {
   Block,
@@ -12,7 +12,7 @@ import {
   GetBlockListReqDto,
   SearchBlockListReqDto,
 } from '@/app/_dto/blocking/blocking.dto';
-import { sendApiError } from '../../_utils/apiErrorResponse/sendApiError';
+import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 
 export class BlockingService {
   private static instance: BlockingService;

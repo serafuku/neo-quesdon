@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import { NextRequest } from 'next/server';
-import { sendApiError } from '../apiErrorResponse/sendApiError';
-import { getIpFromRequest } from '../getIp/get-ip-from-Request';
-import { getIpHash } from '../getIp/get-ip-hash';
-import { RateLimiterService } from './rateLimiter';
-import { verifyToken } from '../jwt/verify-jwt';
+import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
+import { getIpFromRequest } from '@/api/_utils/getIp/get-ip-from-Request';
+import { getIpHash } from '@/api/_utils/getIp/get-ip-hash';
+import { RateLimiterService } from '@/api/_utils/ratelimiter/rateLimiter';
+import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 
 export function RateLimit (
   limitOptions: { bucket_time: number; req_limit: number },

@@ -6,8 +6,8 @@ import { useContext, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { $Enums } from '@prisma/client';
-import { MyProfileEv, MyProfileContext } from '../_profileContext';
-import BlockList from './_table';
+import { MyProfileEv, MyProfileContext } from '@/app/main/_profileContext';
+import BlockList from '@/app/main/settings/_table';
 
 export type FormValue = {
   stopAnonQuestion: boolean;

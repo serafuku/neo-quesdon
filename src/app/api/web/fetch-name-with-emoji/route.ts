@@ -1,9 +1,9 @@
 import { fetchNameWithEmojiReqDto } from '@/app/_dto/fetch-name-with-emoji/fetch-name-with-emoji.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import detectInstance from '../../../../utils/detectInstance/detectInstance';
+import detectInstance from '@/utils/detectInstance/detectInstance';
 import { Logger } from '@/utils/logger/Logger';
-import { sendApiError } from '../../_utils/apiErrorResponse/sendApiError';
+import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 
 const logger = new Logger('fetch-name-with-emoji');
 export async function POST(req: NextRequest) {

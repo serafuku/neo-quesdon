@@ -2,22 +2,24 @@ import { RefreshTokenReqDto } from '@/app/_dto/refresh-token/refresh-token.dto';
 import { Logger } from '@/utils/logger/Logger';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import { sendApiError } from '../../_utils/apiErrorResponse/sendApiError';
-import { verifyToken } from '../../_utils/jwt/verify-jwt';
+import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
+import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 import { cookies } from 'next/headers';
-import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { profile, user } from '@prisma/client';
 import { createHash } from 'crypto';
-import { MiUser } from '../../_misskey-entities/user';
-import { fetchNameWithEmoji } from '../../_utils/fetchUsername';
-import { generateJwt } from '../../_utils/jwt/generate-jwt';
-import { MastodonUser } from '../../_mastodon-entities/user';
-import { RateLimiterService } from '../../_utils/ratelimiter/rateLimiter';
-import { getIpFromRequest } from '../../_utils/getIp/get-ip-from-Request';
-import { getIpHash } from '../../_utils/getIp/get-ip-hash';
+import { MiUser } from '@/api/_misskey-entities/user';
+import { fetchNameWithEmoji } from '@/api/_utils/fetchUsername';
+import { generateJwt } from '@/api/_utils/jwt/generate-jwt';
+import { MastodonUser } from '@/api/_mastodon-entities/user';
+import { RateLimiterService } from '@/api/_utils/ratelimiter/rateLimiter';
+import { getIpFromRequest } from '@/api/_utils/getIp/get-ip-from-Request';
+import { getIpHash } from '@/api/_utils/getIp/get-ip-hash';
+import { QueueService } from '@/api/_queue-service/queueService';
 
 const logger = new Logger('refresh-token');
 export async function POST(req: NextRequest) {
+
   let data;
   try {
     data = await validateStrict(RefreshTokenReqDto, await req.json());
@@ -119,6 +121,8 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
       } catch {
         return;
       }
+      const queueService =  QueueService.get();
+      await queueService.addRefreshFollowJob(user, 'misskey');
       logger.log(`Misskey User Updated!`);
       break;
     }

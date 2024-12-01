@@ -18,4 +18,13 @@ services:
     volumes:
       - ./local_redis_data:/data
 
-
+  bullboard:
+    image: venatum/bull-board:latest
+    ports:
+      - 8090:3000
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+    restart: unless-stopped

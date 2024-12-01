@@ -2,10 +2,10 @@
 
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { mastodonCallbackTokenClaimPayload } from '../_dto/mastodon-callback/callback-token-claim.dto';
-import { login } from './action';
+import { mastodonCallbackTokenClaimPayload } from '@/app/_dto/mastodon-callback/callback-token-claim.dto';
+import { login } from '@/app/mastodon-callback/action';
 import { useRouter } from 'next/navigation';
-import DialogModalOneButton from '../_components/modalOneButton';
+import DialogModalOneButton from '@/app/_components/modalOneButton';
 
 const onErrorModalClick = () => {
   window.location.replace('/');

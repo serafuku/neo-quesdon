@@ -1,12 +1,12 @@
 import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
-import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
-import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
-import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
+import { RateLimiterService } from '@/api/_utils/ratelimiter/rateLimiter';
+import { getIpHash } from '@/api/_utils/getIp/get-ip-hash';
+import { getIpFromRequest } from '@/api/_utils/getIp/get-ip-from-Request';
+import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 
 const logger = new Logger('fetch-user-answer');
 export async function POST(req: NextRequest) {

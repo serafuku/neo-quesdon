@@ -1,7 +1,7 @@
 'use client';
 
 import { RefreshTokenReqDto } from '@/app/_dto/refresh-token/refresh-token.dto';
-import { logout } from '../logout/logout';
+import { logout } from '@/utils/logout/logout';
 
 /**
  * /api/web/refresh-token 를 호출해서 JWT를 Refresh 하려고 시도합니다. 

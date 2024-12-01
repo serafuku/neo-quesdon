@@ -2,7 +2,7 @@ import { loginReqDto } from '@/app/_dto/web/login/login.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
 import { MiApiError, MiAuthSession } from '@/app';
-import detectInstance from '../../../../utils/detectInstance/detectInstance';
+import detectInstance from '@/utils/detectInstance/detectInstance';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';

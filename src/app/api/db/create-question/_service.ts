@@ -5,9 +5,9 @@ import { validateStrict } from '@/utils/validator/strictValidator';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
-import { Auth, JwtPayload } from '../../_utils/jwt/decorator';
-import type { jwtPayload } from '../../_utils/jwt/jwtPayload';
-import { RateLimit } from '../../_utils/ratelimiter/decorator';
+import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
+import type { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
+import { RateLimit } from '@/api/_utils/ratelimiter/decorator';
  
 
 

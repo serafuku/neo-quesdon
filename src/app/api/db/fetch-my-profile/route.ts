@@ -1,6 +1,6 @@
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '../../_utils/jwt/verify-jwt';
+import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
