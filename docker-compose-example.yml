@@ -27,6 +27,7 @@ services:
       - internal_network
     volumes:
       - redis:/data
+
   db:
     image: postgres:15-alpine
     restart: always
@@ -36,6 +37,21 @@ services:
       - ./config/docker.env
     volumes:
       - db:/var/lib/postgresql/data
+
+  bullboard:
+    image: venatum/bull-board:latest
+    ports:
+      - "127.0.0.1:8090:3000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    networks:
+      - internal_network
+      - external_network
+    restart: unless-stopped
+    depends_on:
+      - redis
+
 volumes:
   db:
   redis:
