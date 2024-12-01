@@ -222,6 +222,9 @@ export default function Profile() {
     fetchProfile(profileHandle).then((r) => {
       setUserProfile(r);
     });
+  }, []);
+
+  useEffect(() => {
     setLocalHandle(localStorage.getItem('user_handle'));
     if (localHandle) {
       (async () => {
@@ -234,7 +237,7 @@ export default function Profile() {
         setIsUserBlocked(data.isBlocked);
       })();
     }
-  }, []);
+  }, [localHandle]);
 
   return (
     <div className="w-full h-fit desktop:sticky top-2 flex flex-col">
