@@ -10,6 +10,7 @@ import { misskeyUserInfoPayload } from '@/app/_dto/misskey-callback/user-info.dt
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { generateJwt } from '@/api/_utils/jwt/generate-jwt';
+import { QueueService } from '../api/_queue-service/queueService';
 
 const logger = new Logger('misskey-callback');
 export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): Promise<misskeyUserInfoPayload> {
@@ -130,7 +131,7 @@ async function requestMiAccessTokenAndUserInfo(payload: misskeyCallbackTokenClai
 async function pushDB(payload: DBpayload) {
   const prisma = GetPrismaClient.getClient();
 
-  await prisma.user.upsert({
+  const user = await prisma.user.upsert({
     where: {
       handle: payload.handle,
     },
@@ -162,4 +163,8 @@ async function pushDB(payload: DBpayload) {
       },
     },
   });
+
+  //refersh follows
+  const queue = QueueService.get();
+  queue.addRefreshFollowJob(user, 'misskey');
 }
