@@ -39,17 +39,16 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   };
 
   const onProfileUpdateEvent = (ev: CustomEvent<Partial<userProfileMeDto>>) => {
-    const logger = new Logger('onProfileUpdateEvent', {noColor: true});
+    const logger = new Logger('onProfileUpdateEvent', { noColor: true });
     setUserProfile((prev) => {
       if (prev) {
-        const newData = {...prev, ...ev.detail};
+        const newData = { ...prev, ...ev.detail };
         logger.log('My Profile Context Update With: ', ev.detail);
         return newData;
       }
     });
     setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
-  
 
   useEffect(() => {
     if (setUserProfile) {
@@ -124,6 +123,9 @@ export default function MainHeader({ setUserProfile }: headerProps) {
               </li>
               <li>
                 <Link href={'/main/questions'}>미답변 질문</Link>
+              </li>
+              <li>
+                <Link href={'/main/social'}>소셜(베타)</Link>
               </li>
               <li>
                 <Link href={'/main/settings'}>설정</Link>
