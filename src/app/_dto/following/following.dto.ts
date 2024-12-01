@@ -1,4 +1,5 @@
 import { IsNumber, IsOptional, Max, Min } from 'class-validator';
+import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
 
 export class FollowingListReqDto {
   @IsOptional()
@@ -8,9 +9,10 @@ export class FollowingListReqDto {
   limit: number;
 }
 
-class following {
+export class following {
   follweeHandle: string;
   followerHandle: string;
+  follweeProfile: userProfileDto;
 }
 export class FollowingListResDto {
   followingList: following[];
