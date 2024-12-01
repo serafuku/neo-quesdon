@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Answer from '../_components/answer';
+import Answer from '@/app/_components/answer';
 import { FaExclamationCircle } from 'react-icons/fa';
 import { answer } from '@prisma/client';
-import { FetchAllAnswersReqDto } from '../_dto/fetch-all-answers/fetch-all-answers.dto';
-import { AnswerListWithProfileDto } from '../_dto/Answers.dto';
+import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
+import { AnswerListWithProfileDto } from '@/app/_dto/Answers.dto';
 
 async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
   const res = await fetch('/api/db/fetch-all-answers', {

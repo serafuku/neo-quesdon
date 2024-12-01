@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { BlockingService } from '../_service';
+import { BlockingService } from '@/api/user/blocking/_service';
 
 export async function POST(req: NextRequest) {
   const service = BlockingService.get();

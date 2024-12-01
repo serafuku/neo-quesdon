@@ -1,6 +1,6 @@
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { Logger } from '../logger/Logger';
+import { Logger } from '@/utils/logger/Logger';
 
 const logger = new Logger('validator');
 export async function validateStrict<T extends object>(cls: ClassConstructor<T>, data: unknown): Promise<T> {

@@ -1,8 +1,8 @@
 'use client';
-import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
-import MainHeader from './_header';
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import MainHeader from '@/app/main/_header';
 import { useState } from 'react';
-import { MyProfileContext } from './_profileContext';
+import { MyProfileContext } from '@/app/main/_profileContext';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [userProfileData, setUserProfileData] = useState<userProfileMeDto | undefined>();

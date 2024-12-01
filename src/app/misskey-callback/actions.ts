@@ -2,14 +2,14 @@
  
 import { cookies } from 'next/headers';
 import { DBpayload, misskeyAccessKeyApiResponse } from '..';
-import { MiUser } from '../api/_misskey-entities/user';
-import { fetchNameWithEmoji } from '../api/_utils/fetchUsername';
+import { MiUser } from '@/api/_misskey-entities/user';
+import { fetchNameWithEmoji } from '@/api/_utils/fetchUsername';
 import { validateStrict } from '@/utils/validator/strictValidator';
-import { misskeyCallbackTokenClaimPayload } from '../_dto/misskey-callback/callback-token-claim.dto';
-import { misskeyUserInfoPayload } from '../_dto/misskey-callback/user-info.dto';
+import { misskeyCallbackTokenClaimPayload } from '@/app/_dto/misskey-callback/callback-token-claim.dto';
+import { misskeyUserInfoPayload } from '@/app/_dto/misskey-callback/user-info.dto';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { generateJwt } from '../api/_utils/jwt/generate-jwt';
+import { generateJwt } from '@/api/_utils/jwt/generate-jwt';
 
 const logger = new Logger('misskey-callback');
 export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): Promise<misskeyUserInfoPayload> {

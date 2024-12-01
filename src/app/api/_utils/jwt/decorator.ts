@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import { NextRequest } from 'next/server';
-import { sendApiError } from '../apiErrorResponse/sendApiError';
-import { verifyToken } from './verify-jwt';
+import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
+import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 import 'reflect-metadata';
 import { Logger } from '@/utils/logger/Logger';
 

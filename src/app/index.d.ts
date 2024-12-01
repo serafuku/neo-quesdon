@@ -1,5 +1,5 @@
 import type { profile, user } from '@prisma/client';
-import { MiUser } from './api/_misskey-entities/user';
+import { MiUser } from '@/api/_misskey-entities/user';
 
 interface MiAuthSession {
   token: string;

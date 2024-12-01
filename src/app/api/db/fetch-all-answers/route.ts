@@ -7,7 +7,7 @@ import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-cli
 import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '../../_utils/jwt/verify-jwt';
+import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { profile } from '@prisma/client';
 

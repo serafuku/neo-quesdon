@@ -1,7 +1,7 @@
 'use server';
 
 import { SignJWT } from 'jose';
-import { jwtPayload } from './jwtPayload';
+import { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
 import { Logger } from '@/utils/logger/Logger';
 
 const logger = new Logger('generateJwt');

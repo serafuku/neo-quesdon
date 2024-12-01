@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { CreateQuestionApiService } from './_service';
+import { CreateQuestionApiService } from '@/api/db/create-question/_service';
 
 export async function POST(req: NextRequest) {
   const service = CreateQuestionApiService.get();

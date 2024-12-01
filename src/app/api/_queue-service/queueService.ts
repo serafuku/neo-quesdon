@@ -1,4 +1,4 @@
-import { TestLogQueueWorkerService } from './processors/TestLogWorkerService';
+import { TestLogQueueWorkerService } from '@/api/_queue-service/processors/TestLogWorkerService';
 import { Redis } from 'ioredis';
 
 export class QueueService {

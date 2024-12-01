@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import UserPage from './_answers';
-import Profile from './_profile';
+import UserPage from '@/app/main/user/[handle]/_answers';
+import Profile from '@/app/main/user/[handle]/_profile';
 import { useParams } from 'next/navigation';
 import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
 

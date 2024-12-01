@@ -1,10 +1,10 @@
 'use server';
 
 import { validateStrict } from '@/utils/validator/strictValidator';
-import { mastodonCallbackTokenClaimPayload } from '../_dto/mastodon-callback/callback-token-claim.dto';
-import { fetchNameWithEmoji } from '../api/_utils/fetchUsername';
+import { mastodonCallbackTokenClaimPayload } from '@/app/_dto/mastodon-callback/callback-token-claim.dto';
+import { fetchNameWithEmoji } from '@/api/_utils/fetchUsername';
 import { cookies } from 'next/headers';
-import { generateJwt } from '../api/_utils/jwt/generate-jwt';
+import { generateJwt } from '@/api/_utils/jwt/generate-jwt';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { DBpayload } from '..';

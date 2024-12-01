@@ -3,10 +3,10 @@
 import { questions } from '@/app';
 import Question from '@/app/_components/question';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { deleteQuestion } from './action';
+import { deleteQuestion } from '@/app/main/questions/action';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
-import { MyProfileEv, MyProfileContext } from '../_profileContext';
+import { MyProfileEv, MyProfileContext } from '@/app/main/_profileContext';
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 
 const fetchQuestions = async (): Promise<questions[] | null> => {

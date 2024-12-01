@@ -1,8 +1,8 @@
 'use server';
 
 import { jwtVerify } from 'jose';
-import { jwtPayload } from './jwtPayload';
-import { GetPrismaClient } from '../getPrismaClient/get-prisma-client';
+import { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
+import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 
 const logger = new Logger('verifyToken');

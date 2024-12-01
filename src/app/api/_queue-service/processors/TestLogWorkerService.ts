@@ -1,7 +1,7 @@
 import { Logger } from '@/utils/logger/Logger';
 import { Job, Queue, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
-import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 
 const TEST_LOG_QUEUE = 'testLogQueue';
 

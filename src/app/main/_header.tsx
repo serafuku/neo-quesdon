@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { Dispatch, SetStateAction, useContext, useEffect, useRef, useState } from 'react';
 import { FaUser } from 'react-icons/fa';
-import DialogModalTwoButton from '../_components/modalTwoButton';
-import DialogModalOneButton from '../_components/modalOneButton';
+import DialogModalTwoButton from '@/app/_components/modalTwoButton';
+import DialogModalOneButton from '@/app/_components/modalOneButton';
 import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
 import { logout } from '@/utils/logout/logout';
-import { MyProfileContext, MyProfileEv } from './_profileContext';
-import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
+import { MyProfileContext, MyProfileEv } from '@/app/main/_profileContext';
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { Logger } from '@/utils/logger/Logger';
 
 type headerProps = {

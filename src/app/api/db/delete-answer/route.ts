@@ -3,7 +3,7 @@ import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '../../_utils/jwt/verify-jwt';
+import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
