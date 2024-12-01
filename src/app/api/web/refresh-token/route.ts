@@ -15,9 +15,11 @@ import { MastodonUser } from '@/api/_mastodon-entities/user';
 import { RateLimiterService } from '@/api/_utils/ratelimiter/rateLimiter';
 import { getIpFromRequest } from '@/api/_utils/getIp/get-ip-from-Request';
 import { getIpHash } from '@/api/_utils/getIp/get-ip-hash';
+import { QueueService } from '@/api/_queue-service/queueService';
 
 const logger = new Logger('refresh-token');
 export async function POST(req: NextRequest) {
+
   let data;
   try {
     data = await validateStrict(RefreshTokenReqDto, await req.json());
@@ -119,6 +121,8 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
       } catch {
         return;
       }
+      const queueService =  QueueService.get();
+      await queueService.addRefreshFollowJob(user, 'misskey');
       logger.log(`Misskey User Updated!`);
       break;
     }
