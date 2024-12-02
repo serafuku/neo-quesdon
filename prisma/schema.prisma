@@ -25,6 +25,7 @@ model user {
   userId       String   @unique
   profile      profile?
   jwtIndex     Int      @default(0)
+  server       server   @relation(references: [instances], fields: [hostName], onUpdate: Cascade)
 
   blocking blocking[] @relation("blocks")
   following following[] @relation("user")
@@ -81,6 +82,8 @@ model server {
   appSecret     String? /// Misskey App인증의 Secret Key
   client_id     String? /// Mastodon OAuth2 client ID
   client_secret String? /// Mastodon OAuth2 client secret
+
+  user user[]
 }
 
 model blocking {
