@@ -10,7 +10,7 @@ import { misskeyUserInfoPayload } from '@/app/_dto/misskey-callback/user-info.dt
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { generateJwt } from '@/api/_utils/jwt/generate-jwt';
-import { QueueService } from '../api/_queue-service/queueService';
+import { QueueService } from '@/api/_queue-service/queueService';
 
 const logger = new Logger('misskey-callback');
 export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): Promise<misskeyUserInfoPayload> {

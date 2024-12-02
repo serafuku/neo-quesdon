@@ -1,6 +1,6 @@
 import { Logger } from '@/utils/logger/Logger';
 import { server, user } from '@prisma/client';
-import { Job, Queue, Worker } from 'bullmq';
+import { Job, Queue, UnrecoverableError, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { MisskeyFollowingApiResponse } from '@/api/_misskey-entities/following';
@@ -14,10 +14,17 @@ export class RefreshFollowWorkerService {
   private workerMisskey;
   constructor(connection: Redis) {
     logger.log('Worker started');
-    this.queue = new Queue(RefreshFollowMisskey, { connection });
+    this.queue = new Queue(RefreshFollowMisskey, {
+      connection,
+      defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 60 * 1000 } },
+    });
     this.workerMisskey = new Worker(RefreshFollowMisskey, this.processMisskey, {
       connection,
       concurrency: 30,
+      limiter: {
+        max: 20,
+        duration: 1000,
+      },
       removeOnComplete: { age: 86400, count: 1000 },
       removeOnFail: { age: 86400, count: 1000 },
     });
@@ -65,7 +72,10 @@ export class RefreshFollowWorkerService {
           body: JSON.stringify(body),
         };
         const response = await fetch(url, options);
-        if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new UnrecoverableError(`Misskey API returned ${response.status}. ${await response.text()}`);
+        }
+        else if (!response.ok) {
           throw new Error(`Misskey API returned Error! ${await response.text()}`);
         }
         const data = (await response.json()) as MisskeyFollowingApiResponse;
@@ -103,7 +113,8 @@ export class RefreshFollowWorkerService {
         });
       }
 
-      // cleanup old record
+      // 10분 이상 지난 레코드는 지난번에 import된 것으로 간주,
+      // 이번에 timeStamp가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
       const oldTimeStamp = Date.now() - 10 * 60 * 1000;
       const oldDate = new Date(oldTimeStamp).toISOString();
       const cleaned = await prisma.following.deleteMany({
