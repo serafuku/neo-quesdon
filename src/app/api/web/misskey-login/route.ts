@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       const payload = {
         name: 'Neo-Quesdon',
         description: '새로운 퀘스돈, 네오-퀘스돈입니다.',
-        permission: ['read:account','read:blocks', 'read:following', 'write:notes'],
+        permission: ['read:account', 'read:blocks', 'read:following', 'write:notes'],
         callbackUrl: `${process.env.WEB_URL}/misskey-callback`,
       };
 

@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import Answer from '@/app/_components/answer';
-import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { AnswerDto } from '@/app/_dto/Answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
@@ -17,7 +17,7 @@ async function fetchProfile(handle: string) {
   const profile = await fetch(`/api/db/fetch-profile/${handle}`);
   try {
     if (profile.ok) {
-      return profile.json() as unknown as userProfileWithHostnameDto;
+      return profile.json() as unknown as userProfileDto;
     } else {
       throw new Error(`프로필이 없습니다! ${await profile.text()}`);
     }
@@ -31,7 +31,7 @@ export default function UserPage() {
   const { handle } = useParams() as { handle: string };
   const profileHandle = decodeURIComponent(handle);
 
-  const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto>();
+  const [userProfile, setUserProfile] = useState<userProfileDto>();
   const [answers, setAnswers] = useState<AnswerDto[] | null>(null);
   const [count, setCount] = useState<number | null>(0);
   const [untilId, setUntilId] = useState<string | null>(null);

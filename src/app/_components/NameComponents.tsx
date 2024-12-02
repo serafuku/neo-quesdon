@@ -1,3 +1,5 @@
+'use client';
+
 type username = {
   username: string[] | undefined;
   width: number;

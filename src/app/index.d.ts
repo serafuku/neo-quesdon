@@ -30,7 +30,6 @@ export interface questions {
   questionedAt: Date;
 }
 
-
 export interface MkNoteAnswers {
   i: string;
   cw: string;
@@ -61,4 +60,4 @@ export interface DBpayload {
   avatarUrl: profile['avatarUrl'];
   accessToken: user['token'];
   userId: user['userId'];
-};
+}

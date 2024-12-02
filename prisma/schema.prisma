@@ -25,8 +25,9 @@ model user {
   userId       String   @unique
   profile      profile?
   jwtIndex     Int      @default(0)
+  server       server   @relation(references: [instances], fields: [hostName], onUpdate: Cascade, onDelete: Cascade)
 
-  blocking blocking[] @relation("blocks")
+  blocking  blocking[]  @relation("blocks")
   following following[] @relation("user")
 }
 
@@ -50,7 +51,7 @@ model profile {
   avatarUrl             String
   questionBoxName       String         @default("질문함")
   lastFollowRefreshed   DateTime       @default("1996-12-19T16:39:57-08:00")
-  user                  user           @relation(fields: [handle], references: [handle])
+  user                  user           @relation(fields: [handle], references: [handle], onDelete: Cascade)
   defaultPostVisibility PostVisibility @default(public)
 }
 
@@ -61,17 +62,21 @@ model answer {
   answer               String
   answeredAt           DateTime @default(now())
   answeredPersonHandle String
-  answeredPerson       profile  @relation(fields: [answeredPersonHandle], references: [handle])
+  answeredPerson       profile  @relation(fields: [answeredPersonHandle], references: [handle], onDelete: Cascade)
   nsfwedAnswer         Boolean
+
+  @@index([answeredPersonHandle])
 }
 
 model question {
   id               Int      @id @default(autoincrement())
   question         String
   questioner       String?
-  questionee       profile  @relation(fields: [questioneeHandle], references: [handle])
+  questionee       profile  @relation(fields: [questioneeHandle], references: [handle], onDelete: Cascade)
   questioneeHandle String
   questionedAt     DateTime @default(now())
+
+  @@index([questioneeHandle])
 }
 
 model server {
@@ -81,6 +86,10 @@ model server {
   appSecret     String? /// Misskey App인증의 Secret Key
   client_id     String? /// Mastodon OAuth2 client ID
   client_secret String? /// Mastodon OAuth2 client secret
+
+  user user[]
+
+  @@index([instances])
 }
 
 model blocking {
@@ -96,10 +105,10 @@ model blocking {
 }
 
 model following {
-  id           String   @id @default(cuid())
-  followerHandle String  @db.VarChar(500)
-  follower       user    @relation("user", fields: [followerHandle], references: [handle], onDelete: Cascade)
-  followeeHandle String  @db.VarChar(500)
+  id             String   @id @default(cuid())
+  followerHandle String   @db.VarChar(500)
+  follower       user     @relation("user", fields: [followerHandle], references: [handle], onDelete: Cascade)
+  followeeHandle String   @db.VarChar(500)
   createdAt      DateTime @default(now())
 
   @@unique([followerHandle, followeeHandle])

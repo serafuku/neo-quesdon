@@ -19,7 +19,6 @@ import { QueueService } from '@/api/_queue-service/queueService';
 
 const logger = new Logger('refresh-token');
 export async function POST(req: NextRequest) {
-
   let data;
   try {
     data = await validateStrict(RefreshTokenReqDto, await req.json());
@@ -58,7 +57,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     logger.warn('User Revoked Access token. JWT를 Revoke합니다... Detail:', err);
-    await prisma.user.update({where: {handle: user.handle}, data: {jwtIndex: (user.jwtIndex + 1)}});
+    await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: user.jwtIndex + 1 } });
     return sendApiError(401, `Refresh user failed!! ${err}`);
   }
 
@@ -121,7 +120,7 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
       } catch {
         return;
       }
-      const queueService =  QueueService.get();
+      const queueService = QueueService.get();
       await queueService.addRefreshFollowJob(user, 'misskey');
       logger.log(`Misskey User Updated!`);
       break;

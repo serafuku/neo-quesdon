@@ -13,12 +13,15 @@ import {
   SearchBlockListReqDto,
 } from '@/app/_dto/blocking/blocking.dto';
 import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
+import { RedisKvCacheService } from '../../_utils/kvCacheService/redisKvCacheService';
 
 export class BlockingService {
   private static instance: BlockingService;
   private prisma: PrismaClient;
+  private redisKvService: RedisKvCacheService;
   private constructor() {
     this.prisma = GetPrismaClient.getClient();
+    this.redisKvService = RedisKvCacheService.getInstance();
   }
   public static get() {
     if (!BlockingService.instance) {
@@ -54,6 +57,7 @@ export class BlockingService {
       return sendApiError(400, '이미 차단된 사용자입니다!');
     }
 
+    await this.redisKvService.drop(`block-${user.handle}`);
     return NextResponse.json({}, { status: 200 });
   }
 
@@ -153,6 +157,7 @@ export class BlockingService {
       return sendApiError(400, '이미 차단 해제된 사용자입니다!');
     }
 
+    await this.redisKvService.drop(`block-${user.handle}`);
     return NextResponse.json({}, { status: 200 });
   }
 }
