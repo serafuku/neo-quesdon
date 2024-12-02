@@ -11,7 +11,7 @@ import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client'
 export class FollowingService {
   private static instance: FollowingService;
   private logger = new Logger('FollowingService');
-  private constructor() { }
+  private constructor() {}
   public static get() {
     if (!FollowingService.instance) {
       FollowingService.instance = new FollowingService();
@@ -32,24 +32,49 @@ export class FollowingService {
 
     const user = await prisma.user.findUniqueOrThrow({ where: { handle: tokenBody!.handle } });
 
-    const follows = await prisma.following.findMany({ where: { followerHandle: user.handle } });
-    const filteredDto: FollowingListResDto = { followingList: [] };
+    const follows = await prisma.following.findMany({
+      where: { followerHandle: user.handle },
+    });
+
+    const filteredList = [];
     for (const f of follows) {
-      const exist = await prisma.profile.findUnique({ where: { handle: f.followeeHandle } });
+      const exist = await prisma.profile.findUnique({
+        where: { handle: f.followeeHandle },
+        include: { _count: { select: { answer: true } } },
+      });
       if (exist) {
-        filteredDto.followingList.push({
-          followerHandle: f.followerHandle, follweeHandle: f.followeeHandle,
-          follweeProfile: {
-            handle: exist.handle,
-            name: exist.name,
-            stopNewQuestion: exist.stopNewQuestion,
-            stopAnonQuestion: exist.stopAnonQuestion,
-            stopNotiNewQuestion: exist.stopNotiNewQuestion,
-            avatarUrl: exist.avatarUrl,
-            questionBoxName: exist.questionBoxName,
-          }
-        });
+        filteredList.push(exist);
       }
+    }
+    // 답변순 정렬
+    filteredList.sort((a, b) => {
+      if (a._count.answer > b._count.answer) {
+        return -1;
+      }
+      if (b._count.answer > a._count.answer) {
+        return 1;
+      }
+      return 0;
+    });
+
+    const filteredDto: FollowingListResDto = { followingList: [] };
+    filteredList.forEach((exist) => {
+      filteredDto.followingList.push({
+        followerHandle: user.handle,
+        follweeHandle: exist.handle,
+        follweeProfile: {
+          handle: exist.handle,
+          name: exist.name,
+          stopNewQuestion: exist.stopNewQuestion,
+          stopAnonQuestion: exist.stopAnonQuestion,
+          stopNotiNewQuestion: exist.stopNotiNewQuestion,
+          avatarUrl: exist.avatarUrl,
+          questionBoxName: exist.questionBoxName,
+        },
+      });
+    });
+    if (data.limit) {
+      filteredDto.followingList = filteredDto.followingList.slice(0, data.limit);
     }
     return NextResponse.json(filteredDto, { status: 200 });
   }

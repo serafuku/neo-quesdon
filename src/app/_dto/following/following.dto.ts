@@ -6,7 +6,7 @@ export class FollowingListReqDto {
   @IsNumber()
   @Max(100)
   @Min(1)
-  limit: number;
+  limit?: number;
 }
 
 export class following {
