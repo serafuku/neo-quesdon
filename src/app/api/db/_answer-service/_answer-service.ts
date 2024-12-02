@@ -8,10 +8,11 @@ import type { jwtPayload } from '../../_utils/jwt/jwtPayload';
 import { Auth, JwtPayload } from '../../_utils/jwt/decorator';
 import { RateLimit } from '../../_utils/ratelimiter/decorator';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
-import { $Enums, profile } from '@prisma/client';
+import { $Enums, blocking, profile } from '@prisma/client';
 import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
 import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
+import { RedisKvCacheService } from '../../_utils/kvCacheService/redisKvCacheService';
 
 export class AnswerService {
   private static instance: AnswerService;
@@ -207,7 +208,21 @@ export class AnswerService {
 
   private async filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
     const prisma = GetPrismaClient.getClient();
-    const blockList = await prisma.blocking.findMany({ where: { blockerHandle: myHandle, hidden: false } });
+    const kv = RedisKvCacheService.getInstance();
+    const getBlockListOnlyExist = async (): Promise<blocking[]> => {
+      const all_blockList = await prisma.blocking.findMany({ where: { blockerHandle: myHandle, hidden: false } });
+      const existList = [];
+      for (const block of all_blockList) {
+        const exist = await prisma.user.findUnique({
+          where: { handle: block.blockeeHandle },
+        });
+        if (exist) {
+          existList.push(block);
+        }
+      }
+      return existList;
+    };
+    const blockList = await kv.get(getBlockListOnlyExist, { key: `block-${myHandle}`, ttl: 600 });
     const blockedList = await prisma.blocking.findMany({ where: { blockeeHandle: myHandle, hidden: false } });
     const filteredAnswers = answers.filter((ans) => {
       if (blockList.find((b) => b.blockeeHandle === ans.answeredPersonHandle || b.blockeeHandle === ans.questioner)) {
