@@ -27,7 +27,7 @@ model user {
   jwtIndex     Int      @default(0)
   server       server   @relation(references: [instances], fields: [hostName], onUpdate: Cascade, onDelete: Cascade)
 
-  blocking blocking[] @relation("blocks")
+  blocking  blocking[]  @relation("blocks")
   following following[] @relation("user")
 }
 
@@ -64,6 +64,8 @@ model answer {
   answeredPersonHandle String
   answeredPerson       profile  @relation(fields: [answeredPersonHandle], references: [handle], onDelete: Cascade)
   nsfwedAnswer         Boolean
+
+  @@index([answeredPersonHandle])
 }
 
 model question {
@@ -73,6 +75,8 @@ model question {
   questionee       profile  @relation(fields: [questioneeHandle], references: [handle], onDelete: Cascade)
   questioneeHandle String
   questionedAt     DateTime @default(now())
+
+  @@index([questioneeHandle])
 }
 
 model server {
@@ -84,6 +88,8 @@ model server {
   client_secret String? /// Mastodon OAuth2 client secret
 
   user user[]
+
+  @@index([instances])
 }
 
 model blocking {
@@ -99,10 +105,10 @@ model blocking {
 }
 
 model following {
-  id           String   @id @default(cuid())
-  followerHandle String  @db.VarChar(500)
-  follower       user    @relation("user", fields: [followerHandle], references: [handle], onDelete: Cascade)
-  followeeHandle String  @db.VarChar(500)
+  id             String   @id @default(cuid())
+  followerHandle String   @db.VarChar(500)
+  follower       user     @relation("user", fields: [followerHandle], references: [handle], onDelete: Cascade)
+  followeeHandle String   @db.VarChar(500)
   createdAt      DateTime @default(now())
 
   @@unique([followerHandle, followeeHandle])
