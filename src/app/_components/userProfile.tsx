@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { userProfileDto } from '../_dto/fetch-profile/Profile.dto';
 import NameComponents from './NameComponents';

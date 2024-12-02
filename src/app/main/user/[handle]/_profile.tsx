@@ -1,3 +1,5 @@
+'use client';
+
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import NameComponents from '@/app/_components/NameComponents';

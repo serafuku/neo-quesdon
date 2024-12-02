@@ -8,8 +8,6 @@ import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import type { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
 import { RateLimit } from '@/api/_utils/ratelimiter/decorator';
- 
-
 
 export class CreateQuestionApiService {
   private logger = new Logger('create-question');
@@ -17,18 +15,16 @@ export class CreateQuestionApiService {
   private constructor() {}
   public static get() {
     if (!CreateQuestionApiService.instance) {
-      CreateQuestionApiService.instance = new CreateQuestionApiService;
+      CreateQuestionApiService.instance = new CreateQuestionApiService();
     }
     return CreateQuestionApiService.instance;
   }
 
-  @RateLimit({bucket_time: 100, req_limit: 10}, 'user-or-ip')
-  @Auth({isOptional: true})
-  public async CreateQuestion(req: NextRequest, 
-    @JwtPayload tokenPayload?: jwtPayload,
-  ) {
+  @RateLimit({ bucket_time: 100, req_limit: 10 }, 'user-or-ip')
+  @Auth({ isOptional: true })
+  public async CreateQuestion(req: NextRequest, @JwtPayload tokenPayload?: jwtPayload) {
     const prisma = GetPrismaClient.getClient();
-  
+
     try {
       let data;
       try {
@@ -37,7 +33,7 @@ export class CreateQuestionApiService {
         this.logger.warn(errors);
         return sendApiError(400, `${errors}`);
       }
-  
+
       const questionee_user = await prisma.user.findUniqueOrThrow({
         where: {
           handle: data.questionee,
@@ -48,7 +44,7 @@ export class CreateQuestionApiService {
           handle: questionee_user?.handle,
         },
       });
-  
+
       if (questionee_profile.stopAnonQuestion && !data.questioner) {
         this.logger.debug('The user has prohibits anonymous questions.');
         throw new Error('The user has prohibits anonymous questions.');
@@ -58,12 +54,14 @@ export class CreateQuestionApiService {
       }
       // 블락 여부 검사
       if (tokenPayload?.handle) {
-        const blocked = await prisma.blocking.findFirst({where: {blockeeHandle: tokenPayload.handle, blockerHandle: questionee_user.handle}});
+        const blocked = await prisma.blocking.findFirst({
+          where: { blockeeHandle: tokenPayload.handle, blockerHandle: questionee_user.handle },
+        });
         if (blocked) {
           return sendApiError(403, '이 사용자에게 질문을 보낼 수 없습니다!');
         }
       }
-  
+
       // 제시된 questioner 핸들이 JWT토큰의 핸들과 일치하는지 검사
       if (data.questioner) {
         try {
@@ -78,7 +76,7 @@ export class CreateQuestionApiService {
           return sendApiError(403, `${err}`);
         }
       }
-  
+
       //질문 생성
       const newQuestion = await prisma.question.create({
         data: {
@@ -87,13 +85,13 @@ export class CreateQuestionApiService {
           questioneeHandle: data.questionee,
         },
       });
-  
+
       const userSettings = await prisma.profile.findUnique({
         where: {
           handle: data.questionee,
         },
       });
-  
+
       if (userSettings && userSettings.stopNotiNewQuestion === true) {
         // 알림 전송 스킵
       } else {
@@ -101,14 +99,14 @@ export class CreateQuestionApiService {
         const url = `${process.env.WEB_URL}/main/questions`;
         this.sendNotify(questionee_user, data.questioner, newQuestion.question, url);
       }
-  
+
       // notify send 기다라지 않고 200반환
       return NextResponse.json({}, { status: 200 });
     } catch (err) {
       return NextResponse.json(`Error! ${err}`, { status: 500 });
     }
   }
-  
+
   private async sendNotify(questionee: user, questioner: string | null, question: string, url: string): Promise<void> {
     const notify_host = process.env.NOTI_HOST;
     this.logger.log(`try to send notification to ${questionee.handle}`);
@@ -134,5 +132,4 @@ export class CreateQuestionApiService {
       this.logger.error('Post-question: fail to send notify: ', error);
     }
   }
-  
 }

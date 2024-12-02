@@ -17,10 +17,13 @@ export class UserSettingsService {
     return UserSettingsService.instance;
   }
 
-  @RateLimit({
-    bucket_time: 600,
-    req_limit: 300,
-  }, 'user')
+  @RateLimit(
+    {
+      bucket_time: 600,
+      req_limit: 300,
+    },
+    'user',
+  )
   @Auth()
   public async getSettings(_req: NextRequest, @JwtPayload jwtBody?: jwtPayload) {
     const prisma = GetPrismaClient.getClient();
@@ -39,10 +42,13 @@ export class UserSettingsService {
     }
   }
 
-  @RateLimit({
-    bucket_time: 600,
-    req_limit: 60,
-  }, 'user')
+  @RateLimit(
+    {
+      bucket_time: 600,
+      req_limit: 60,
+    },
+    'user',
+  )
   @Auth()
   public async updateSettings(req: NextRequest, @JwtPayload jwtBody?: jwtPayload) {
     let data;

@@ -1,6 +1,6 @@
 type options = {
-  noColor?: boolean
-}
+  noColor?: boolean;
+};
 export class Logger {
   private name: string;
   private options: options;

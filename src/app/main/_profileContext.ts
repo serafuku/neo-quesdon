@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext } from 'react';
 import { userProfileMeDto } from '@/app//_dto/fetch-profile/Profile.dto';
 import { Logger } from '@/utils/logger/Logger';
@@ -13,7 +15,7 @@ type ProfileUpdateReqData = Partial<userProfileMeDto>;
  */
 export class MyProfileEv {
   private constructor() {}
-  private static logger = new Logger('UpdateMyProfileContext', {noColor: true});
+  private static logger = new Logger('UpdateMyProfileContext', { noColor: true });
   static async SendUpdateReq(data: Partial<userProfileMeDto>) {
     const ev = new CustomEvent<ProfileUpdateReqData>(ProfileUpdateReqEvent, { bubbles: true, detail: data });
     window.dispatchEvent(ev);

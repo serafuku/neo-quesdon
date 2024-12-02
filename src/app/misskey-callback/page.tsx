@@ -11,7 +11,7 @@ import DialogModalOneButton from '@/app/_components/modalOneButton';
 
 const onErrorModalClick = () => {
   window.location.replace('/');
-}
+};
 export default function CallbackPage() {
   const [id, setId] = useState<number>(0);
   const errModalRef = useRef<HTMLDialogElement>(null);

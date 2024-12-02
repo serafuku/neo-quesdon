@@ -1,3 +1,5 @@
+'use client';
+
 import { RefObject } from 'react';
 
 type modalProps = {

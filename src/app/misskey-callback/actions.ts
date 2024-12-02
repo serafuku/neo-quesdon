@@ -1,5 +1,5 @@
 'use server';
- 
+
 import { cookies } from 'next/headers';
 import { DBpayload, misskeyAccessKeyApiResponse } from '..';
 import { MiUser } from '@/api/_misskey-entities/user';
@@ -68,7 +68,7 @@ export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): 
     // 프론트 쿠키스토어에 쿠키 저장
     const cookieStore = await cookies();
     const prisma = GetPrismaClient.getClient();
-    const user = await prisma.user.findUniqueOrThrow({where: {handle: user_handle}});
+    const user = await prisma.user.findUniqueOrThrow({ where: { handle: user_handle } });
     const jwtToken = await generateJwt(loginReq.misskeyHost, user_handle, user.jwtIndex);
     cookieStore.set('jwtToken', jwtToken, {
       expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
@@ -126,7 +126,6 @@ async function requestMiAccessTokenAndUserInfo(payload: misskeyCallbackTokenClai
     return null;
   }
 }
-
 
 async function pushDB(payload: DBpayload) {
   const prisma = GetPrismaClient.getClient();

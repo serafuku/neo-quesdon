@@ -5,5 +5,3 @@ export async function POST(req: NextRequest) {
   const service = AnswerService.get();
   return await service.fetchAll(req);
 }
-
-

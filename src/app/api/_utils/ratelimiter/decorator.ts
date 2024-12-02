@@ -6,7 +6,7 @@ import { getIpHash } from '@/api/_utils/getIp/get-ip-hash';
 import { RateLimiterService } from '@/api/_utils/ratelimiter/rateLimiter';
 import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 
-export function RateLimit (
+export function RateLimit(
   limitOptions: { bucket_time: number; req_limit: number },
   type: 'ip' | 'user' | 'user-or-ip',
 ) {

@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest } from 'next/server';
 import { BlockingService } from '@/api/user/blocking/_service';
 
 export async function POST(req: NextRequest) {

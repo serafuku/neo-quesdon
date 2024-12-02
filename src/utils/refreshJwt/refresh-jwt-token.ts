@@ -4,9 +4,9 @@ import { RefreshTokenReqDto } from '@/app/_dto/refresh-token/refresh-token.dto';
 import { logout } from '@/utils/logout/logout';
 
 /**
- * /api/web/refresh-token 를 호출해서 JWT를 Refresh 하려고 시도합니다. 
- * 만약 JWT가 인증 해제된 경우 로그아웃을 수행합니다. 
- * 성공적으로 JWT를 refresh 한 경우 last_token_refresh 를 현재 시간으로 업데이트합니다. 
+ * /api/web/refresh-token 를 호출해서 JWT를 Refresh 하려고 시도합니다.
+ * 만약 JWT가 인증 해제된 경우 로그아웃을 수행합니다.
+ * 성공적으로 JWT를 refresh 한 경우 last_token_refresh 를 현재 시간으로 업데이트합니다.
  */
 export async function refreshJwt() {
   const now = Math.ceil(Date.now() / 1000);

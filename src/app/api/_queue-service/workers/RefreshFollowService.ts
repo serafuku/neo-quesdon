@@ -104,7 +104,7 @@ export class RefreshFollowWorkerService {
       }
 
       // cleanup old record
-      const oldTimeStamp = Date.now() - (10 * 60 * 1000);
+      const oldTimeStamp = Date.now() - 10 * 60 * 1000;
       const oldDate = new Date(oldTimeStamp).toISOString();
       const cleaned = await prisma.following.deleteMany({
         where: { followerHandle: job.data.handle, createdAt: { lte: oldDate } },

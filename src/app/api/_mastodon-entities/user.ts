@@ -1,4 +1,4 @@
-import { mastodonEmojiModel } from "@/app/_dto/fetch-name-with-emoji/fetch-name-with-emoji.dto";
+import { mastodonEmojiModel } from '@/app/_dto/fetch-name-with-emoji/fetch-name-with-emoji.dto';
 
 /**
  * Mastodon /api/v1/accounts/verify_credentials 에서 돌아오는 응답중에 필요한 것만 추린것
