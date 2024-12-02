@@ -40,7 +40,10 @@ export class FollowingService {
     for (const f of follows) {
       const exist = await prisma.profile.findUnique({
         where: { handle: f.followeeHandle },
-        include: { _count: { select: { answer: true } } },
+        include: {
+          _count: { select: { answer: true } },
+          user: { include: { server: { select: { instances: true, instanceType: true } } } },
+        },
       });
       if (exist) {
         filteredList.push(exist);
@@ -70,6 +73,8 @@ export class FollowingService {
           stopNotiNewQuestion: exist.stopNotiNewQuestion,
           avatarUrl: exist.avatarUrl,
           questionBoxName: exist.questionBoxName,
+          hostname: exist.user.hostName,
+          instanceType: exist.user.server.instanceType,
         },
       });
     });

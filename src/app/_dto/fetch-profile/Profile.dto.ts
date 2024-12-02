@@ -7,6 +7,8 @@ export interface userProfileDto {
   stopNotiNewQuestion: boolean;
   avatarUrl: string;
   questionBoxName: string;
+  hostname: string;
+  instanceType: $Enums.InstanceType;
 }
 
 export interface userProfileMeDto extends userProfileDto {
@@ -14,9 +16,4 @@ export interface userProfileMeDto extends userProfileDto {
   instanceType: $Enums.InstanceType;
   defaultPostVisibility: $Enums.PostVisibility;
   stopPostAnswer: boolean;
-}
-
-export interface userProfileWithHostnameDto extends userProfileDto {
-  hostname: string;
-  instanceType: $Enums.InstanceType;
 }

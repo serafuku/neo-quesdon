@@ -5,7 +5,7 @@ import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import NameComponents from '@/app/_components/NameComponents';
 import { SearchBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
 import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
-import { userProfileWithHostnameDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import josa from '@/app/api/_utils/josa';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -22,7 +22,7 @@ async function fetchProfile(handle: string) {
   const res = await fetch(`/api/db/fetch-profile/${handle}`);
   try {
     if (res && res.ok) {
-      return res.json() as unknown as userProfileWithHostnameDto;
+      return res.json() as unknown as userProfileDto;
     } else {
       throw new Error(`프로필을 불러오는데 실패했습니다! ${await res.text()}`);
     }
@@ -36,7 +36,7 @@ export default function Profile() {
   const { handle } = useParams() as { handle: string };
   const profileHandle = decodeURIComponent(handle);
 
-  const [userProfile, setUserProfile] = useState<userProfileWithHostnameDto>();
+  const [userProfile, setUserProfile] = useState<userProfileDto>();
   const [localHandle, setLocalHandle] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isUserBlocked, setIsUserBlocked] = useState<boolean>(false);

@@ -8,7 +8,7 @@ import type { jwtPayload } from '../../_utils/jwt/jwtPayload';
 import { Auth, JwtPayload } from '../../_utils/jwt/decorator';
 import { RateLimit } from '../../_utils/ratelimiter/decorator';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
-import { profile } from '@prisma/client';
+import { $Enums, profile } from '@prisma/client';
 import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
 import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
@@ -84,14 +84,25 @@ export class AnswerService {
         },
       },
       include: {
-        answeredPerson: true,
+        answeredPerson: {
+          include: {
+            user: true,
+          },
+        },
       },
       orderBy: {
         id: orderBy,
       },
       take: query_limit,
     });
-    let list: AnswerWithProfileDto[] = answersWithProfile.map((answer) => {
+    let list: AnswerWithProfileDto[] = [];
+    for (const answer of answersWithProfile) {
+      const instanceType = (
+        await prisma.server.findUniqueOrThrow({
+          select: { instanceType: true },
+          where: { instances: answer.answeredPerson.user.hostName },
+        })
+      ).instanceType;
       const data: AnswerWithProfileDto = {
         id: answer.id,
         question: answer.question,
@@ -99,11 +110,11 @@ export class AnswerService {
         answer: answer.answer,
         answeredAt: answer.answeredAt,
         answeredPersonHandle: answer.answeredPersonHandle,
-        answeredPerson: this.profileToDto(answer.answeredPerson),
+        answeredPerson: this.profileToDto(answer.answeredPerson, answer.answeredPerson.user.hostName, instanceType),
         nsfwedAnswer: answer.nsfwedAnswer,
       };
-      return data;
-    });
+      list.push(data);
+    }
 
     if (tokenPayload?.handle) {
       // 로그인 상태면 블락 필터링
@@ -179,7 +190,7 @@ export class AnswerService {
     }
   }
 
-  private profileToDto(profile: profile): userProfileDto {
+  private profileToDto(profile: profile, hostName: string, instanceType: $Enums.InstanceType): userProfileDto {
     const data: userProfileDto = {
       handle: profile.handle,
       name: profile.name,
@@ -188,6 +199,8 @@ export class AnswerService {
       stopNotiNewQuestion: profile.stopNotiNewQuestion,
       avatarUrl: profile.avatarUrl,
       questionBoxName: profile.questionBoxName,
+      hostname: hostName,
+      instanceType: instanceType,
     };
     return data;
   }
