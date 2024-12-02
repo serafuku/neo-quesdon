@@ -38,10 +38,10 @@ export class RedisKvCacheService {
         this.logger.error('Redis Cache Save Fail!');
         throw new Error('Redis Save Fail');
       }
-      this.logger.debug(`Return data without cache (Cache-Miss or Bypass) Key: ${key}, data: ${JSON.stringify(data)}`);
+      this.logger.debug(`Return data without cache (Cache-Miss or Bypass) Key: ${key}`);
       return data;
     } else {
-      this.logger.debug(`Return data with cache (Cache-Hit) Key: ${key}, data: ${cached_data}`);
+      this.logger.debug(`Return data with cache (Cache-Hit) Key: ${key}`);
       return JSON.parse(cached_data) as T;
     }
   }
