@@ -5,6 +5,7 @@ import { Redis } from 'ioredis';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { MisskeyFollowingApiResponse } from '@/api/_misskey-entities/following';
 import { createHash } from 'crypto';
+import { RedisKvCacheService } from '@/api/_utils/kvCacheService/redisKvCacheService';
 
 const RefreshFollowMisskey = 'RefreshFollowMisskey';
 const logger = new Logger('RefreshFollow');
@@ -74,8 +75,7 @@ export class RefreshFollowWorkerService {
         const response = await fetch(url, options);
         if (response.status === 401 || response.status === 403) {
           throw new UnrecoverableError(`Misskey API returned ${response.status}. ${await response.text()}`);
-        }
-        else if (!response.ok) {
+        } else if (!response.ok) {
           throw new Error(`Misskey API returned Error! ${await response.text()}`);
         }
         const data = (await response.json()) as MisskeyFollowingApiResponse;
@@ -121,6 +121,8 @@ export class RefreshFollowWorkerService {
         where: { followerHandle: job.data.handle, createdAt: { lte: oldDate } },
       });
       logger.log(`Clean ${cleaned.count} old records`);
+      const kvCache = RedisKvCacheService.getInstance();
+      await kvCache.drop(`follow-${job.data.handle}`);
     } catch (err) {
       logger.error(err);
       throw err;

@@ -45,4 +45,8 @@ export class RedisKvCacheService {
       return JSON.parse(cached_data) as T;
     }
   }
+  public async drop(key: string) {
+    const dropped = await this.redis.del('cache:' + key);
+    this.logger.debug(`Drop Cache ${key}. dropped ${dropped}`);
+  }
 }
