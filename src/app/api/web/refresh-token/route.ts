@@ -157,6 +157,8 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
       } catch {
         return;
       }
+      const queueService = QueueService.get();
+      await queueService.addRefreshFollowJob(user, 'mastodon');
       logger.log(`Mastodon User Updated!`);
       break;
     }

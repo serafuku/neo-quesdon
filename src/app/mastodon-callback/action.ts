@@ -8,6 +8,7 @@ import { generateJwt } from '@/api/_utils/jwt/generate-jwt';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { DBpayload } from '..';
+import { QueueService } from '@/app/api/_service/queue/queueService';
 
 const logger = new Logger('Mastodon-callback');
 export async function login(loginReqestData: mastodonCallbackTokenClaimPayload) {
@@ -148,7 +149,7 @@ async function requestMastodonAccessCodeAndUserInfo(
 async function pushDB(payload: DBpayload) {
   const prisma = GetPrismaClient.getClient();
 
-  await prisma.user.upsert({
+  const user = await prisma.user.upsert({
     where: {
       handle: payload.handle,
     },
@@ -180,4 +181,8 @@ async function pushDB(payload: DBpayload) {
       },
     },
   });
+  
+    //refersh follows
+    const queue = QueueService.get();
+    queue.addRefreshFollowJob(user, 'mastodon');
 }

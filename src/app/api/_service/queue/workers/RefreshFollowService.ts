@@ -6,16 +6,20 @@ import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client'
 import { MisskeyFollowingApiResponse } from '@/api/_misskey-entities/following';
 import { createHash } from 'crypto';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
+import { MastodonUser } from '@/app/api/_mastodon-entities/user';
 
 const RefreshFollowMisskey = 'RefreshFollowMisskey';
+const RefreshFollowMastodon = 'RefreshFollowMastodon';
 const logger = new Logger('RefreshFollow');
 
 export class RefreshFollowWorkerService {
-  private queue;
+  private misskeyQueue;
+  private mastodonQueue;
   private workerMisskey;
+  private workerMastodon;
   constructor(connection: Redis) {
     logger.log('Worker started');
-    this.queue = new Queue(RefreshFollowMisskey, {
+    this.misskeyQueue = new Queue(RefreshFollowMisskey, {
       connection,
       defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 60 * 1000 } },
     });
@@ -35,11 +39,34 @@ export class RefreshFollowWorkerService {
     this.workerMisskey.on('completed', (job) => {
       logger.debug(`JOB ${job.name} completed!`);
     });
+
+    this.mastodonQueue = new Queue(RefreshFollowMastodon, {
+      connection,
+      defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 60 * 1000 } },
+    });
+    this.workerMastodon = new Worker(RefreshFollowMastodon, this.processMastodon, {
+      connection,
+      concurrency: 30,
+      limiter: {
+        max: 20,
+        duration: 1000,
+      },
+      removeOnComplete: { age: 86400, count: 1000 },
+      removeOnFail: { age: 86400, count: 1000 },
+    });
+    this.workerMastodon.on('progress', (job) => {
+      logger.debug(`JOB ${job.name} started`);
+    });
+    this.workerMastodon.on('completed', (job) => {
+      logger.debug(`JOB ${job.name} completed!`);
+    });
   }
 
   public async addJob(user: user, instanceType: server['instanceType']) {
     if (instanceType === 'misskey' || instanceType == 'cherrypick') {
-      this.queue.add(RefreshFollowMisskey, user, {});
+      this.misskeyQueue.add(RefreshFollowMisskey, user, {});
+    } else if (instanceType === 'mastodon') {
+      this.mastodonQueue.add(RefreshFollowMastodon, user, {});
     }
   }
 
@@ -113,9 +140,88 @@ export class RefreshFollowWorkerService {
         });
       }
 
-      // 10분 이상 지난 레코드는 지난번에 import된 것으로 간주,
+      // 30분 이상 지난 레코드는 지난번에 import된 것으로 간주,
       // 이번에 timeStamp가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
-      const oldTimeStamp = Date.now() - 10 * 60 * 1000;
+      const oldTimeStamp = Date.now() - 30 * 60 * 1000;
+      const oldDate = new Date(oldTimeStamp).toISOString();
+      const cleaned = await prisma.following.deleteMany({
+        where: { followerHandle: job.data.handle, createdAt: { lte: oldDate } },
+      });
+      logger.log(`Clean ${cleaned.count} old records`);
+      const kvCache = RedisKvCacheService.getInstance();
+      await kvCache.drop(`follow-${job.data.handle}`);
+    } catch (err) {
+      logger.error(err);
+      throw err;
+    }
+  }
+
+  private async processMastodon(job: Job<user>) {
+    const prisma = GetPrismaClient.getClient();
+    const profile = await prisma.profile.findUnique({ where: { handle: job.data.handle } });
+    if (!profile) {
+      throw new Error('그런 유저가 없습니다!');
+    }
+    let counter = 0;
+    let url = `https://${job.data.hostName}/api/v1/accounts/${job.data.userId}/following?limit=50`;
+
+    try {
+      while (true) {
+        const res = await fetch(url, { method: 'GET', headers: { Authorization: `Bearer ${job.data.token}` } });
+        if (res.status === 401) {
+          throw new UnrecoverableError(`Mastodon rejects token ${await res.text()}`);
+        } else if (res.status === 429) {
+          throw new Error(`Mastodon Rate limited! ${await res.text()}`);
+        } else if (!res.ok) {
+          throw new Error(`Mastodon API call fail! ${await res.text()}`);
+        }
+        const data = (await res.json()) as MastodonUser[];
+        counter += data.length;
+
+        const link_header = res.headers.get('link');
+        if (!link_header) {
+          throw new UnrecoverableError(`Mastodon Server does not give Next header`);
+        }
+
+        if (data.length === 0) {
+          logger.log(`${counter} follow imported`);
+          break;
+        }
+        
+        for (const f of data) {
+          const acct = f.acct;
+          const followeeHandle = acct.includes('@') ? `@${acct}` : `@${acct}@${job.data.hostName}`;
+          await prisma.following.upsert({
+            where: {
+              followerHandle_followeeHandle: {
+                followeeHandle: followeeHandle,
+                followerHandle: job.data.handle,
+              },
+            },
+            create: {
+              followeeHandle: followeeHandle,
+              followerHandle: job.data.handle,
+            },
+            update: {
+              createdAt: new Date(Date.now()),
+            },
+          });
+        }
+        logger.debug(`Processed ${counter} follows...`);
+
+        const next_url = link_header.match(/(?:<)(https:\/\/.+)(?:>; rel="next")/)?.[1];
+        if (!next_url) {
+          logger.debug(`Mastodon Server does not give Next URL (End of list)`);
+          logger.log(`${counter} follow imported`);
+          break;
+        }
+        url = next_url;
+
+      }
+
+      // 30 분 이상 지난 레코드는 지난번에 import된 것으로 간주,
+      // 이번에 timeStamp 가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
+      const oldTimeStamp = Date.now() - 30 * 60 * 1000;
       const oldDate = new Date(oldTimeStamp).toISOString();
       const cleaned = await prisma.following.deleteMany({
         where: { followerHandle: job.data.handle, createdAt: { lte: oldDate } },
