@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuid } from 'uuid';
 import { GetPrismaClient } from '@/app/api/_utils//getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
+import { RateLimiterService } from '@/_service/ratelimiter/rateLimiterService';
 import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
 import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';

@@ -4,8 +4,8 @@ import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client'
 import { UserSettingsDto, UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
-import type { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
-import { RateLimit } from '@/api/_utils/ratelimiter/decorator';
+import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
+import { RateLimit } from '@/_service/ratelimiter/decorator';
 
 export class UserSettingsService {
   private constructor() {}
@@ -25,7 +25,7 @@ export class UserSettingsService {
     'user',
   )
   @Auth()
-  public async getSettings(_req: NextRequest, @JwtPayload jwtBody?: jwtPayload) {
+  public async getSettings(_req: NextRequest, @JwtPayload jwtBody?: jwtPayloadType) {
     const prisma = GetPrismaClient.getClient();
     try {
       const user_profile = await prisma.profile.findUniqueOrThrow({ where: { handle: jwtBody!.handle } });
@@ -50,7 +50,7 @@ export class UserSettingsService {
     'user',
   )
   @Auth()
-  public async updateSettings(req: NextRequest, @JwtPayload jwtBody?: jwtPayload) {
+  public async updateSettings(req: NextRequest, @JwtPayload jwtBody?: jwtPayloadType) {
     let data;
     try {
       const body = await req.json();

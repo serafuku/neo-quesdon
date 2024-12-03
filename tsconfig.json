@@ -23,7 +23,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@/api/*": ["./src/app/api/*"]
+      "@/api/*": ["./src/app/api/*"],
+      "@/_service/*": ["./src/app/api/_service/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "next-env.d.ts", "build/types/**/*.ts", "eslint.config.mjs"],

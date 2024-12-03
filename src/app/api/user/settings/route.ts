@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { UserSettingsService } from '@/api/user/settings/_service';
+import { UserSettingsService } from '@/app/api/_service/user-settings/user-settings-service';
 
 const uss = UserSettingsService.get();
 

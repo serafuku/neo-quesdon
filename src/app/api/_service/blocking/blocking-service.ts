@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
-import { RateLimit } from '@/api/_utils/ratelimiter/decorator';
-import type { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
+import { RateLimit } from '@/_service/ratelimiter/decorator';
+import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { PrismaClient } from '@prisma/client';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { validateStrict } from '@/utils/validator/strictValidator';
@@ -13,7 +13,7 @@ import {
   SearchBlockListReqDto,
 } from '@/app/_dto/blocking/blocking.dto';
 import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
-import { RedisKvCacheService } from '../../_utils/kvCacheService/redisKvCacheService';
+import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
 
 export class BlockingService {
   private static instance: BlockingService;
@@ -32,7 +32,7 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 60 }, 'user')
-  public async createBlock(req: NextRequest, @JwtPayload tokenBody?: jwtPayload) {
+  public async createBlock(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
     let data;
     try {
       data = await validateStrict(CreateBlockDto, await req.json());
@@ -63,7 +63,7 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
-  public async getBlockList(req: NextRequest, @JwtPayload tokenBody?: jwtPayload) {
+  public async getBlockList(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
     let data;
     try {
       data = await validateStrict(GetBlockListReqDto, await req.json());
@@ -109,7 +109,7 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
-  public async searchInBlockListByHandle(req: NextRequest, @JwtPayload tokenBody?: jwtPayload) {
+  public async searchInBlockListByHandle(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
     let data;
     try {
       data = await validateStrict(SearchBlockListReqDto, await req.json());
@@ -134,7 +134,7 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 60 }, 'user')
-  public async deleteBlock(req: NextRequest, @JwtPayload tokenBody?: jwtPayload) {
+  public async deleteBlock(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
     let data;
     try {
       data = await validateStrict(DeleteBlockDto, await req.json());

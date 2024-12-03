@@ -1,4 +1,4 @@
-import { AnswerService } from '@/app/api/db/_answer-service/_answer-service';
+import { AnswerService } from '@/_service/answer/answer-service';
 import { NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest) {

@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { getIpFromRequest } from '@/api/_utils/getIp/get-ip-from-Request';
 import { getIpHash } from '@/api/_utils/getIp/get-ip-hash';
-import { RateLimiterService } from '@/api/_utils/ratelimiter/rateLimiter';
+import { RateLimiterService } from '@/_service/ratelimiter/rateLimiterService';
 import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 
 export function RateLimit(

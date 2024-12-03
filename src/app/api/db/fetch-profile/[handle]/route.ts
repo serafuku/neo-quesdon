@@ -1,4 +1,4 @@
-import { ProfileService } from '@/app/api/db/_profile-service/profile-service';
+import { ProfileService } from '@/app/api/_service/profile/profile-service';
 import { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ handle?: string }> }) {

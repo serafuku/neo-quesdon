@@ -1,9 +1,9 @@
-import { TestLogQueueWorkerService } from '@/app/api/_queue-service/workers/TestLogWorkerService';
+import { TestLogQueueWorkerService } from '@/_service/queue/workers/TestLogWorkerService';
 import { Logger } from '@/utils/logger/Logger';
 import { server, user } from '@prisma/client';
 import { Redis } from 'ioredis';
-import { RefreshFollowWorkerService } from '@/api/_queue-service/workers/RefreshFollowService';
-import { GetPrismaClient } from '../_utils/getPrismaClient/get-prisma-client';
+import { RefreshFollowWorkerService } from '@/app/api/_service/queue/workers/RefreshFollowService';
+import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 
 export class QueueService {
   static instance: QueueService;

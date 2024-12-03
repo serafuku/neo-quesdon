@@ -6,8 +6,8 @@ import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-cli
 import { Logger } from '@/utils/logger/Logger';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
-import type { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
-import { RateLimit } from '@/api/_utils/ratelimiter/decorator';
+import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
+import { RateLimit } from '@/_service/ratelimiter/decorator';
 
 export class CreateQuestionApiService {
   private logger = new Logger('create-question');
@@ -22,7 +22,7 @@ export class CreateQuestionApiService {
 
   @RateLimit({ bucket_time: 100, req_limit: 10 }, 'user-or-ip')
   @Auth({ isOptional: true })
-  public async CreateQuestion(req: NextRequest, @JwtPayload tokenPayload?: jwtPayload) {
+  public async CreateQuestion(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
     const prisma = GetPrismaClient.getClient();
 
     try {
