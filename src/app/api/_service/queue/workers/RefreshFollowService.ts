@@ -187,10 +187,10 @@ export class RefreshFollowWorkerService {
           logger.log(`${counter} follow imported`);
           break;
         }
-        
+
         for (const f of data) {
-          const acct = f.acct;
-          const followeeHandle = acct.includes('@') ? `@${acct}` : `@${acct}@${job.data.hostName}`;
+          const followeeDomain = new URL(f.url).hostname;
+          const followeeHandle = `@${f.username}@${followeeDomain}`;
           await prisma.following.upsert({
             where: {
               followerHandle_followeeHandle: {
@@ -216,7 +216,6 @@ export class RefreshFollowWorkerService {
           break;
         }
         url = next_url;
-
       }
 
       // 30 분 이상 지난 레코드는 지난번에 import된 것으로 간주,
