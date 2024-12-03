@@ -101,7 +101,8 @@ model blocking {
   hidden        Boolean  @default(false)
 
   @@unique([blockeeHandle, blockerHandle, hidden])
-  @@index([blockerHandle, blockeeHandle, hidden, createdAt(sort: Desc)])
+  @@index([blockerHandle, hidden])
+  @@index([blockeeHandle, hidden])
 }
 
 model following {
@@ -112,5 +113,6 @@ model following {
   createdAt      DateTime @default(now())
 
   @@unique([followerHandle, followeeHandle])
-  @@index([followeeHandle, followerHandle])
+  @@index([followeeHandle])
+  @@index([followerHandle])
 }
