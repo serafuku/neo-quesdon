@@ -243,10 +243,10 @@ export default function Profile() {
 
   return (
     <div className="w-full h-fit desktop:sticky top-2 flex flex-col">
-      <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
-        <div className="flex flex-col items-center gap-2 py-2">
+      <div className="h-fit p-2 glass rounded-box flex flex-col items-center shadow mb-2">
+        <div className="flex flex-col items-center">
           {localHandle !== profileHandle && localHandle !== null && (
-            <div tabIndex={0} className="dropdown dropdown-end absolute size-fit right-[2rem]">
+            <div tabIndex={0} className="dropdown dropdown-end size-fit absolute top-2 right-2">
               <div className="flex btn btn-ghost btn-circle text-slate-600 dark:text-slate-200">
                 <FaEllipsisVertical size={20} />
               </div>
@@ -268,7 +268,7 @@ export default function Profile() {
             </div>
           )}
           {userProfile && userProfile.avatarUrl ? (
-            <div className="flex w-full h-24">
+            <div className="flex w-full h-24 mb-2">
               <Link href={`https://${userProfile.hostname}/${userProfile.handle.match(/^@([^@ ]){1,100}/g)?.[0]}`}>
                 <img
                   src={userProfile.avatarUrl}
@@ -277,8 +277,8 @@ export default function Profile() {
                 />
               </Link>
               {userProfile.stopAnonQuestion && !userProfile.stopNewQuestion && (
-                <div className="chat chat-start w-32 window:w-full desktop:w-full relative left-[68%] window:left-[60%] deskstop:left-[57%]">
-                  <div className="chat-bubble text-sm flex items-center bg-base-100 text-slate-700">
+                <div className="chat chat-end w-32 window:w-full desktop:w-full relative bottom-[40%] right-[22%] window:right-[60%] deskstop:left-[60%]">
+                  <div className="chat-bubble text-xs flex items-center bg-base-100 text-slate-700">
                     작성자 공개 질문만 받아요!
                   </div>
                 </div>
@@ -287,7 +287,7 @@ export default function Profile() {
           ) : (
             <div className="skeleton h-24 w-24 rounded-full" />
           )}
-          <div className="flex items-center text-xl">
+          <div className="flex items-center text-xl mb-2">
             {userProfile && userProfile.stopNewQuestion ? (
               <div className="flex flex-col items-center desktop:flex-row">
                 <NameComponents username={userProfile.name} width={32} height={32} />
@@ -308,11 +308,12 @@ export default function Profile() {
               maxLength: 1000,
             })}
             placeholder="질문 내용을 입력해 주세요"
-            className={`w-[90%] my-2 font-thin leading-loose textarea ${
+            className={`w-[90%] mb-2 font-thin leading-loose textarea ${
               errors.question ? 'textarea-error' : 'textarea-bordered'
             }`}
             onKeyDown={onCtrlEnter}
             disabled={userProfile?.stopNewQuestion === true ? true : false}
+            style={{ resize: 'none' }}
           />
           {errors.questioner && errors.questioner.type === 'stopAnonQuestion' && (
             <div

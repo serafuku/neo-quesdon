@@ -64,7 +64,7 @@ export default function Answer({ value, idState, ref }: askProps) {
                 '익명의 질문자'
               )}
             </div>
-            <div className="flex items-center text-sm window:text-xl desktop:text-2xl chat-bubble text-slate-200">
+            <div className="flex items-center text-sm break-all window:text-xl desktop:text-2xl chat-bubble text-slate-200">
               {value.question}
             </div>
           </div>
