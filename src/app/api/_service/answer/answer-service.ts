@@ -1,18 +1,18 @@
 import { DeleteAnswerDto } from '@/app/_dto/delete-answer/delete-answer.dto';
-import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
+import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
+import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import type { jwtPayload } from '../../_utils/jwt/jwtPayload';
-import { Auth, JwtPayload } from '../../_utils/jwt/decorator';
-import { RateLimit } from '../../_utils/ratelimiter/decorator';
+import type { jwtPayloadType } from '@/api/_utils/jwt/jwtPayloadType';
+import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
+import { RateLimit } from '@/_service/ratelimiter/decorator';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { $Enums, blocking, profile } from '@prisma/client';
 import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
 import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
-import { RedisKvCacheService } from '../../_utils/kvCacheService/redisKvCacheService';
+import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
 
 export class AnswerService {
   private static instance: AnswerService;
@@ -27,7 +27,7 @@ export class AnswerService {
 
   @Auth()
   @RateLimit({ bucket_time: 600, req_limit: 300 }, 'user')
-  public async deleteAnswer(req: NextRequest, @JwtPayload tokenPayload?: jwtPayload) {
+  public async deleteAnswer(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
     let data: DeleteAnswerDto;
     try {
       data = await validateStrict(DeleteAnswerDto, await req.json());
@@ -60,7 +60,7 @@ export class AnswerService {
 
   @Auth({ isOptional: true })
   @RateLimit({ bucket_time: 600, req_limit: 600 }, 'ip')
-  public async fetchAll(req: NextRequest, @JwtPayload tokenPayload?: jwtPayload) {
+  public async fetchAll(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
     const prisma = GetPrismaClient.getClient();
 
     let data;

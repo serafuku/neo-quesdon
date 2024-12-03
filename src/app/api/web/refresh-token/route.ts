@@ -12,10 +12,10 @@ import { MiUser } from '@/api/_misskey-entities/user';
 import { fetchNameWithEmoji } from '@/api/_utils/fetchUsername';
 import { generateJwt } from '@/api/_utils/jwt/generate-jwt';
 import { MastodonUser } from '@/api/_mastodon-entities/user';
-import { RateLimiterService } from '@/api/_utils/ratelimiter/rateLimiter';
+import { RateLimiterService } from '@/_service/ratelimiter/rateLimiterService';
 import { getIpFromRequest } from '@/api/_utils/getIp/get-ip-from-Request';
 import { getIpHash } from '@/api/_utils/getIp/get-ip-hash';
-import { QueueService } from '@/api/_queue-service/queueService';
+import { QueueService } from '@/_service/queue/queueService';
 
 const logger = new Logger('refresh-token');
 export async function POST(req: NextRequest) {

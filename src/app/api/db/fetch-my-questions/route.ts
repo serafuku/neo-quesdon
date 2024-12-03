@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
-import { RateLimiterService } from '@/app/api/_utils/ratelimiter/rateLimiter';
+import { RateLimiterService } from '@/_service/ratelimiter/rateLimiterService';
 
 export async function GET(req: NextRequest) {
   const prisma = GetPrismaClient.getClient();

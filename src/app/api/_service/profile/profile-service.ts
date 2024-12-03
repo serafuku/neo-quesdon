@@ -2,8 +2,8 @@ import { userProfileMeDto, userProfileDto } from '@/app/_dto/fetch-profile/Profi
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Auth, JwtPayload } from '@/app/api/_utils/jwt/decorator';
-import type { jwtPayload } from '@/app/api/_utils/jwt/jwtPayload';
-import { RateLimit } from '@/app/api/_utils/ratelimiter/decorator';
+import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
+import { RateLimit } from '@/_service/ratelimiter/decorator';
 import { Logger } from '@/utils/logger/Logger';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -24,7 +24,7 @@ export class ProfileService {
     req: NextRequest,
     isMe: boolean,
     handlePath?: string,
-    @JwtPayload tokenPayload?: jwtPayload,
+    @JwtPayload tokenPayload?: jwtPayloadType,
   ) {
     const prisma = GetPrismaClient.getClient();
     const handle = isMe ? tokenPayload?.handle : handlePath;

@@ -1,14 +1,14 @@
 'use server';
 
 import { SignJWT } from 'jose';
-import { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
+import { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { Logger } from '@/utils/logger/Logger';
 
 const logger = new Logger('generateJwt');
 export async function generateJwt(hostname: string, handle: string, jwtIndex: number) {
   const alg = 'HS256';
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const jwtPayload: jwtPayload = {
+  const jwtPayload: jwtPayloadType = {
     server: hostname,
     handle: handle,
     jwtIndex: jwtIndex,

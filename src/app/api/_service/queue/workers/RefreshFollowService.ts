@@ -5,7 +5,7 @@ import { Redis } from 'ioredis';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { MisskeyFollowingApiResponse } from '@/api/_misskey-entities/following';
 import { createHash } from 'crypto';
-import { RedisKvCacheService } from '@/api/_utils/kvCacheService/redisKvCacheService';
+import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
 
 const RefreshFollowMisskey = 'RefreshFollowMisskey';
 const logger = new Logger('RefreshFollow');

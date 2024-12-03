@@ -1,7 +1,7 @@
 'use server';
 
 import { jwtVerify } from 'jose';
-import { jwtPayload } from '@/api/_utils/jwt/jwtPayload';
+import { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 
@@ -21,7 +21,7 @@ export async function verifyToken(token: string | null | undefined) {
       throw new Error('token is not string');
     }
     const { payload } = await jwtVerify(token, secret);
-    const data: jwtPayload = {
+    const data: jwtPayloadType = {
       handle: '',
       server: '',
       jwtIndex: 0,

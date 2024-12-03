@@ -1,13 +1,13 @@
 import { Logger } from '@/utils/logger/Logger';
-import { Auth, JwtPayload } from '../../_utils/jwt/decorator';
-import { RateLimit } from '../../_utils/ratelimiter/decorator';
+import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
+import { RateLimit } from '@/_service/ratelimiter/decorator';
 import { NextRequest, NextResponse } from 'next/server';
-import type { jwtPayload } from '../../_utils/jwt/jwtPayload';
+import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { FollowingListReqDto, FollowingListResDto } from '@/app/_dto/following/following.dto';
-import { sendApiError } from '../../_utils/apiErrorResponse/sendApiError';
-import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
-import { RedisKvCacheService } from '@/app/api/_utils/kvCacheService/redisKvCacheService';
+import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
+import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
+import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
 
 export class FollowingService {
   private static instance: FollowingService;
@@ -22,7 +22,7 @@ export class FollowingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 300 }, 'user')
-  public async getFollowing(req: NextRequest, @JwtPayload tokenBody?: jwtPayload) {
+  public async getFollowing(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
     const prisma = GetPrismaClient.getClient();
     let data;
     try {
