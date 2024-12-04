@@ -2,13 +2,15 @@
 
 import NameComponents from '@/app/_components/NameComponents';
 
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { $Enums } from '@prisma/client';
 import { MyProfileEv, MyProfileContext } from '@/app/main/_profileContext';
 import BlockList from '@/app/main/settings/_table';
 import CollapseMenu from '@/app/_components/collapseMenu';
+import { logout } from '@/utils/logout/logout';
+import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -53,6 +55,8 @@ export default function Settings() {
   const userInfo = useContext(MyProfileContext);
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
   const [defaultFormValue, setDefaultFormValue] = useState<FormValue>();
+  const logoutAllModalRef = useRef<HTMLDialogElement>(null);
+
   const {
     register,
     handleSubmit,
@@ -85,6 +89,19 @@ export default function Settings() {
         setButtonClicked(false);
       }, 2000);
     }
+  };
+  const onLogoutAll = async () => {
+    setButtonClicked(true);
+    const res = await fetch('/api/user/logout-all', { method: 'POST' });
+    if (res.ok) {
+      localStorage.removeItem('user_handle');
+      window.location.href = '/';
+    } else {
+      alert('오류가 발생했어요');
+    }
+    setTimeout(() => {
+      setButtonClicked(false);
+    }, 2000);
   };
 
   return (
@@ -182,12 +199,34 @@ export default function Settings() {
                       <div className="flex justify-center">
                         <BlockList />
                       </div>
+                      <CollapseMenu id={'securitySettings'} text="보안">
+                        <div className="w-full flex flex-col items-center">
+                          <span className="font-normal py-2"> 모든 기기에서 로그아웃 하기 </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              logoutAllModalRef.current?.showModal();
+                            }}
+                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-warning'}`}
+                          >
+                            {buttonClicked ? '진행중이에요!' : '모든 기기에서 로그아웃'}
+                          </button>
+                        </div>
+                      </CollapseMenu>
                     </>
                   )}
                 </div>
               </div>
             </>
           )}
+          <DialogModalTwoButton
+            title={'주의'}
+            body={'정말 모든 기기를 로그아웃 시킬까요?'}
+            confirmButtonText={'네'}
+            cancelButtonText={'아니오'}
+            ref={logoutAllModalRef}
+            onClick={onLogoutAll}
+          />
         </>
       )}
     </div>
