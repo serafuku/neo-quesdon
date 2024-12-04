@@ -9,8 +9,8 @@ import { $Enums } from '@prisma/client';
 import { MyProfileEv, MyProfileContext } from '@/app/main/_profileContext';
 import BlockList from '@/app/main/settings/_table';
 import CollapseMenu from '@/app/_components/collapseMenu';
-import { logout } from '@/utils/logout/logout';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
+import { AccountCleanReqDto } from '@/app/_dto/account-clean/account-clean.dto';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -56,6 +56,7 @@ export default function Settings() {
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
   const [defaultFormValue, setDefaultFormValue] = useState<FormValue>();
   const logoutAllModalRef = useRef<HTMLDialogElement>(null);
+  const accountCleanModalRef = useRef<HTMLDialogElement>(null);
 
   const {
     register,
@@ -96,6 +97,42 @@ export default function Settings() {
     if (res.ok) {
       localStorage.removeItem('user_handle');
       window.location.href = '/';
+    } else if (res.status === 429) {
+      alert('요청 제한을 초과했어요. 몇분 후 다시 시도해 주세요');
+      setButtonClicked(false);
+      return;
+    } else {
+      alert('오류가 발생했어요');
+      setButtonClicked(false);
+      return;
+    }
+
+    setTimeout(() => {
+      setButtonClicked(false);
+    }, 2000);
+  };
+
+  const onAccountClean = async () => {
+    setButtonClicked(true);
+    const user_handle = userInfo?.handle;
+    if (!user_handle) {
+      alert(`오류: 유저 정보를 알 수 없어요!`);
+      return;
+    }
+    const req: AccountCleanReqDto = {
+      handle: user_handle,
+    };
+    const res = await fetch('/api/user/account-clean', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      headers: { 'content-type': 'application/json' },
+    });
+    if (res.ok) {
+      console.log('계정청소 시작됨...');
+    } else if (res.status === 429) {
+      alert('요청 제한을 초과했어요. 잠시 후 다시 시도해 주세요');
+      setButtonClicked(false);
+      return;
     } else {
       alert('오류가 발생했어요');
     }
@@ -213,6 +250,20 @@ export default function Settings() {
                           </button>
                         </div>
                       </CollapseMenu>
+                      <CollapseMenu id={'dangerSetting'} text="위험한 설정">
+                        <div className="w-full flex flex-col items-center">
+                          <span className="font-normal py-2"> 계정의 모든 답변을 지우기 </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              accountCleanModalRef.current?.showModal();
+                            }}
+                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-error'}`}
+                          >
+                            {buttonClicked ? '시작되었어요!' : '모든 답변을 삭제'}
+                          </button>
+                        </div>
+                      </CollapseMenu>
                     </>
                   )}
                 </div>
@@ -226,6 +277,14 @@ export default function Settings() {
             cancelButtonText={'아니오'}
             ref={logoutAllModalRef}
             onClick={onLogoutAll}
+          />
+          <DialogModalTwoButton
+            title={'경고'}
+            body={'그동안 썼던 모든 답변을 지울까요? \n이 작업은 시간이 걸리고, 지워진 답변은 복구할 수 없어요!'}
+            confirmButtonText={'네'}
+            cancelButtonText={'아니오'}
+            ref={accountCleanModalRef}
+            onClick={onAccountClean}
           />
         </>
       )}
