@@ -57,7 +57,7 @@ export default function Answer({ value, idState, ref }: askProps) {
       <div className={`${!showNsfw && 'blur'} w-full h-full`}>
         <div className="chat chat-start flex ml-2 desktop:ml-0 justify-between">
           <div className="w-full">
-            <div className="chat-header">
+            <div className="chat-header dark:text-white">
               {value.questioner ? (
                 <Link href={`/main/user/${value.questioner}`}>{value.questioner}</Link>
               ) : (
@@ -69,9 +69,9 @@ export default function Answer({ value, idState, ref }: askProps) {
             </div>
           </div>
           {localHandle !== null && localHandle === profileHandle && (
-            <div className="w-12 flex justify-end">
+            <div className="w-fit mx-2 break-keep flex justify-end">
               <a
-                className="link text-red-800 dark:text-red-500"
+                className="link text-red-800 dark:text-red-600"
                 onClick={() => {
                   ref?.current?.showModal();
                   if (idState) {
@@ -97,10 +97,10 @@ export default function Answer({ value, idState, ref }: askProps) {
               <NameComponents username={userInfo?.name} width={16} height={16} />
             </Link>
           </div>
-          <div className="flex items-center text-sm break-all window:text-xl desktop:text-2xl chat-bubble bg-green-600 text-slate-200">
-            <Link href={`/main/user/${value.answeredPersonHandle}/${value.id}`}>{value.answer}</Link>
+          <div className="flex items-center text-sm break-all window:text-xl desktop:text-2xl chat-bubble bg-green-600 text-slate-100 dark:text-slate-50">
+            {value.answer}
           </div>
-          <div className="chat-footer font-thin text-xs mt-2 underline text-blue-900 dark:text-slate-200">
+          <div className="chat-footer font-thin text-xs mt-2 underline text-blue-900 dark:text-slate-100">
             <Link href={`/main/user/${value.answeredPersonHandle}/${value.id}`}>
               {new Date(value.answeredAt).toLocaleString('ko-kr', { hour12: false })}
             </Link>
