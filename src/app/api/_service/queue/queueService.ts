@@ -4,11 +4,13 @@ import { server, user } from '@prisma/client';
 import { Redis } from 'ioredis';
 import { RefreshFollowWorkerService } from '@/app/api/_service/queue/workers/RefreshFollowService';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
+import { AccountCleanJob } from './workers/AccountClean';
 
 export class QueueService {
   static instance: QueueService;
   private testLogProcess: TestLogQueueWorkerService;
   private followWorker: RefreshFollowWorkerService;
+  private accountClean: AccountCleanJob;
   private logger = new Logger('QueueService');
 
   private constructor() {
@@ -17,6 +19,7 @@ export class QueueService {
     const connection = new Redis({ host: host, port: port, maxRetriesPerRequest: null });
     this.testLogProcess = new TestLogQueueWorkerService(connection);
     this.followWorker = new RefreshFollowWorkerService(connection);
+    this.accountClean = new AccountCleanJob(connection);
     this.logger.log('Queue Service Started ', `redis: ${host}:${port}`);
   }
   public static get() {
@@ -47,5 +50,9 @@ export class QueueService {
         `SKIP refresh follow. reason: Last refresh: ${profile.lastFollowRefreshed}, handle: ${user.handle}`,
       );
     }
+  }
+
+  public async addAccountCleanJob(user: user) {
+    await this.accountClean.addJob({ handle: user.handle });
   }
 }
