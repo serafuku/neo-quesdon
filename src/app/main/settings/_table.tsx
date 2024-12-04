@@ -1,5 +1,6 @@
 'use client';
 
+import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { Block, GetBlockListReqDto, GetBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
@@ -78,61 +79,57 @@ export default function BlockList() {
   }, [mounted, untilId]);
 
   return (
-    <div className="w-full">
-      <div className="collapse collapse-arrow backdrop-brightness-105">
-        <input type="checkbox" />
-        <div className="collapse-title cursor-pointer font-thin">차단한 사용자 보기</div>
-        <div className="collapse-content">
-          <table className="table">
-            <thead>
-              <tr>
-                <th className="dark:text-black">유저 핸들</th>
+    <>
+      <CollapseMenu id={'blockList'} text="차단한 사용자 보기">
+        <table className="table">
+          <thead>
+            <tr>
+              <th className="dark:text-black">유저 핸들</th>
+            </tr>
+          </thead>
+          <tbody>
+            {blockList.map((el) => (
+              <tr key={el.id}>
+                <td>{el.targetHandle}</td>
+                <td>
+                  <button
+                    className="btn btn-warning btn-sm w-full break-keep"
+                    onClick={() => {
+                      setUnblockHandle(el.targetHandle);
+                      unblockConfirmModalRef.current?.showModal();
+                    }}
+                  >
+                    차단 해제
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {blockList.map((el) => (
-                <tr key={el.id}>
-                  <td>{el.targetHandle}</td>
-                  <td>
-                    <button
-                      className="btn btn-warning btn-sm w-full break-keep"
-                      onClick={() => {
-                        setUnblockHandle(el.targetHandle);
-                        unblockConfirmModalRef.current?.showModal();
-                      }}
-                    >
-                      차단 해제
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              <tr ref={(ref) => setMounted(ref)}>
-                {isLoading ? (
-                  <td>
-                    <span className="loading loading-spinner" />
-                  </td>
-                ) : (
-                  <>
-                    {blockList.length === 0 ? (
-                      <>
-                        <td>
-                          <span className="text-lg">차단한 유저가 없어요!</span>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td>
-                          <span className="text-lg">끝!</span>
-                        </td>
-                      </>
-                    )}
-                  </>
-                )}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))}
+            <tr ref={(ref) => setMounted(ref)}>
+              {isLoading ? (
+                <td>
+                  <span className="loading loading-spinner" />
+                </td>
+              ) : (
+                <>
+                  {blockList.length === 0 ? (
+                    <>
+                      <td>
+                        <span className="text-lg">차단한 유저가 없어요!</span>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td>
+                        <span className="text-lg">끝!</span>
+                      </td>
+                    </>
+                  )}
+                </>
+              )}
+            </tr>
+          </tbody>
+        </table>
+      </CollapseMenu>
       <DialogModalTwoButton
         title={'차단 해제'}
         body={'차단 해제하시겠어요?'}
@@ -151,6 +148,6 @@ export default function BlockList() {
         doneButtonText={'닫기'}
         ref={unblockSuccessModalRef}
       />
-    </div>
+    </>
   );
 }
