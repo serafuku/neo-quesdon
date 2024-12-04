@@ -84,7 +84,7 @@ export default function BlockList() {
         <table className="table">
           <thead>
             <tr>
-              <th className="dark:text-black">유저 핸들</th>
+              <th className="text-sm dark:text-white">유저 핸들</th>
             </tr>
           </thead>
           <tbody>

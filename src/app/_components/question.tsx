@@ -117,7 +117,7 @@ export default function Question({
   return (
     <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
       <div className="text-2xl chat chat-start">
-        <div className="chat-header dark:text-slate-100">
+        <div className="chat-header dark:text-slate-50">
           {singleQuestion.questioner ? (
             <Link href={`/main/user/${singleQuestion.questioner}`}>{singleQuestion.questioner}</Link>
           ) : (
@@ -149,7 +149,7 @@ export default function Question({
             <textarea
               {...register('answer', { required: 'required', maxLength: 2000 })}
               tabIndex={0}
-              className={`textarea textarea-sm text-sm h-24 desktop:h-32 window:text-xl desktop:text-2xl bg-transparent ${
+              className={`textarea textarea-sm text-sm h-24 desktop:h-32 window:text-xl desktop:text-2xl bg-transparent placeholder-neutral-300 text-slate-50 ${
                 errors.answer && 'textarea-error'
               }`}
               placeholder="답변을 입력하세요..."
@@ -167,7 +167,7 @@ export default function Question({
                   <input type="hidden" {...register('nsfw')} />
                   <span className="text-sm desktop:text-xl">NSFW로 체크</span>
                 </div>
-                <select {...register('visibility')} className="select select-ghost select-sm">
+                <select {...register('visibility')} className="select select-ghost select-sm dark:shadow">
                   <option className={'hidden'} value={undefined}>
                     ...
                   </option>

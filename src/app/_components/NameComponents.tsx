@@ -8,7 +8,7 @@ type username = {
 
 export default function NameComponents({ username, height }: username) {
   return (
-    <div className="flex items-center">
+    <div className="flex items-center dark:text-white">
       {username && username.length > 0 ? (
         <>
           {username?.map((el, key) => (

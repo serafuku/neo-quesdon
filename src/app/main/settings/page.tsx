@@ -88,7 +88,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="w-[90%] window:w-[80%] desktop:w-[70%] glass flex flex-col desktop:grid desktop:grid-cols-2 gap-0 rounded-box shadow p-2">
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%] glass flex flex-col desktop:grid desktop:grid-cols-2 gap-0 rounded-box shadow p-2 dark:text-white">
       {userInfo === undefined ? (
         <div className="w-full flex col-span-3 justify-center">
           <span className="loading loading-spinner loading-lg" />
