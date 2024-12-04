@@ -88,7 +88,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="w-[90%] window:w-[80%] desktop:w-[70%] glass flex flex-col desktop:grid desktop:grid-cols-3 gap-4 rounded-box shadow p-2">
+    <div className="w-[90%] window:w-[80%] desktop:w-[70%] glass flex flex-col desktop:grid desktop:grid-cols-2 gap-0 rounded-box shadow p-2">
       {userInfo === undefined ? (
         <div className="w-full flex col-span-3 justify-center">
           <span className="loading loading-spinner loading-lg" />
@@ -101,7 +101,7 @@ export default function Settings() {
             </div>
           ) : (
             <>
-              <div className="flex flex-col mt-2 gap-2 justify-center items-center">
+              <div className="flex flex-col mt-2 gap-2 col-span-2 justify-center items-center">
                 <div className="avatar">
                   <div className="ring-primary ring-offset-base-100 w-24 h-24 rounded-full ring ring-offset-2">
                     {userInfo?.avatarUrl !== undefined && (
@@ -112,7 +112,7 @@ export default function Settings() {
                 <div className="desktop:ml-2 flex flex-col items-center desktop:items-start">
                   <span className="text-xl font-thin">안녕하세요,</span>
                   <div className="flex text-2xl items-center">
-                    <NameComponents username={userInfo?.name} width={32} height={32} />
+                    <NameComponents username={userInfo?.name} width={24} height={24} />
                     <span>님!</span>
                   </div>
                 </div>
@@ -126,8 +126,8 @@ export default function Settings() {
                   {userInfo && (
                     <>
                       <CollapseMenu id={'basicSetting'} text="기본설정">
-                        <form onSubmit={handleSubmit(onSubmit)}>
-                          <div className="grid grid-cols-[20%_80%] desktop:grid-cols-[30%_70%] gap-2 items-center p-2">
+                        <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col items-center">
+                          <div className="grid grid-cols-[20%_80%] desktop:w-[24rem] desktop:grid-cols-[7rem_100%] gap-2 items-center p-2">
                             <input {...register('stopNewQuestion')} type="checkbox" className="toggle toggle-success" />
                             <span className="font-thin">더 이상 질문을 받지 않기</span>
                             <input
@@ -172,7 +172,7 @@ export default function Settings() {
                               <span className="font-thin">질문함 이름 (10글자 이내)</span>
                             </div>
                           </div>
-                          <div className="flex justify-end mt-2">
+                          <div className="flex w-full justify-end mt-2">
                             <button type="submit" className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-primary'}`}>
                               {buttonClicked ? '저장했어요!' : '저장'}
                             </button>
