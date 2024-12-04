@@ -350,7 +350,7 @@ export default function Profile() {
         </form>
       </div>
       {localHandle === profileHandle && (
-        <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2">
+        <div className="h-fit py-4 glass rounded-box flex flex-col items-center shadow mb-2 dark:text-white">
           <a className="link" href={shareUrl()} target="_blank" rel="noreferrer">
             {userProfile?.instanceType}에 질문상자 페이지를 공유
           </a>

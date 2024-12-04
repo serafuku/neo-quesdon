@@ -69,9 +69,9 @@ export default function Answer({ value, idState, ref }: askProps) {
             </div>
           </div>
           {localHandle !== null && localHandle === profileHandle && (
-            <div className="w-12 flex justify-end">
+            <div className="w-fit mx-2 break-keep flex justify-end">
               <a
-                className="link text-red-800 dark:text-red-500"
+                className="link text-red-800 dark:text-red-600"
                 onClick={() => {
                   ref?.current?.showModal();
                   if (idState) {
