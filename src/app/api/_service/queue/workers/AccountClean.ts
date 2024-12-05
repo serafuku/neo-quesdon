@@ -40,7 +40,7 @@ export class AccountCleanJob {
   }
 
   private async process(job: Job<dataType>) {
-    logger.debug(`${job.data.handle} 의 답변 청소를 시작합니다...`);
+    logger.log(`${job.data.handle} 의 답변 청소를 시작합니다...`);
     const prisma = GetPrismaClient.getClient();
     let counter = 0;
     try {
@@ -51,13 +51,14 @@ export class AccountCleanJob {
           take: 30,
         });
         if (parts.length === 0) {
-          break;
+          logger.log(`${job.data.handle} 의 답변 ${counter} 개가 삭제됨`);
+          return `${job.data.handle} 의 답변 ${counter} 개가 삭제됨`;
         }
         for (const a of parts) {
           await prisma.answer.delete({ where: { id: a.id } });
         }
         counter += parts.length;
-        logger.debug(`${job.data.handle} 의 답변 ${counter} 개가 삭제됨`);
+        logger.debug(`답변 ${counter} 개 삭제됨`);
         // wait 1 sec
         await new Promise<void>((resolve) => {
           setTimeout(() => {
