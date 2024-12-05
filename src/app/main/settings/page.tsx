@@ -11,6 +11,7 @@ import BlockList from '@/app/main/settings/_table';
 import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { AccountCleanReqDto } from '@/app/_dto/account-clean/account-clean.dto';
+import { FaEraser, FaLock, FaUserLargeSlash } from 'react-icons/fa6';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -258,7 +259,10 @@ export default function Settings() {
                       </div>
                       <CollapseMenu id={'securitySettings'} text="보안">
                         <div className="w-full flex flex-col items-center">
-                          <span className="font-normal py-2"> 모든 기기에서 로그아웃 하기 </span>
+                          <span className="font-normal text-xl py-3 flex items-center gap-2">
+                            <FaLock />
+                            모든 기기에서 로그아웃 하기{' '}
+                          </span>
                           <button
                             type="button"
                             onClick={() => {
@@ -273,10 +277,13 @@ export default function Settings() {
                       <CollapseMenu id={'dangerSetting'} text="위험한 설정">
                         <Divider />
                         <div className="w-full flex flex-col items-center">
-                          <div className="font-normal text-xl py-3"> 차단 가져오기 </div>
+                          <div className="font-normal text-xl py-3 flex items-center gap-2">
+                            <FaUserLargeSlash />
+                            차단 목록 가져오기
+                          </div>
                           <div className="font-thin px-4 py-2 break-keep">
                             차단 목록을 내 연합우주 계정에서 가져오는 기능이에요. 차단된 사용자는 나에게 더 이상 질문을
-                            보낼 수 없게 되어요. 사용자를 차단하면 서로의 글이 최근 올라온 답변들 목록에서 숨겨져요.
+                            보낼 수 없어요. 사용자를 차단하면 서로의 답변이 숨겨져요.
                           </div>
                           <button
                             type="button"
@@ -285,12 +292,14 @@ export default function Settings() {
                             }}
                             className={`btn ${startButtonClicked ? 'btn-disabled' : 'btn-warning'}`}
                           >
-                            {startButtonClicked ? '시작되었어요!' : '블락 가져오기'}
+                            {startButtonClicked ? '시작되었어요!' : '차단 목록 가져오기'}
                           </button>
                           <Divider />
-                          <div className="font-normal text-xl py-3"> 계정의 답변 청소하기 </div>
+                          <div className="font-normal text-xl py-3 flex items-center gap-2">
+                            <FaEraser />
+                            계정 청소하기
+                          </div>
                           <div className="font-thin px-4 py-2 break-keep">
-                            {' '}
                             네오 퀘스돈에서 이 계정으로 지금까지 작성한 모든 답변을 지워요. 이 작업은 시간이 걸리고,
                             지워진 글은 되돌릴 수 없으니 주의하세요.{' '}
                           </div>
