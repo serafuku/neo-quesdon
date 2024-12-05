@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   experimental: {
     forceSwcTransforms: true,
   },
+  serverExternalPackages: ['re2'],
 };
 
 export default nextConfig;
