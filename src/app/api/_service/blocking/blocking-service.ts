@@ -14,14 +14,20 @@ import {
 } from '@/app/_dto/blocking/blocking.dto';
 import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
+import { Logger } from '@/utils/logger/Logger';
+import { QueueService } from '@/app/api/_service/queue/queueService';
 
 export class BlockingService {
   private static instance: BlockingService;
   private prisma: PrismaClient;
   private redisKvService: RedisKvCacheService;
+  private logger = new Logger('BlockingService');
+  private queueService: QueueService;
+
   private constructor() {
     this.prisma = GetPrismaClient.getClient();
     this.redisKvService = RedisKvCacheService.getInstance();
+    this.queueService = QueueService.get();
   }
   public static get() {
     if (!BlockingService.instance) {
@@ -50,6 +56,8 @@ export class BlockingService {
     const dbData = {
       blockeeHandle: targetHandle,
       blockerHandle: user.handle,
+      hidden: false,
+      imported: false,
     };
     try {
       await this.prisma.blocking.create({ data: dbData });
@@ -119,15 +127,14 @@ export class BlockingService {
     if (!tokenBody) {
       return sendApiError(401, '');
     }
-    const isBlocked = await this.prisma.blocking.findUnique({
+    const r = await this.prisma.blocking.findMany({
       where: {
-        blockeeHandle_blockerHandle_hidden: {
-          blockerHandle: tokenBody.handle,
-          blockeeHandle: data.targetHandle,
-          hidden: false,
-        },
+        blockerHandle: tokenBody.handle,
+        blockeeHandle: data.targetHandle,
+        hidden: false,
       },
     });
+    const isBlocked = r.length > 0;
 
     return NextResponse.json({ isBlocked: isBlocked ? true : false }, { status: 200 });
   }
@@ -144,20 +151,36 @@ export class BlockingService {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { handle: tokenBody!.handle } });
 
     try {
-      await this.prisma.blocking.delete({
+      const r = await this.prisma.blocking.deleteMany({
         where: {
-          blockeeHandle_blockerHandle_hidden: {
-            blockeeHandle: data.targetHandle,
-            blockerHandle: user.handle,
-            hidden: false,
-          },
+          blockeeHandle: data.targetHandle,
+          blockerHandle: user.handle,
+          hidden: false,
         },
       });
+      this.logger.debug(`${r.count} block deleted`);
     } catch {
       return sendApiError(400, '이미 차단 해제된 사용자입니다!');
     }
 
     await this.redisKvService.drop(`block-${user.handle}`);
     return NextResponse.json({}, { status: 200 });
+  }
+
+  @Auth()
+  @RateLimit({ bucket_time: 60, req_limit: 2 }, 'user')
+  public async importBlockFromRemote(_req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
+    const user = await this.prisma.user.findUnique({ where: { handle: tokenBody!.handle } });
+    if (!user) {
+      return sendApiError(400, '찾을 수 없는 유저입니다');
+    }
+    await this.queueService.addBlockImportJob(user);
+    return NextResponse.json(
+      { message: 'OK, queued.' },
+      {
+        status: 202,
+        headers: { 'content-type': 'application/json' },
+      },
+    );
   }
 }

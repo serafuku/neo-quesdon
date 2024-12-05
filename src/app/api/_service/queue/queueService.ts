@@ -5,12 +5,14 @@ import { Redis } from 'ioredis';
 import { RefreshFollowWorkerService } from '@/app/api/_service/queue/workers/RefreshFollowService';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { AccountCleanJob } from './workers/AccountClean';
+import { ImportBlockQueueService } from '@/app/api/_service/queue/workers/ImportBlock';
 
 export class QueueService {
   static instance: QueueService;
   private testLogProcess: TestLogQueueWorkerService;
   private followWorker: RefreshFollowWorkerService;
   private accountClean: AccountCleanJob;
+  private importBlockService: ImportBlockQueueService;
   private logger = new Logger('QueueService');
 
   private constructor() {
@@ -20,6 +22,8 @@ export class QueueService {
     this.testLogProcess = new TestLogQueueWorkerService(connection);
     this.followWorker = new RefreshFollowWorkerService(connection);
     this.accountClean = new AccountCleanJob(connection);
+    this.importBlockService = new ImportBlockQueueService(connection);
+
     this.logger.log('Queue Service Started ', `redis: ${host}:${port}`);
   }
   public static get() {
@@ -54,5 +58,8 @@ export class QueueService {
 
   public async addAccountCleanJob(user: user) {
     await this.accountClean.addJob({ handle: user.handle });
+  }
+  public async addBlockImportJob(user: user) {
+    await this.importBlockService.addJob({ userHandle: user.handle });
   }
 }
