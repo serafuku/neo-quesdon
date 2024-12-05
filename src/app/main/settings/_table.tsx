@@ -90,7 +90,7 @@ export default function BlockList() {
           <tbody>
             {blockList.map((el) => (
               <tr key={el.id}>
-                <td>{el.targetHandle}</td>
+                <td className="break-all">{el.targetHandle}</td>
                 <td>
                   <button
                     className="btn btn-warning btn-sm w-full break-keep"
