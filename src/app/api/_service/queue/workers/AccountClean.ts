@@ -1,6 +1,5 @@
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
-import { PrismaClient } from '@prisma/client';
 import { Job, Queue, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 

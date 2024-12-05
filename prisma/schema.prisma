@@ -99,10 +99,12 @@ model blocking {
   blocker       user     @relation("blocks", fields: [blockerHandle], references: [handle], onDelete: Cascade)
   createdAt     DateTime @default(now())
   hidden        Boolean  @default(false)
+  imported      Boolean  @default(false)
 
-  @@unique([blockeeHandle, blockerHandle, hidden])
+  @@unique([blockeeHandle, blockerHandle, hidden, imported])
   @@index([blockerHandle, hidden])
   @@index([blockeeHandle, hidden])
+  @@index([imported])
 }
 
 model following {

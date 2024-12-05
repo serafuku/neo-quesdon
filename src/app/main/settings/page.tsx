@@ -54,9 +54,11 @@ function Divider({ className }: { className?: string }) {
 export default function Settings() {
   const userInfo = useContext(MyProfileContext);
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
+  const [startButtonClicked, setStartButtonClicked] = useState<boolean>(false);
   const [defaultFormValue, setDefaultFormValue] = useState<FormValue>();
   const logoutAllModalRef = useRef<HTMLDialogElement>(null);
   const accountCleanModalRef = useRef<HTMLDialogElement>(null);
+  const importBlockModalRef = useRef<HTMLDialogElement>(null);
 
   const {
     register,
@@ -92,28 +94,27 @@ export default function Settings() {
     }
   };
   const onLogoutAll = async () => {
-    setButtonClicked(true);
+    setStartButtonClicked(true);
     const res = await fetch('/api/user/logout-all', { method: 'POST' });
     if (res.ok) {
       localStorage.removeItem('user_handle');
       window.location.href = '/';
     } else if (res.status === 429) {
       alert('요청 제한을 초과했어요. 몇분 후 다시 시도해 주세요');
-      setButtonClicked(false);
+      setStartButtonClicked(false);
       return;
     } else {
       alert('오류가 발생했어요');
-      setButtonClicked(false);
+      setStartButtonClicked(false);
       return;
     }
-
     setTimeout(() => {
-      setButtonClicked(false);
+      setStartButtonClicked(false);
     }, 2000);
   };
 
   const onAccountClean = async () => {
-    setButtonClicked(true);
+    setStartButtonClicked(true);
     const user_handle = userInfo?.handle;
     if (!user_handle) {
       alert(`오류: 유저 정보를 알 수 없어요!`);
@@ -131,13 +132,32 @@ export default function Settings() {
       console.log('계정청소 시작됨...');
     } else if (res.status === 429) {
       alert('요청 제한을 초과했어요. 잠시 후 다시 시도해 주세요');
-      setButtonClicked(false);
+      setStartButtonClicked(false);
       return;
     } else {
       alert('오류가 발생했어요');
     }
     setTimeout(() => {
-      setButtonClicked(false);
+      setStartButtonClicked(false);
+    }, 2000);
+  };
+
+  const onImportBlock = async () => {
+    setStartButtonClicked(true);
+    const res = await fetch('/api/user/blocking/import', {
+      method: 'POST',
+    });
+    if (res.ok) {
+      console.log('블락 리스트 가져오기 시작됨...');
+    } else if (res.status === 429) {
+      alert('요청 제한을 초과했어요. 잠시 후 다시 시도해 주세요');
+      setStartButtonClicked(false);
+      return;
+    } else {
+      alert(`오류가 발생했어요 ${await res.text()}`);
+    }
+    setTimeout(() => {
+      setStartButtonClicked(false);
     }, 2000);
   };
 
@@ -251,16 +271,37 @@ export default function Settings() {
                         </div>
                       </CollapseMenu>
                       <CollapseMenu id={'dangerSetting'} text="위험한 설정">
+                        <Divider />
                         <div className="w-full flex flex-col items-center">
-                          <span className="font-normal py-2"> 계정의 모든 답변을 지우기 </span>
+                          <div className="font-normal text-xl py-3"> 차단 가져오기 </div>
+                          <div className="font-thin px-4 py-2 break-keep">
+                            차단 목록을 내 연합우주 계정에서 가져오는 기능이에요. 차단된 사용자는 나에게 더 이상 질문을
+                            보낼 수 없게 되어요. 사용자를 차단하면 서로의 글이 최근 올라온 답변들 목록에서 숨겨져요.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              importBlockModalRef.current?.showModal();
+                            }}
+                            className={`btn ${startButtonClicked ? 'btn-disabled' : 'btn-warning'}`}
+                          >
+                            {startButtonClicked ? '시작되었어요!' : '블락 가져오기'}
+                          </button>
+                          <Divider />
+                          <div className="font-normal text-xl py-3"> 계정의 답변 청소하기 </div>
+                          <div className="font-thin px-4 py-2 break-keep">
+                            {' '}
+                            네오 퀘스돈에서 이 계정으로 지금까지 작성한 모든 답변을 지워요. 이 작업은 시간이 걸리고,
+                            지워진 글은 되돌릴 수 없으니 주의하세요.{' '}
+                          </div>
                           <button
                             type="button"
                             onClick={() => {
                               accountCleanModalRef.current?.showModal();
                             }}
-                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-error'}`}
+                            className={`btn ${startButtonClicked ? 'btn-disabled' : 'btn-error'}`}
                           >
-                            {buttonClicked ? '시작되었어요!' : '모든 답변을 삭제'}
+                            {startButtonClicked ? '시작되었어요!' : '모든 답변을 삭제'}
                           </button>
                         </div>
                       </CollapseMenu>
@@ -285,6 +326,14 @@ export default function Settings() {
             cancelButtonText={'아니오'}
             ref={accountCleanModalRef}
             onClick={onAccountClean}
+          />
+          <DialogModalTwoButton
+            title={'주의'}
+            body={`${userInfo.instanceType} 에서 블락 목록을 가져올까요? \n 이 작업은 완료되는데 시간이 조금 걸려요!`}
+            confirmButtonText={'네'}
+            cancelButtonText={'아니오'}
+            ref={importBlockModalRef}
+            onClick={onImportBlock}
           />
         </>
       )}
