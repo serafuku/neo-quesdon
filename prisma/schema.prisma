@@ -22,7 +22,7 @@ model user {
   handle       String   @unique
   name         String[]
   token        String
-  userId       String   @unique
+  userId       String   /// Misskey/Mastodon 의 내부 ID
   profile      profile?
   jwtIndex     Int      @default(0)
   server       server   @relation(references: [instances], fields: [hostName], onUpdate: Cascade, onDelete: Cascade)

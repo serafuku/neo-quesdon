@@ -137,6 +137,7 @@ async function pushDB(payload: DBpayload) {
     update: {
       name: payload.name,
       token: payload.accessToken,
+      userId: payload.userId,
       profile: {
         update: {
           account: payload.account,
