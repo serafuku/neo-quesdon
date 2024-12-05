@@ -20,6 +20,7 @@ export type FormValue = {
   stopPostAnswer: boolean;
   questionBoxName: string;
   visibility: $Enums.PostVisibility;
+  wordMuteList: string;
 };
 async function updateUserSettings(value: FormValue) {
   const body: UserSettingsUpdateDto = {
@@ -29,6 +30,10 @@ async function updateUserSettings(value: FormValue) {
     stopPostAnswer: value.stopPostAnswer,
     questionBoxName: value.questionBoxName || '질문함',
     defaultPostVisibility: value.visibility,
+    wordMuteList: value.wordMuteList
+      .split('\n')
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0),
   };
   try {
     const res = await fetch('/api/user/settings', {
@@ -79,6 +84,7 @@ export default function Settings() {
         stopPostAnswer: userInfo.stopPostAnswer,
         questionBoxName: userInfo.questionBoxName,
         visibility: userInfo.defaultPostVisibility,
+        wordMuteList: userInfo.wordMuteList.join('\n'),
       };
       setDefaultFormValue(value);
     }
@@ -245,6 +251,18 @@ export default function Settings() {
                               />
                               <span className="font-thin">질문함 이름 (10글자 이내)</span>
                             </div>
+                          </div>
+                          <Divider />
+                          <div className="flex flex-col desktop:w-[24rem] gap-2 items-center p-2">
+                            <div className="text-lg"> 질문 단어 뮤트 </div>
+                            <div className="font-thin">
+                              뮤트할 단어를 한줄에 하나씩 입력합니다. <br /> 정규식 문법도 지원합니다.
+                            </div>
+                            <textarea
+                              {...register('wordMuteList')}
+                              className="textarea textarea-bordered textarea-lg min-h-[15vh] text-sm"
+                              placeholder="뮤트할 단어, 또는 정규식"
+                            ></textarea>
                           </div>
                           <div className="flex w-full justify-end mt-2">
                             <button type="submit" className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-primary'}`}>

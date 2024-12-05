@@ -79,6 +79,7 @@ export class ProfileService {
         instanceType: instanceType,
         defaultPostVisibility: userProfile.defaultPostVisibility,
         hostname: userProfile.user.hostName,
+        wordMuteList: userProfile.wordMuteList,
       };
       if (isMe) {
         return NextResponse.json(resMe, {
