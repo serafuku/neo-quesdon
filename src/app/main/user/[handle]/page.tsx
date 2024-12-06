@@ -6,17 +6,21 @@ import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-cli
 
 export const dynamic = 'force-dynamic';
 
-const prisma = GetPrismaClient.getClient();
-
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params;
   const profileHandle = decodeURIComponent(handle);
-
-  const userProfile = await prisma.profile.findUniqueOrThrow({
+  const prisma = GetPrismaClient.getClient();
+  const userProfile = await prisma.profile.findUnique({
     where: {
       handle: profileHandle,
     },
   });
+  if (!userProfile) {
+    return {
+      title: '찾을 수 없음',
+      description: '그런 유저를 찾을 수 없습니다',
+    };
+  }
 
   return {
     title: `${userProfile.handle.match(/(?:@)(.+)(?:@)/)?.[1]} 님의 ${userProfile.questionBoxName}`,
@@ -31,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
 export default async function ProfilePage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
   const profileHandle = decodeURIComponent(handle);
-
+  const prisma = GetPrismaClient.getClient();
   const userProfile = await prisma.profile.findUnique({
     where: {
       handle: profileHandle,

@@ -11,6 +11,7 @@ import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-cli
 import { Logger } from '@/utils/logger/Logger';
 import { generateJwt } from '@/api/_utils/jwt/generate-jwt';
 import { QueueService } from '@/_service/queue/queueService';
+import { RedisService } from '@/app/api/_service/redisService/redis-service';
 
 const logger = new Logger('misskey-callback');
 export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): Promise<misskeyUserInfoPayload> {
@@ -21,6 +22,15 @@ export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): 
     throw new Error(JSON.stringify(err));
   }
   loginReq.misskeyHost = loginReq.misskeyHost.toLowerCase();
+
+  const redis = RedisService.getRedis();
+  const session = await redis.get(`login/misskey/${loginReq.callback_token}`);
+  if (!session) {
+    throw new Error('로그인 세션을 찾을 수 없습니다');
+  } else {
+    await redis.del(`login/misskey/${loginReq.callback_token}`);
+  }
+
 
   // 미스키 App 인증 API에서 액세스토큰과 MiUser 정보를 받아오기
   const misskeyApiResponse: misskeyAccessKeyApiResponse = await requestMiAccessTokenAndUserInfo(loginReq);

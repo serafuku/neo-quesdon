@@ -1,11 +1,11 @@
 import { TestLogQueueWorkerService } from '@/_service/queue/workers/TestLogWorkerService';
 import { Logger } from '@/utils/logger/Logger';
 import { server, user } from '@prisma/client';
-import { Redis } from 'ioredis';
 import { RefreshFollowWorkerService } from '@/app/api/_service/queue/workers/RefreshFollowService';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { AccountCleanJob } from './workers/AccountClean';
 import { ImportBlockQueueService } from '@/app/api/_service/queue/workers/ImportBlock';
+import { RedisService } from '@/app/api/_service/redisService/redis-service';
 
 export class QueueService {
   static instance: QueueService;
@@ -18,7 +18,7 @@ export class QueueService {
   private constructor() {
     const host = process.env.REDIS_HOST ?? '';
     const port = Number.parseInt(process.env.REDIS_PORT ?? '');
-    const connection = new Redis({ host: host, port: port, maxRetriesPerRequest: null });
+    const connection = RedisService.getRedis();
     this.testLogProcess = new TestLogQueueWorkerService(connection);
     this.followWorker = new RefreshFollowWorkerService(connection);
     this.accountClean = new AccountCleanJob(connection);

@@ -1,5 +1,6 @@
 import { Redis } from 'ioredis';
 import { Logger } from '@/utils/logger/Logger';
+import { RedisService } from '@/app/api/_service/redisService/redis-service';
 
 export class RateLimiterService {
   private redis: Redis;
@@ -7,16 +8,7 @@ export class RateLimiterService {
   private logger: Logger;
   private constructor() {
     this.logger = new Logger('RateLimiterService');
-    const host = process.env.REDIS_HOST;
-    const port_str = process.env.REDIS_PORT;
-    if (typeof host !== 'string' || typeof port_str !== 'string') {
-      throw new Error('Redis host or port not provided!');
-    }
-    const port = Number.parseInt(port_str);
-    this.redis = new Redis({
-      host: host,
-      port: port,
-    });
+    this.redis = RedisService.getRedis();
   }
   public static getLimiter() {
     if (!RateLimiterService.instance) {
