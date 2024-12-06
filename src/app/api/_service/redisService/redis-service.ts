@@ -14,6 +14,7 @@ export class RedisService {
     RedisService.redis = new Redis({
       host: host,
       port: port,
+      maxRetriesPerRequest: null,
     });
     this.logger.log(`Start redis with ${host}:${port}`);
   }

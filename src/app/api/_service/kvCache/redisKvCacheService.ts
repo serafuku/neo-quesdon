@@ -1,3 +1,4 @@
+import { RedisService } from '@/app/api/_service/redisService/redis-service';
 import { Logger } from '@/utils/logger/Logger';
 import { Redis } from 'ioredis';
 
@@ -11,11 +12,7 @@ export class RedisKvCacheService {
     if (typeof host !== 'string' || typeof port_str !== 'string') {
       throw new Error('Redis host or port not provided!');
     }
-    const port = Number.parseInt(port_str);
-    this.redis = new Redis({
-      host: host,
-      port: port,
-    });
+    this.redis = RedisService.getRedis();
   }
 
   public static getInstance() {
