@@ -9,6 +9,7 @@ import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-cli
 import { Logger } from '@/utils/logger/Logger';
 import { DBpayload } from '..';
 import { QueueService } from '@/app/api/_service/queue/queueService';
+import { RedisService } from '@/app/api/_service/redisService/redis-service';
 
 const logger = new Logger('Mastodon-callback');
 export async function login(loginReqestData: mastodonCallbackTokenClaimPayload) {
@@ -22,6 +23,14 @@ export async function login(loginReqestData: mastodonCallbackTokenClaimPayload) 
     throw new Error(JSON.stringify(err));
   }
   loginReq.mastodonHost = loginReq.mastodonHost.toLowerCase();
+
+  const redis = RedisService.getRedis();
+  const session = await redis.get(`login/mastodon/${loginReq.state}`);
+  if (!session) {
+    throw new Error('로그인 세션을 찾을 수 없습니다');
+  } else {
+    await redis.del(`login/mastodon/${loginReq.state}`);
+  }
 
   const serverInfo = await prisma.server.findFirst({
     where: {

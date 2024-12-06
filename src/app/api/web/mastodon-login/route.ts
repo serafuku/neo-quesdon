@@ -1,13 +1,14 @@
 import { loginReqDto } from '@/app/_dto/web/login/login.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuid } from 'uuid';
 import { GetPrismaClient } from '@/app/api/_utils//getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { RateLimiterService } from '@/_service/ratelimiter/rateLimiterService';
 import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
 import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
+import { randomUUID } from 'crypto';
+import { RedisService } from '@/app/api/_service/redisService/redis-service';
 
 const logger = new Logger('mastodon-login');
 export async function POST(req: NextRequest) {
@@ -94,7 +95,8 @@ export async function POST(req: NextRequest) {
  * @returns Mastodon Authorize URL
  */
 async function initiateMastodonAuthSession(hostname: string, client_id: string) {
-  const loginState = `${uuid()}_${client_id}`;
+  const loginState = `${randomUUID()}_${client_id}`;
+  const redis = RedisService.getRedis();
 
   const params: { [key: string]: string } = {
     client_id: encodeURIComponent(client_id),
@@ -107,6 +109,7 @@ async function initiateMastodonAuthSession(hostname: string, client_id: string) 
   const url = `https://${hostname}/oauth/authorize?${Object.entries(params)
     .map((v) => v.join('='))
     .join('&')}`;
+  await redis.setex(`login/mastodon/${loginState}`, 90, `${loginState}`);
   logger.log('Created New Mastodon OAuth2 authorize URL:', url);
   return url;
 }

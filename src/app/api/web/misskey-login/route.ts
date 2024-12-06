@@ -9,6 +9,7 @@ import { RateLimiterService } from '@/_service/ratelimiter/rateLimiterService';
 import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
 import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
+import { RedisService } from '@/app/api/_service/redisService/redis-service';
 
 const logger = new Logger('misskey-login');
 export async function POST(req: NextRequest) {
@@ -101,6 +102,8 @@ export async function POST(req: NextRequest) {
         return sendApiError(500, `Fail to Create Misskey Auth Session`);
       }
       const misskeyAuthSession = (await res.json()) as MiAuthSession;
+      const redis = RedisService.getRedis();
+      await redis.setex(`login/misskey/${misskeyAuthSession.token}`, 90, `${misskeyAuthSession.token}`);
       logger.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
       return NextResponse.json(misskeyAuthSession);
     }
