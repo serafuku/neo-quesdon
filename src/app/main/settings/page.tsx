@@ -260,7 +260,7 @@ export default function Settings() {
                             </div>
                             <textarea
                               {...register('wordMuteList')}
-                              className="textarea textarea-bordered textarea-lg min-h-[15vh] text-sm"
+                              className="textarea textarea-bordered w-full min-h-[15vh] text-base"
                               placeholder="뮤트할 단어, 또는 정규식"
                             ></textarea>
                           </div>
