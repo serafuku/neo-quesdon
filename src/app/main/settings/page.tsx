@@ -20,6 +20,7 @@ export type FormValue = {
   stopPostAnswer: boolean;
   questionBoxName: string;
   visibility: $Enums.PostVisibility;
+  wordMuteList: string;
 };
 async function updateUserSettings(value: FormValue) {
   const body: UserSettingsUpdateDto = {
@@ -29,6 +30,10 @@ async function updateUserSettings(value: FormValue) {
     stopPostAnswer: value.stopPostAnswer,
     questionBoxName: value.questionBoxName || '질문함',
     defaultPostVisibility: value.visibility,
+    wordMuteList: value.wordMuteList
+      .split('\n')
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0),
   };
   try {
     const res = await fetch('/api/user/settings', {
@@ -55,7 +60,6 @@ function Divider({ className }: { className?: string }) {
 export default function Settings() {
   const userInfo = useContext(MyProfileContext);
   const [buttonClicked, setButtonClicked] = useState<boolean>(false);
-  const [startButtonClicked, setStartButtonClicked] = useState<boolean>(false);
   const [defaultFormValue, setDefaultFormValue] = useState<FormValue>();
   const logoutAllModalRef = useRef<HTMLDialogElement>(null);
   const accountCleanModalRef = useRef<HTMLDialogElement>(null);
@@ -80,6 +84,7 @@ export default function Settings() {
         stopPostAnswer: userInfo.stopPostAnswer,
         questionBoxName: userInfo.questionBoxName,
         visibility: userInfo.defaultPostVisibility,
+        wordMuteList: userInfo.wordMuteList.join('\n'),
       };
       setDefaultFormValue(value);
     }
@@ -95,27 +100,27 @@ export default function Settings() {
     }
   };
   const onLogoutAll = async () => {
-    setStartButtonClicked(true);
+    setButtonClicked(true);
     const res = await fetch('/api/user/logout-all', { method: 'POST' });
     if (res.ok) {
       localStorage.removeItem('user_handle');
       window.location.href = '/';
     } else if (res.status === 429) {
       alert('요청 제한을 초과했어요. 몇분 후 다시 시도해 주세요');
-      setStartButtonClicked(false);
+      setButtonClicked(false);
       return;
     } else {
       alert('오류가 발생했어요');
-      setStartButtonClicked(false);
+      setButtonClicked(false);
       return;
     }
     setTimeout(() => {
-      setStartButtonClicked(false);
+      setButtonClicked(false);
     }, 2000);
   };
 
   const onAccountClean = async () => {
-    setStartButtonClicked(true);
+    setButtonClicked(true);
     const user_handle = userInfo?.handle;
     if (!user_handle) {
       alert(`오류: 유저 정보를 알 수 없어요!`);
@@ -133,18 +138,18 @@ export default function Settings() {
       console.log('계정청소 시작됨...');
     } else if (res.status === 429) {
       alert('요청 제한을 초과했어요. 잠시 후 다시 시도해 주세요');
-      setStartButtonClicked(false);
+      setButtonClicked(false);
       return;
     } else {
       alert('오류가 발생했어요');
     }
     setTimeout(() => {
-      setStartButtonClicked(false);
+      setButtonClicked(false);
     }, 2000);
   };
 
   const onImportBlock = async () => {
-    setStartButtonClicked(true);
+    setButtonClicked(true);
     const res = await fetch('/api/user/blocking/import', {
       method: 'POST',
     });
@@ -152,13 +157,13 @@ export default function Settings() {
       console.log('블락 리스트 가져오기 시작됨...');
     } else if (res.status === 429) {
       alert('요청 제한을 초과했어요. 잠시 후 다시 시도해 주세요');
-      setStartButtonClicked(false);
+      setButtonClicked(false);
       return;
     } else {
       alert(`오류가 발생했어요 ${await res.text()}`);
     }
     setTimeout(() => {
-      setStartButtonClicked(false);
+      setButtonClicked(false);
     }, 2000);
   };
 
@@ -247,9 +252,21 @@ export default function Settings() {
                               <span className="font-thin">질문함 이름 (10글자 이내)</span>
                             </div>
                           </div>
+                          <Divider />
+                          <div className="flex flex-col desktop:w-[24rem] gap-2 items-center p-2">
+                            <div className="text-lg"> 질문 단어 뮤트 </div>
+                            <div className="font-thin">
+                              뮤트할 단어를 한줄에 하나씩 입력합니다. <br /> 정규식 문법도 지원합니다.
+                            </div>
+                            <textarea
+                              {...register('wordMuteList')}
+                              className="textarea textarea-bordered textarea-lg min-h-[15vh] text-sm"
+                              placeholder="뮤트할 단어, 또는 정규식"
+                            ></textarea>
+                          </div>
                           <div className="flex w-full justify-end mt-2">
                             <button type="submit" className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-primary'}`}>
-                              {buttonClicked ? '저장했어요!' : '저장'}
+                              {buttonClicked ? '잠깐만요...' : '저장'}
                             </button>
                           </div>
                         </form>
@@ -270,7 +287,7 @@ export default function Settings() {
                             }}
                             className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-warning'}`}
                           >
-                            {buttonClicked ? '진행중이에요!' : '모든 기기에서 로그아웃'}
+                            {buttonClicked ? '잠깐만요...' : '모든 기기에서 로그아웃'}
                           </button>
                         </div>
                       </CollapseMenu>
@@ -290,9 +307,9 @@ export default function Settings() {
                             onClick={() => {
                               importBlockModalRef.current?.showModal();
                             }}
-                            className={`btn ${startButtonClicked ? 'btn-disabled' : 'btn-warning'}`}
+                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-warning'}`}
                           >
-                            {startButtonClicked ? '시작되었어요!' : '차단 목록 가져오기'}
+                            {buttonClicked ? '잠깐만요...' : '차단 목록 가져오기'}
                           </button>
                           <Divider />
                           <div className="font-normal text-xl py-3 flex items-center gap-2">
@@ -308,9 +325,9 @@ export default function Settings() {
                             onClick={() => {
                               accountCleanModalRef.current?.showModal();
                             }}
-                            className={`btn ${startButtonClicked ? 'btn-disabled' : 'btn-error'}`}
+                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-error'}`}
                           >
-                            {startButtonClicked ? '시작되었어요!' : '모든 답변을 삭제'}
+                            {buttonClicked ? '잠깐만요...' : '모든 답변을 삭제'}
                           </button>
                         </div>
                       </CollapseMenu>

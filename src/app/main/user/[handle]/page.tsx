@@ -1,36 +1,43 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import UserPage from '@/app/main/user/[handle]/_answers';
 import Profile from '@/app/main/user/[handle]/_profile';
-import { useParams } from 'next/navigation';
-import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import josa from '@/app/api/_utils/josa';
+import { Metadata } from 'next';
+import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 
-async function fetchProfile(handle: string) {
-  const res = await fetch(`/api/db/fetch-profile/${handle}`);
-  try {
-    if (res && res.ok) {
-      return res.json() as unknown as userProfileDto;
-    } else {
-      throw new Error(`사용자를 불러오는데 실패했어요! ${await res.text()}`);
-    }
-  } catch (err) {
-    alert(err);
-    return null;
-  }
-}
+export const dynamic = 'force-dynamic';
 
-export default function ProfilePage() {
-  const { handle } = useParams() as { handle: string };
+const prisma = GetPrismaClient.getClient();
+
+export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
+  const { handle } = await params;
   const profileHandle = decodeURIComponent(handle);
 
-  const [userProfile, setUserProfile] = useState<userProfileDto | null>();
+  const userProfile = await prisma.profile.findUniqueOrThrow({
+    where: {
+      handle: profileHandle,
+    },
+  });
 
-  useEffect(() => {
-    fetchProfile(profileHandle).then((r) => {
-      setUserProfile(r);
-    });
-  }, [profileHandle]);
+  return {
+    title: `${userProfile.handle.match(/(?:@)(.+)(?:@)/)?.[1]} 님의 ${userProfile.questionBoxName}`,
+    openGraph: {
+      title: `${userProfile.handle.match(/(?:@)(.+)(?:@)/)?.[1]} 님의 ${userProfile.questionBoxName}`,
+      description: `${userProfile.handle.match(/(?:@)(.+)(?:@)/)?.[1]} 님의 ${josa(userProfile.questionBoxName, '이에요!', '예요!')}`,
+      images: userProfile.avatarUrl,
+    },
+  };
+}
+
+export default async function ProfilePage({ params }: { params: Promise<{ handle: string }> }) {
+  const { handle } = await params;
+  const profileHandle = decodeURIComponent(handle);
+
+  const userProfile = await prisma.profile.findUnique({
+    where: {
+      handle: profileHandle,
+    },
+  });
+
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] grid grid-cols-1 desktop:grid-cols-2 gap-4">
       {userProfile === null ? (

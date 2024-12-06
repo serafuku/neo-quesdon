@@ -1,5 +1,5 @@
-import { IsBoolean, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
-import { $Enums } from '@prisma/client';
+import { IsArray, IsBoolean, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { $Enums, profile } from '@prisma/client';
 
 export class UserSettingsDto {
   @IsBoolean()
@@ -39,4 +39,8 @@ export class UserSettingsUpdateDto {
   @IsOptional()
   @IsEnum($Enums.PostVisibility)
   defaultPostVisibility?: $Enums.PostVisibility;
+
+  @IsArray()
+  @IsString({ each: true })
+  wordMuteList: profile['wordMuteList'];
 }

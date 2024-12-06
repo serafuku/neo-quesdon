@@ -16,4 +16,5 @@ export interface userProfileMeDto extends userProfileDto {
   instanceType: $Enums.InstanceType;
   defaultPostVisibility: $Enums.PostVisibility;
   stopPostAnswer: boolean;
+  wordMuteList: string[];
 }

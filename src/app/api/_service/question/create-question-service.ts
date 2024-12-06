@@ -8,6 +8,7 @@ import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
+import re2 from 're2';
 
 export class CreateQuestionApiService {
   private logger = new Logger('create-question');
@@ -41,7 +42,7 @@ export class CreateQuestionApiService {
       });
       const questionee_profile = await prisma.profile.findUniqueOrThrow({
         where: {
-          handle: questionee_user?.handle,
+          handle: questionee_user.handle,
         },
       });
 
@@ -74,6 +75,23 @@ export class CreateQuestionApiService {
         } catch (err) {
           this.logger.warn(`questioner verify ERROR! ${err}`);
           return sendApiError(403, `${err}`);
+        }
+      }
+
+      const wordMuteList = questionee_profile.wordMuteList;
+      await new Promise<void>((resolve) => {
+        const random_delay = Math.random() * 10;
+        setTimeout(() => {
+          resolve();
+        }, random_delay);
+      });
+      for (const word of wordMuteList) {
+        const re = new re2(word);
+        const matched = data.question.match(re);
+        if (matched) {
+          // 조용히 질문을 드랍
+          this.logger.log(`Drop question! Pattern: ${word} Match: ${matched.toString()}`);
+          return NextResponse.json({}, { status: 200 });
         }
       }
 
