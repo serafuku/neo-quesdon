@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const ipHash = getIpHash(getIpFromRequest(req));
   const limited = await limiter.limit(`mastodon-login-${ipHash}`, {
     bucket_time: 600,
-    req_limit: 300,
+    req_limit: 60,
   });
   if (limited) {
     return sendApiError(429, '요청 제한에 도달했습니다!');
