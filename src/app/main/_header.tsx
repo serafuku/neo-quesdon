@@ -49,7 +49,28 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     });
     setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
+  const websocket = useRef<WebSocket | null>(null);
 
+  useEffect(() => {
+    fetch('/api/websocket').then(() => {});
+
+    const ws = new WebSocket('/api/websocket');
+    ws.onmessage = (ev) => {
+      console.log('메시지 도착!', ev.data);
+    };
+    ws.onopen = () => {
+      console.log('웹소켓이 열렸어요!');
+    };
+    ws.onclose = (ev: CloseEvent) => {
+      console.log('웹소켓이 닫혔어요!', ev);
+    };
+    websocket.current = ws;
+    return () => {
+      if (websocket.current && websocket.current.readyState === 1) {
+        websocket.current.close();
+      }
+    };
+  }, []);
   useEffect(() => {
     if (setUserProfile) {
       fetchMyProfile().then((r) => {

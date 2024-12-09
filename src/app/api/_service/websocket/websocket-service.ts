@@ -42,6 +42,9 @@ export class WebsocketService {
       user: tokenBody?.handle,
     });
     ws.send(`hello! ${id}`);
+    setInterval(() => {
+      ws.send(`므아... ${id}`);
+    }, 2000);
     this.logger.debug(
       `Client List`,
       this.clientList.map((v) => {
