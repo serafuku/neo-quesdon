@@ -10,6 +10,11 @@ import { logout } from '@/utils/logout/logout';
 import { MyProfileContext, MyProfileEv } from '@/app/main/_profileContext';
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { Logger } from '@/utils/logger/Logger';
+import {
+  WebsocketEventPayload,
+  WebsocketQuestionCreatedEvent,
+  WebsocketQuestionDeletedEvent,
+} from '@/app/_dto/websocket-event/websocket-event.dto';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -49,6 +54,45 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     });
     setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
+  const websocket = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    websocket.current = new WebSocket('/api/websocket');
+    websocket.current.onmessage = (ws_event: MessageEvent) => {
+      const ws_data = JSON.parse(ws_event.data) as WebsocketEventPayload<unknown>;
+      switch (ws_data.ev_name) {
+        case 'question-created-event': {
+          const data = ws_data as WebsocketQuestionCreatedEvent;
+          console.debug('WS: 새로운 질문이 생겼어요!,', data.data);
+          MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
+          break;
+        }
+        case 'question-deleted-event': {
+          const data = ws_data as WebsocketQuestionDeletedEvent;
+          console.debug('WS: 질문이 삭제되었어요!', data.data);
+          MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
+        }
+        case 'keep-alive': {
+          break;
+        }
+      }
+    };
+    websocket.current.onopen = () => {
+      console.debug('웹소켓이 열렸어요!');
+    };
+    websocket.current.onclose = (ev: CloseEvent) => {
+      console.log('웹소켓이 닫혔어요!', ev);
+    };
+    websocket.current.onerror = (ev: Event) => {
+      console.log(`웹소켓 에러`, ev);
+    };
+
+    return () => {
+      if (websocket.current && websocket.current.readyState === 1) {
+        websocket.current.close();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (setUserProfile) {

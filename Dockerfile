@@ -31,6 +31,8 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
+RUN apk add --no-cache openssl
+
 ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -42,9 +44,11 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
 COPY --chown=nextjs:nodejs package.json .
 COPY --chown=nextjs:nodejs package-lock.json .
 COPY --chown=nextjs:nodejs prisma ./prisma
+COPY --chown=nextjs:nodejs paths-bootstrap.js .
 
 USER nextjs
 

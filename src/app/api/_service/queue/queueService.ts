@@ -7,8 +7,9 @@ import { AccountCleanJob } from './workers/AccountClean';
 import { ImportBlockQueueService } from '@/app/api/_service/queue/workers/ImportBlock';
 import { RedisService } from '@/app/api/_service/redisService/redis-service';
 
+
+let instance: QueueService;
 export class QueueService {
-  static instance: QueueService;
   private testLogProcess: TestLogQueueWorkerService;
   private followWorker: RefreshFollowWorkerService;
   private accountClean: AccountCleanJob;
@@ -18,7 +19,7 @@ export class QueueService {
   private constructor() {
     const host = process.env.REDIS_HOST ?? '';
     const port = Number.parseInt(process.env.REDIS_PORT ?? '');
-    const connection = RedisService.getRedis();
+    const connection = RedisService.getRedis({ maxRetriesPerRequest: null });
     this.testLogProcess = new TestLogQueueWorkerService(connection);
     this.followWorker = new RefreshFollowWorkerService(connection);
     this.accountClean = new AccountCleanJob(connection);
@@ -27,10 +28,10 @@ export class QueueService {
     this.logger.log('Queue Service Started ', `redis: ${host}:${port}`);
   }
   public static get() {
-    if (!QueueService.instance) {
-      QueueService.instance = new QueueService();
+    if (!instance) {
+      instance = new QueueService();
     }
-    return QueueService.instance;
+    return instance;
   }
 
   public async addTestLogJob(data: string) {

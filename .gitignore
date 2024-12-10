@@ -19,6 +19,7 @@
 
 # production
 /build
+/dist
 docker-compose.yml
 
 # misc

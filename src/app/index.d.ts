@@ -21,14 +21,6 @@ export interface misskeyAccessKeyApiResponse {
   user: MiUser;
 }
 
-export interface questions {
-  id: number;
-  question: string;
-  questioner: string | null;
-  questionee: profile;
-  questioneeHandle: string;
-  questionedAt: Date;
-}
 
 export interface MkNoteAnswers {
   i: string;
