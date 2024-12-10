@@ -13,11 +13,16 @@ import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/Answe
 import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
+import { RedisPubSubService } from '../redis-pubsub/redis-event.service';
+import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 export class AnswerService {
   private static instance: AnswerService;
   private logger = new Logger('AnswerService');
-  private constructor() {}
+  private event_service: RedisPubSubService;
+  private constructor() {
+    this.event_service = RedisPubSubService.getInstance();
+  }
   public static get() {
     if (!AnswerService.instance) {
       AnswerService.instance = new AnswerService();
@@ -50,6 +55,7 @@ export class AnswerService {
     try {
       this.logger.log(`Delete answer... : ${data.id}`);
       await prisma.answer.delete({ where: { id: data.id } });
+      await this.event_service.pub<AnswerDeletedEvPayload>('answer-deleted-event', { deleted_id: data.id });
 
       return NextResponse.json({ message: 'Delete Answer Successful' }, { status: 200 });
     } catch (err) {
@@ -206,7 +212,7 @@ export class AnswerService {
     return data;
   }
 
-  private async filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
+  public async filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
     const prisma = GetPrismaClient.getClient();
     const kv = RedisKvCacheService.getInstance();
     const getBlockListOnlyExist = async (): Promise<blocking[]> => {

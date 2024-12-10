@@ -12,6 +12,7 @@ import { createAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
 import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { AnswerDto } from '@/app/_dto/Answers.dto';
 
 export async function getQuestion(id: number) {
   const prisma = GetPrismaClient.getClient();
@@ -126,7 +127,15 @@ export async function postAnswer(questionId: question['id'] | null, reqData: cre
     handle: answeredUser.handle,
     question_numbers: question_numbers,
   });
-
+  pubsub_service.pub<AnswerDto>('answer-created-event', {
+    id: createdAnswer.id,
+    question: createdAnswer.question,
+    questioner: createdAnswer.questioner,
+    answer: createdAnswer.answer,
+    answeredAt: createdAnswer.answeredAt,
+    answeredPersonHandle: createdAnswer.answeredPersonHandle,
+    nsfwedAnswer: createdAnswer.nsfwedAnswer,
+  });
   postLogger.log('Created new answer:', answerUrl);
 }
 
