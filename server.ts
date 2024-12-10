@@ -8,6 +8,7 @@ const dev = process.env.NODE_ENV !== 'production';
 const port = parseInt(process.env.PORT || '3000', 10);
 const app = next({ dev });
 const handle = app.getRequestHandler();
+const dev_server_upgradeHandler = app.getUpgradeHandler();
 
 app.prepare().then(() => {
   if (process.env.NODE_ENV === 'production') {
@@ -34,6 +35,8 @@ app.prepare().then(() => {
       wss.handleUpgrade(req, socket, head, (ws_client, request) => {
         wss.emit('connection', ws_client, request);
       });
+    } else {
+      dev_server_upgradeHandler(req, socket, head);
     }
   });
 

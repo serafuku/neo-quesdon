@@ -11,6 +11,8 @@ import { MyProfileContext, MyProfileEv } from '@/app/main/_profileContext';
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { Logger } from '@/utils/logger/Logger';
 import {
+  WebsocketAnswerCreatedEvent,
+  WebsocketAnswerDeletedEvent,
   WebsocketEventPayload,
   WebsocketQuestionCreatedEvent,
   WebsocketQuestionDeletedEvent,
@@ -82,6 +84,17 @@ export default function MainHeader({ setUserProfile }: headerProps) {
           MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
           MyQuestionEv.SendDeleteReq(data.data);
           setQuestionsToastMenu(false);
+          break;
+        }
+        case 'answer-created-event': {
+          const data = ws_data as WebsocketAnswerCreatedEvent;
+          console.debug('WS: 새로운 답변이 생겼어요!', data.data);
+          break;
+        }
+        case 'answer-deleted-event': {
+          const data = ws_data as WebsocketAnswerDeletedEvent;
+          console.debug('WS: 답변이 삭제되었어요!', data.data);
+          break;
         }
         case 'keep-alive': {
           break;
