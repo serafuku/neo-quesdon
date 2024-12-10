@@ -18,6 +18,7 @@ type ClientList = {
   id: UUID;
   client_ip: string;
   user?: jwtPayloadType['handle'];
+  pingInterval: NodeJS.Timeout;
   ws: WebSocket;
 }[];
 export class WebsocketService {
@@ -52,7 +53,6 @@ export class WebsocketService {
   async onConnect(ws: WebSocket, req: IncomingMessage) {
     const id = randomUUID();
     const cookie = req.headers.cookie;
-    this.logger.debug(cookie);
     const re = new RE2('(?:jwtToken=)(.+)(?:;)');
     const token = re.match(cookie ?? '')?.[1];
     let tokenBody;
@@ -73,11 +73,19 @@ export class WebsocketService {
       client_ip = req.socket.remoteAddress ?? '??';
     }
     this.logger.debug(`new Websocket Client ${id} Connected, ip: ${client_ip}`);
+    const pingInterval = setInterval(() => {
+      const keepAliveData: WebsocketKeepAliveEvent = {
+        ev_name: 'keep-alive',
+        data: `Ping ${Date.now()}`,
+      };
+      ws.send(JSON.stringify(keepAliveData));
+    }, 5000);
     this.clientList.push({
       id: id,
       client_ip: client_ip,
       ws: ws,
       user: tokenBody?.handle,
+      pingInterval: pingInterval,
     });
     const same_ip_list = this.clientList.filter((c) => {
       return c.client_ip === client_ip;
@@ -92,24 +100,21 @@ export class WebsocketService {
       data: `Hello ${id}`,
     };
     ws.send(JSON.stringify(helloData));
-    setInterval(() => {
-      const keepAliveData: WebsocketKeepAliveEvent = {
-        ev_name: 'keep-alive',
-        data: `Ping ${Date.now()}`,
-      };
-      ws.send(JSON.stringify(keepAliveData));
-    }, 5000);
 
     ws.on('close', (_code, _reason) => {
       this.logger.debug('bye', id);
       this.clientList.forEach((c, i) => {
         if (c.id === id) {
+          clearInterval(c.pingInterval);
           this.clientList.splice(i, 1);
         }
       });
     });
     ws.on('message', (data, _isBinary) => {
       this.logger.debug(`Client ${id} say`, data.toString());
+    });
+    ws.on('error', (err) => {
+      this.logger.debug(`WS ERROR`, err);
     });
   }
   public sendToUser<T>(handle: string, data: WebsocketEventPayload<T>) {
