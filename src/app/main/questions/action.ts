@@ -10,6 +10,8 @@ import { createHash } from 'crypto';
 import { cookies } from 'next/headers';
 import { createAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
+import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
+import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 export async function getQuestion(id: number) {
   const prisma = GetPrismaClient.getClient();
@@ -115,6 +117,14 @@ export async function postAnswer(questionId: question['id'] | null, reqData: cre
     where: {
       id: q.id,
     },
+  });
+
+  const question_numbers = await prisma.question.count({ where: { questioneeHandle: tokenPayload.handle } });
+  const pubsub_service = RedisPubSubService.getInstance();
+  pubsub_service.pub<QuestionDeletedPayload>('question-deleted-event', {
+    deleted_id: q.id,
+    handle: answeredUser.handle,
+    question_numbers: question_numbers,
   });
 
   postLogger.log('Created new answer:', answerUrl);
@@ -255,6 +265,14 @@ export async function deleteQuestion(id: number) {
           id: id,
         },
       });
+    });
+
+    const question_numbers = await prisma.question.count({ where: { questioneeHandle: tokenPayload.handle } });
+    const pubsub_service = RedisPubSubService.getInstance();
+    pubsub_service.pub<QuestionDeletedPayload>('question-deleted-event', {
+      deleted_id: id,
+      handle: tokenPayload.handle,
+      question_numbers: question_numbers,
     });
   } catch (err) {
     throw new Error(`JWT Token Verification Error: ${err}`);

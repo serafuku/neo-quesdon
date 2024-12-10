@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import type { questions } from '..';
 import { postAnswer } from '../main/questions/action';
 import { RefObject, useContext, useEffect } from 'react';
 import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
 import { MyProfileEv, MyProfileContext } from '../main/_profileContext';
 import { createAnswerDto } from '../_dto/create-answer/create-answer.dto';
+import { questionDto } from '@/app/_dto/question/question.dto';
 
 interface formValue {
   answer: string;
@@ -16,9 +16,9 @@ interface formValue {
 }
 
 interface askProps {
-  singleQuestion: questions;
-  multipleQuestions: questions[];
-  setQuestions: React.Dispatch<React.SetStateAction<questions[] | undefined | null>>;
+  singleQuestion: questionDto;
+  multipleQuestions: questionDto[];
+  setQuestions: React.Dispatch<React.SetStateAction<questionDto[] | undefined | null>>;
   setId: React.Dispatch<React.SetStateAction<number>>;
   deleteRef: RefObject<HTMLDialogElement>;
   answerRef: RefObject<HTMLDialogElement>;
@@ -96,12 +96,6 @@ export default function Question({
     answerRef.current?.showModal();
     try {
       await postAnswer(questionId, typedAnswer);
-
-      // 답변 성공시 남은 질문 갯수 1줄이기
-      const req: Partial<userProfileMeDto> = {
-        questions: profile?.questions ? profile?.questions - 1 : null,
-      };
-      MyProfileEv.SendUpdateReq(req);
     } catch (err) {
       answerRef.current?.close();
       alert(err);

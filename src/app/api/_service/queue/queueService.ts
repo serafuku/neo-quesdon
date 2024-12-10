@@ -19,7 +19,7 @@ export class QueueService {
   private constructor() {
     const host = process.env.REDIS_HOST ?? '';
     const port = Number.parseInt(process.env.REDIS_PORT ?? '');
-    const connection = RedisService.getRedis();
+    const connection = RedisService.getRedis({ maxRetriesPerRequest: null });
     this.testLogProcess = new TestLogQueueWorkerService(connection);
     this.followWorker = new RefreshFollowWorkerService(connection);
     this.accountClean = new AccountCleanJob(connection);

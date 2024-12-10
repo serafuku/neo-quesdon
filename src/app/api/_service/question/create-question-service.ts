@@ -9,11 +9,16 @@ import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
 import re2 from 're2';
+import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
+import { QeustionCreatedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 export class CreateQuestionApiService {
   private logger = new Logger('create-question');
   private static instance: CreateQuestionApiService;
-  private constructor() {}
+  private eventService: RedisPubSubService;
+  private constructor() {
+    this.eventService = RedisPubSubService.getInstance();
+  }
   public static get() {
     if (!CreateQuestionApiService.instance) {
       CreateQuestionApiService.instance = new CreateQuestionApiService();
@@ -103,6 +108,22 @@ export class CreateQuestionApiService {
           questioneeHandle: data.questionee,
         },
       });
+
+      // 웹소켓으로 업데이트 전송
+      const question_numbers = await prisma.question.count({
+        where: {
+          questioneeHandle: questionee_user.handle,
+        },
+      });
+      const ev_data: QeustionCreatedPayload = {
+        id: newQuestion.id,
+        question: newQuestion.question,
+        questioneeHandle: newQuestion.questioneeHandle,
+        questionedAt: newQuestion.questionedAt,
+        questioner: newQuestion.questioner,
+        question_numbers: question_numbers,
+      };
+      this.eventService.pub<QeustionCreatedPayload>('question-created-event', ev_data);
 
       const userSettings = await prisma.profile.findUnique({
         where: {

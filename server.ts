@@ -10,6 +10,14 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
+  if (process.env.NODE_ENV === 'production') {
+    const env_arr = ['REDIS_HOST', 'REDIS_PORT', 'WEB_URL', 'DATABASE_URL', 'JWT_SECRET', 'NOTI_TOKEN', 'NOTI_HOST'];
+    env_arr.forEach((key) => {
+      if (!process.env[key]) {
+        throw new Error(`ENV ${key} are not set`);
+      }
+    });
+  }
   const server = createServer((req, res) => {
     const parsedUrl = parse(req.url!, true);
     handle(req, res, parsedUrl);

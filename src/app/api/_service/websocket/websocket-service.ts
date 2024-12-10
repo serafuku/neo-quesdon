@@ -5,6 +5,15 @@ import { WebSocket } from 'ws';
 import { jwtPayloadType } from '../../_utils/jwt/jwtPayloadType';
 import RE2 from 're2';
 import { verifyToken } from '../../_utils/jwt/verify-jwt';
+import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
+import {
+  QeustionCreatedPayload,
+  QuestionDeletedPayload,
+  WebsocketEventPayload,
+  WebsocketKeepAliveEvent,
+  WebsocketQuestionCreatedEvent,
+  WebsocketQuestionDeletedEvent,
+} from '@/app/_dto/websocket-event/websocket-event.dto';
 
 let instance: WebsocketService;
 type ClientList = {
@@ -17,6 +26,23 @@ export class WebsocketService {
   private clientList: ClientList = [];
   private constructor() {
     this.onConnect = this.onConnect.bind(this);
+    const eventService = RedisPubSubService.getInstance();
+
+    eventService.sub<QeustionCreatedPayload>('question-created-event', (data) => {
+      this.logger.debug(`Got Event question-created-even`);
+      this.sendToUser<QeustionCreatedPayload>(data.questioneeHandle, {
+        ev_name: 'question-created-event',
+        data: data,
+      });
+    });
+
+    eventService.sub<QuestionDeletedPayload>('question-deleted-event', (data) => {
+      this.logger.debug(`Got Event question-deleted-event`);
+      this.sendToUser<QuestionDeletedPayload>(data.handle, {
+        ev_name: 'question-deleted-event',
+        data: data,
+      });
+    });
   }
   public static getInstance() {
     if (!instance) {
@@ -41,10 +67,18 @@ export class WebsocketService {
       ws: ws,
       user: tokenBody?.handle,
     });
-    ws.send(`hello! ${id}`);
+    const helloData: WebsocketKeepAliveEvent = {
+      ev_name: 'keep-alive',
+      data: `Hello ${id}`,
+    };
+    ws.send(JSON.stringify(helloData));
     setInterval(() => {
-      ws.send(`므아... ${id}`);
-    }, 2000);
+      const keepAliveData: WebsocketKeepAliveEvent = {
+        ev_name: 'keep-alive',
+        data: `Ping ${Date.now()}`,
+      };
+      ws.send(JSON.stringify(keepAliveData));
+    }, 5000);
     this.logger.debug(
       `Client List`,
       this.clientList.map((v) => {
@@ -70,16 +104,16 @@ export class WebsocketService {
       this.logger.debug(`Client ${id} say`, data.toString());
     });
   }
-  public sendToUser(handle: string, data: string) {
+  public sendToUser<T>(handle: string, data: WebsocketEventPayload<T>) {
     this.clientList.forEach((c) => {
       if (c.user === handle) {
-        c.ws.send(data);
+        c.ws.send(JSON.stringify(data));
       }
     });
   }
-  public sendToAll(data: string) {
+  public sendToAll<T>(data: WebsocketEventPayload<T>) {
     this.clientList.forEach((c) => {
-      c.ws.send(data);
+      c.ws.send(JSON.stringify(data));
     });
   }
 }
