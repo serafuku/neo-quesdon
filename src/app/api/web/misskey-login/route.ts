@@ -83,6 +83,8 @@ export async function POST(req: NextRequest) {
         return sendApiError(500, `Fail to Create Auth Session: ${await authRes.text()}`);
       }
       const misskeyAuthSession = (await authRes.json()) as MiAuthSession;
+      const redis = RedisService.getRedis();
+      await redis.setex(`login/misskey/${misskeyAuthSession.token}`, 90, `${misskeyAuthSession.token}`);
       logger.log(`New Misskey Auth Session Created: `, misskeyAuthSession);
       return NextResponse.json(misskeyAuthSession);
     }
