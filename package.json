@@ -2,11 +2,16 @@
   "name": "new-quesdon_2",
   "version": "0.1.0",
   "private": true,
+  "_moduleAliases": {
+    "@": "./dist/src",
+    "@/api": "./dist/src/app/api",
+    "@/_service": "./dist/src/app/api/_service"
+  },
   "scripts": {
-    "dev": "source config/local_dev.env && next dev",
-    "build": "npm run lint && next build",
-    "start": "source config/local_dev.env && next start",
-    "start:docker": "prisma migrate deploy && next start",
+    "dev": "source config/local_dev.env && nodemon",
+    "build": "npm run lint && next build && tsc --project tsconfig.server.json",
+    "start": "source config/local_dev.env && NODE_ENV=production node -r ./paths-bootstrap.js dist/server.js",
+    "start:docker": "prisma migrate deploy && NODE_ENV=production node -r ./paths-bootstrap.js dist/server.js",
     "lint": "eslint ./src",
     "format": "prettier --write ./src",
     "prisma": "source config/local_dev.env && prisma migrate dev",
@@ -22,6 +27,7 @@
     "ioredis": "^5.4.1",
     "ip-cidr": "^4.0.2",
     "jose": "^5.9.6",
+    "module-alias": "^2.2.3",
     "next": "15.0.3",
     "pg": "^8.13.1",
     "re2": "^1.21.4",
@@ -46,10 +52,13 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.37.2",
     "globals": "^15.12.0",
+    "nodemon": "^3.1.7",
     "postcss": "^8",
     "prettier": "^3.3.3",
     "prisma": "^6.0.0",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5",
     "typescript-eslint": "^8.15.0"
   }

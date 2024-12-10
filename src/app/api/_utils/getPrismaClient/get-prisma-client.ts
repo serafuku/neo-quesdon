@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 
+let prismaClient: PrismaClient;
 export class GetPrismaClient {
-  private static prismaClient: PrismaClient;
   private constructor() {}
   public static getClient() {
-    if (!GetPrismaClient.prismaClient) {
-      GetPrismaClient.prismaClient = new PrismaClient({ log: ['info'] });
+    if (!prismaClient) {
+      prismaClient = new PrismaClient({ log: ['info'] });
     }
-    return GetPrismaClient.prismaClient;
+    return prismaClient;
   }
 }

@@ -52,19 +52,23 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const websocket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    fetch('/api/websocket').then(() => {});
+    fetch('/api/websocket').then(() => {
+      websocket.current = new WebSocket('/api/websocket');
+      websocket.current.onmessage = (ev) => {
+        console.debug('메시지 도착!', ev.data);
+      };
+      websocket.current.onopen = () => {
+        console.debug('웹소켓이 열렸어요!');
+      };
+      websocket.current.onclose = (ev: CloseEvent) => {
+        console.debug('웹소켓이 닫혔어요!', ev);
+      };
+      websocket.current.onerror = (ev: Event) => {
+        console.debug(`웹소켓 에러`, ev);
+      };
+    });
 
-    const ws = new WebSocket('/api/websocket');
-    ws.onmessage = (ev) => {
-      console.log('메시지 도착!', ev.data);
-    };
-    ws.onopen = () => {
-      console.log('웹소켓이 열렸어요!');
-    };
-    ws.onclose = (ev: CloseEvent) => {
-      console.log('웹소켓이 닫혔어요!', ev);
-    };
-    websocket.current = ws;
+
     return () => {
       if (websocket.current && websocket.current.readyState === 1) {
         websocket.current.close();
