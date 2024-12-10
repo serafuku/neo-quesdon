@@ -7,12 +7,10 @@ import RE2 from 're2';
 import { verifyToken } from '../../_utils/jwt/verify-jwt';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
 import {
-  QeustionCreatedPayload,
+  QuestionCreatedPayload,
   QuestionDeletedPayload,
   WebsocketEventPayload,
   WebsocketKeepAliveEvent,
-  WebsocketQuestionCreatedEvent,
-  WebsocketQuestionDeletedEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 let instance: WebsocketService;
@@ -29,9 +27,9 @@ export class WebsocketService {
     this.onConnect = this.onConnect.bind(this);
     const eventService = RedisPubSubService.getInstance();
 
-    eventService.sub<QeustionCreatedPayload>('question-created-event', (data) => {
+    eventService.sub<QuestionCreatedPayload>('question-created-event', (data) => {
       this.logger.debug(`Got Event question-created-even`);
-      this.sendToUser<QeustionCreatedPayload>(data.questioneeHandle, {
+      this.sendToUser<QuestionCreatedPayload>(data.questioneeHandle, {
         ev_name: 'question-created-event',
         data: data,
       });

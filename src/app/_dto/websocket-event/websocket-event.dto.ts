@@ -7,10 +7,10 @@ export class WebsocketEventPayload<T> {
   data: T;
 }
 
-export type QeustionCreatedPayload = questionDto & {
+export type QuestionCreatedPayload = questionDto & {
   question_numbers: number;
 };
-export class WebsocketQuestionCreatedEvent extends WebsocketEventPayload<QeustionCreatedPayload> {
+export class WebsocketQuestionCreatedEvent extends WebsocketEventPayload<QuestionCreatedPayload> {
   ev_name: 'question-created-event';
 }
 

@@ -10,7 +10,7 @@ import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
 import re2 from 're2';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
-import { QeustionCreatedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { QuestionCreatedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 export class CreateQuestionApiService {
   private logger = new Logger('create-question');
@@ -115,7 +115,7 @@ export class CreateQuestionApiService {
           questioneeHandle: questionee_user.handle,
         },
       });
-      const ev_data: QeustionCreatedPayload = {
+      const ev_data: QuestionCreatedPayload = {
         id: newQuestion.id,
         question: newQuestion.question,
         questioneeHandle: newQuestion.questioneeHandle,
@@ -123,7 +123,7 @@ export class CreateQuestionApiService {
         questioner: newQuestion.questioner,
         question_numbers: question_numbers,
       };
-      this.eventService.pub<QeustionCreatedPayload>('question-created-event', ev_data);
+      this.eventService.pub<QuestionCreatedPayload>('question-created-event', ev_data);
 
       const userSettings = await prisma.profile.findUnique({
         where: {
