@@ -5,9 +5,11 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { deleteQuestion } from '@/app/main/questions/action';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
-import { MyProfileEv, MyProfileContext } from '@/app/main/_profileContext';
-import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { MyProfileContext } from '@/app/main/_profileContext';
 import { questionDto } from '@/app/_dto/question/question.dto';
+import { MyQuestionEv } from '../_questionEvent';
+import { Logger } from '@/utils/logger/Logger';
+import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 const fetchQuestions = async (): Promise<questionDto[] | null> => {
   const res = await fetch('/api/db/fetch-my-questions');
@@ -34,10 +36,29 @@ export default function Questions() {
   const answeredQuestionModalRef = useRef<HTMLDialogElement>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  const onNewQuestion = (ev: CustomEvent<questionDto>) => {
+    const logger = new Logger('onNewQuestion', { noColor: true });
+    logger.log('New Question has arrived: ', ev.detail);
+    setQuestions((prev) => (prev ? [ev.detail, ...prev] : []));
+  };
+
+  const onDeleteQuestion = (ev: CustomEvent<QuestionDeletedPayload>) => {
+    const logger = new Logger('onNewQuestion', { noColor: true });
+    logger.log('Question Deleted: ', ev.detail);
+    setQuestions((prev) => prev && prev.filter((el) => el.id !== ev.detail.deleted_id));
+  };
+
   useEffect(() => {
     fetchQuestions().then((r) => {
       setQuestions(r);
     });
+    MyQuestionEv.addCreatedEventListener(onNewQuestion);
+    MyQuestionEv.addDeletedEventListner(onDeleteQuestion);
+
+    return () => {
+      MyQuestionEv.removeCreatedEventListener(onNewQuestion);
+      MyQuestionEv.removeDeletedEventListener(onDeleteQuestion);
+    };
   }, []);
 
   return (

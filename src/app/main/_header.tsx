@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Dispatch, SetStateAction, useContext, useEffect, useRef, useState } from 'react';
-import { FaUser } from 'react-icons/fa';
+import { FaInfoCircle, FaUser } from 'react-icons/fa';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalOneButton from '@/app/_components/modalOneButton';
 import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
@@ -15,6 +15,8 @@ import {
   WebsocketQuestionCreatedEvent,
   WebsocketQuestionDeletedEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { FaXmark } from 'react-icons/fa6';
+import { MyQuestionEv } from './_questionEvent';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -24,6 +26,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const logoutModalRef = useRef<HTMLDialogElement>(null);
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
   const [questionsNum, setQuestions_num] = useState<number | null>(null);
+  const [questionsToastMenu, setQuestionsToastMenu] = useState<boolean>(false);
 
   const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
     const user_handle = localStorage.getItem('user_handle');
@@ -57,6 +60,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const websocket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
+    let toastTimeout: NodeJS.Timeout;
     websocket.current = new WebSocket('/api/websocket');
     websocket.current.onmessage = (ws_event: MessageEvent) => {
       const ws_data = JSON.parse(ws_event.data) as WebsocketEventPayload<unknown>;
@@ -65,12 +69,19 @@ export default function MainHeader({ setUserProfile }: headerProps) {
           const data = ws_data as WebsocketQuestionCreatedEvent;
           console.debug('WS: 새로운 질문이 생겼어요!,', data.data);
           MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
+          MyQuestionEv.SendUpdateReq(data.data);
+          toastTimeout = setTimeout(() => {
+            setQuestionsToastMenu(false);
+          }, 8000);
+          setQuestionsToastMenu(true);
           break;
         }
         case 'question-deleted-event': {
           const data = ws_data as WebsocketQuestionDeletedEvent;
           console.debug('WS: 질문이 삭제되었어요!', data.data);
           MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
+          MyQuestionEv.SendDeleteReq(data.data);
+          setQuestionsToastMenu(false);
         }
         case 'keep-alive': {
           break;
@@ -88,6 +99,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     };
 
     return () => {
+      clearTimeout(toastTimeout);
       if (websocket.current && websocket.current.readyState === 1) {
         websocket.current.close();
       }
@@ -122,6 +134,10 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     };
     fn();
   }, []);
+
+  useEffect(() => {
+    console.log(questionsToastMenu);
+  }, [questionsToastMenu]);
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] navbar bg-base-100 shadow rounded-box my-4">
       <div className="flex-1">
@@ -130,14 +146,15 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         </Link>
       </div>
       <div className="dropdown dropdown-end">
-        <div
-          tabIndex={0}
-          role="button"
-          className={`btn btn-ghost btn-circle avatar ${questionsNum && questionsNum > 0 && 'online'}`}
-        >
+        <div tabIndex={0} role="button" className={`btn btn-ghost btn-circle avatar`}>
           <div className="w-10 rounded-full">
             {profile?.avatarUrl ? (
-              <img src={profile.avatarUrl} alt="navbar avatar profile" />
+              <>
+                <img src={profile.avatarUrl} alt="navbar avatar profile" />
+                {questionsNum && questionsNum > 0 && (
+                  <span className="badge badge-sm badge-warning absolute top-0">{questionsNum}</span>
+                )}
+              </>
             ) : (
               <div className="w-10 h-10 flex justify-center items-center text-3xl">
                 <FaUser />
@@ -165,8 +182,18 @@ export default function MainHeader({ setUserProfile }: headerProps) {
               <li>
                 <Link href={`/main/user/${profile?.handle}`}>마이페이지</Link>
               </li>
-              <li>
-                <Link href={'/main/questions'}>미답변 질문</Link>
+              <li className="flex ">
+                <Link href={'/main/questions'}>
+                  <span>미답변 질문</span>
+                  {questionsNum && questionsNum > 0 ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full absolute left-[5.6rem] bg-green-400 animate-ping" />
+                      <div className="w-2 h-2 rounded-full absolute left-[5.6rem] bg-green-400" />
+                    </>
+                  ) : (
+                    <></>
+                  )}
+                </Link>
               </li>
               <li>
                 <Link href={'/main/social'}>소셜(베타)</Link>
@@ -196,6 +223,20 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         ref={forcedLogoutModalRef}
         onClick={logout}
       />
+      <div
+        className={`toast toast-end w-[16rem] desktop:w-[20rem] z-[1] ${!questionsToastMenu && 'translate-x-full transition-transform'}`}
+      >
+        <div className="alert shadow flex">
+          <Link href={'/main/questions'} className="flex items-center gap-4">
+            <FaInfoCircle size={20} />
+            <div className="">
+              <h3 className="text-lg">새 질문이 있어요!</h3>
+              <span className="text-sm font-thin">여기를 눌러 확인하기</span>
+            </div>
+          </Link>
+          <FaXmark className="absolute top-7 right-8 cursor-pointer" onClick={() => setQuestionsToastMenu(false)} />
+        </div>
+      </div>
     </div>
   );
 }
