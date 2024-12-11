@@ -18,7 +18,8 @@ import {
   WebsocketQuestionDeletedEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { FaXmark } from 'react-icons/fa6';
-import { MyQuestionEv } from './_events';
+import { AnswerEv, MyQuestionEv } from './_events';
+import { AnswerWithProfileDto } from '../_dto/Answers.dto';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -29,6 +30,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
   const [questionsNum, setQuestions_num] = useState<number | null>(null);
   const [questionsToastMenu, setQuestionsToastMenu] = useState<boolean>(false);
+  const websocket = useRef<WebSocket | null>(null);
 
   const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
     const user_handle = localStorage.getItem('user_handle');
@@ -59,7 +61,6 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     });
     setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
-  const websocket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     let toastTimeout: NodeJS.Timeout;
@@ -88,6 +89,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         }
         case 'answer-created-event': {
           const data = ws_data as WebsocketAnswerCreatedEvent;
+          AnswerEv.sendCreatedAnswerEvent(data.data);
           console.debug('WS: 새로운 답변이 생겼어요!', data.data);
           break;
         }
