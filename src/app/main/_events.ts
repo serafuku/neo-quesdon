@@ -42,3 +42,21 @@ export class MyQuestionEv {
     window.removeEventListener(QuestionDeleteEvent, onEvent as EventListener);
   }
 }
+
+const FetchMoreAnswerRequestEvent = 'FetchMoreAnswerRequestEvent';
+export class AnswerEv {
+  private static logger = new Logger('AnswerEv', { noColor: true });
+  static addFetchMoreRequestEventListener(onEvent: (ev: CustomEvent<string | undefined>) => void) {
+    AnswerEv.logger.debug('addFetchMoreRequestEventListener');
+    window.addEventListener(FetchMoreAnswerRequestEvent, onEvent as EventListener);
+  }
+  static removeFetchMoreRequestEventListener(onEvent: (ev: CustomEvent<string | undefined>) => void) {
+    AnswerEv.logger.debug('removeFetchMoreRequestEventListener');
+    window.removeEventListener(FetchMoreAnswerRequestEvent, onEvent as EventListener);
+  }
+  static sendFetchMoreRequestEvent(untilId: string | undefined) {
+    AnswerEv.logger.debug('Send Event');
+    const ev = new CustomEvent<string | undefined>(FetchMoreAnswerRequestEvent, { detail: untilId });
+    window.dispatchEvent(ev);
+  }
+}

@@ -1,62 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import Answer from '@/app/_components/answer';
 import { FaExclamationCircle } from 'react-icons/fa';
-import { answer } from '@prisma/client';
-import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
-import { AnswerListWithProfileDto } from '@/app/_dto/Answers.dto';
+import { AnswersContext } from './layout';
+import { AnswerEv } from './_events';
 
-async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
-  const res = await fetch('/api/db/fetch-all-answers', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(req),
-  });
-  try {
-    if (res.ok) {
-      const answers = ((await res.json()) as AnswerListWithProfileDto).answersList;
-      return answers;
-    } else {
-      throw new Error(`답변을 불러오는데 실패했어요!: ${await res.text()}`);
-    }
-  } catch (err) {
-    alert(err);
-    throw err;
-  }
-}
 export default function MainBody() {
-  const [answers, setAnswers] = useState<answer[] | null>(null);
   const [mounted, setMounted] = useState<HTMLDivElement | null>(null);
-  const [untilId, setUntilId] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    fetchAllAnswers({ sort: 'DESC', limit: 25 }).then((r) => {
-      if (r.length === 0) {
-        setLoading(false);
-        setAnswers([]);
-        return;
-      }
-      setAnswers(r);
-      setUntilId(r[r.length - 1].id);
-    });
-  }, []);
+  const answersContext = useContext(AnswersContext);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting && untilId !== null) {
-          fetchAllAnswers({ sort: 'DESC', limit: 25, untilId: untilId }).then((r) => {
-            if (r.length === 0) {
-              setLoading(false);
-              return;
-            }
-            setAnswers((prev_answers) => (prev_answers ? [...prev_answers, ...r] : null));
-            setUntilId(r[r.length - 1].id);
-          });
+        if (e.isIntersecting && answersContext?.untilId !== null) {
+          AnswerEv.sendFetchMoreRequestEvent(answersContext?.untilId);
         }
       },
       {
@@ -67,26 +25,26 @@ export default function MainBody() {
     return () => {
       if (mounted) observer.unobserve(mounted);
     };
-  }, [mounted, untilId]);
+  }, [mounted, answersContext?.untilId]);
 
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%]">
       <h3 className="text-3xl desktop:text-4xl mb-2">최근 올라온 답변들</h3>
-      {answers === null ? (
+      {answersContext?.answers === null ? (
         <div className="flex justify-center">
           <span className="loading loading-spinner loading-lg" />
         </div>
       ) : (
         <div>
-          {answers.length > 0 ? (
+          {answersContext?.answers && answersContext.answers.length > 0 ? (
             <div className="flex flex-col">
-              {answers.map((r) => (
+              {answersContext.answers.map((r) => (
                 <div key={r.id}>
                   <Answer id={r.id} value={r} />
                 </div>
               ))}
               <div className="w-full h-16 flex justify-center items-center" ref={(ref) => setMounted(ref)}>
-                {loading ? (
+                {answersContext.loading ? (
                   <div>
                     <span className="loading loading-spinner loading-lg" />
                   </div>
