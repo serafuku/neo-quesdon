@@ -43,9 +43,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         setUntilId(r[r.length - 1].id);
       });
     };
+
+    const onWebSocketEv = (ev: CustomEvent<AnswerWithProfileDto>) => {
+      setAnswers((prevAnswer) => (prevAnswer ? [ev.detail, ...prevAnswer] : []));
+    };
+
     AnswerEv.addFetchMoreRequestEventListener(onEv);
+    AnswerEv.addCreatedAnswerEventListener(onWebSocketEv);
     return () => {
       AnswerEv.removeFetchMoreRequestEventListener(onEv);
+      AnswerEv.removeCreatedAnswerEventListener(onWebSocketEv);
     };
   }, []);
 

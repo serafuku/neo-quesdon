@@ -1,6 +1,7 @@
 import { Logger } from '@/utils/logger/Logger';
 import { questionDto } from '../_dto/question/question.dto';
 import { QuestionDeletedPayload } from '../_dto/websocket-event/websocket-event.dto';
+import { AnswerWithProfileDto } from '../_dto/Answers.dto';
 
 const QuestionCreateEvent = 'QuestionCreateEvent';
 const QuestionDeleteEvent = 'QuestionDeleteEvent';
@@ -44,6 +45,7 @@ export class MyQuestionEv {
 }
 
 const FetchMoreAnswerRequestEvent = 'FetchMoreAnswerRequestEvent';
+const WebSocketAnswerEvent = 'WebSocketAnswerEvent';
 export class AnswerEv {
   private static logger = new Logger('AnswerEv', { noColor: true });
   static addFetchMoreRequestEventListener(onEvent: (ev: CustomEvent<string | undefined>) => void) {
@@ -58,5 +60,21 @@ export class AnswerEv {
     AnswerEv.logger.debug('Send Event');
     const ev = new CustomEvent<string | undefined>(FetchMoreAnswerRequestEvent, { detail: untilId });
     window.dispatchEvent(ev);
+  }
+
+  static addCreatedAnswerEventListener(onEvent: (ev: CustomEvent<AnswerWithProfileDto>) => void) {
+    AnswerEv.logger.debug('Added WebSocket Answer EventListener');
+    window.addEventListener(WebSocketAnswerEvent, onEvent as EventListener);
+  }
+
+  static removeCreatedAnswerEventListener(onEvent: (ev: CustomEvent<AnswerWithProfileDto>) => void) {
+    AnswerEv.logger.debug('Removed WebSocket Answer EventListener');
+    window.removeEventListener(WebSocketAnswerEvent, onEvent as EventListener);
+  }
+
+  static sendCreatedAnswerEvent(data: AnswerWithProfileDto) {
+    const ev = new CustomEvent<AnswerWithProfileDto>(WebSocketAnswerEvent, { detail: data });
+    window.dispatchEvent(ev);
+    AnswerEv.logger.debug('New Answer Created', data);
   }
 }
