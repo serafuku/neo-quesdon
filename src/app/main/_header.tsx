@@ -18,7 +18,7 @@ import {
   WebsocketQuestionDeletedEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { FaXmark } from 'react-icons/fa6';
-import { MyQuestionEv } from './_questionEvent';
+import { MyQuestionEv } from './_events';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;

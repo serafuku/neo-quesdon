@@ -7,7 +7,7 @@ import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
 import { MyProfileContext } from '@/app/main/_profileContext';
 import { questionDto } from '@/app/_dto/question/question.dto';
-import { MyQuestionEv } from '../_questionEvent';
+import { MyQuestionEv } from '../_events';
 import { Logger } from '@/utils/logger/Logger';
 import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
