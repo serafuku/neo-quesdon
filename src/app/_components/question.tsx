@@ -48,9 +48,10 @@ export default function Question({
     defaultValues: {
       nsfw: false,
       visibility: defaultVisibility,
+      answer: '',
     },
+    mode: 'onChange',
   });
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -119,19 +120,21 @@ export default function Question({
   useLayoutEffect(() => {
     const questionId = singleQuestion.id;
     const draft = sessionStorage.getItem(`draftAnswer:${questionId}`);
-    if (draft && textareaRef.current) {
-      textareaRef.current.value = draft;
+    if (draft) {
       console.debug(`질문 ${questionId} 의 답변 임시저장 복구: ${draft}`);
+      setValue('answer', draft);
     }
   }, []);
 
-  const onTextChanged = () => {
+  watch(({ answer }) => {
+    onTextChanged(answer);
+  });
+  const onTextChanged = (textInput: string | undefined) => {
     const save = () => {
       const questionId = singleQuestion.id;
-      const text = textareaRef.current?.value;
-      if (text) {
-        sessionStorage.setItem(`draftAnswer:${questionId}`, text);
-        console.debug(`질문 ${questionId} 의 답변 임시 저장됨: ${text}`);
+      if (textInput) {
+        sessionStorage.setItem(`draftAnswer:${questionId}`, textInput);
+        console.debug(`질문 ${questionId} 의 답변 임시 저장됨: ${textInput}`);
       }
     };
     deBounce(save);
@@ -179,10 +182,6 @@ export default function Question({
               className={`textarea textarea-sm text-sm h-24 desktop:h-32 window:text-xl desktop:text-2xl bg-transparent placeholder-neutral-300 text-slate-50 ${
                 errors.answer && 'textarea-error'
               }`}
-              ref={textareaRef}
-              onChange={() => {
-                onTextChanged();
-              }}
               placeholder="답변을 입력하세요..."
               onKeyDown={onCtrlEnter}
             />
