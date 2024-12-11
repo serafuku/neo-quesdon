@@ -20,6 +20,7 @@ import {
 import { FaXmark } from 'react-icons/fa6';
 import { AnswerEv, MyQuestionEv } from './_events';
 import { AnswerWithProfileDto } from '../_dto/Answers.dto';
+import WebSocketState from '../_components/webSocketState';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -31,6 +32,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const [questionsNum, setQuestions_num] = useState<number | null>(null);
   const [questionsToastMenu, setQuestionsToastMenu] = useState<boolean>(false);
   const websocket = useRef<WebSocket | null>(null);
+  const [wsState, setWsState] = useState<number | undefined>();
 
   const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
     const user_handle = localStorage.getItem('user_handle');
@@ -64,58 +66,73 @@ export default function MainHeader({ setUserProfile }: headerProps) {
 
   useEffect(() => {
     let toastTimeout: NodeJS.Timeout;
-    websocket.current = new WebSocket('/api/websocket');
-    websocket.current.onmessage = (ws_event: MessageEvent) => {
-      const ws_data = JSON.parse(ws_event.data) as WebsocketEventPayload<unknown>;
-      switch (ws_data.ev_name) {
-        case 'question-created-event': {
-          const data = ws_data as WebsocketQuestionCreatedEvent;
-          console.debug('WS: 새로운 질문이 생겼어요!,', data.data);
-          MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
-          MyQuestionEv.SendUpdateReq(data.data);
-          toastTimeout = setTimeout(() => {
+    const webSocketHandler = () => {
+      websocket.current = new WebSocket('/api/websocket');
+      setWsState(websocket.current?.readyState);
+      websocket.current.onmessage = (ws_event: MessageEvent) => {
+        const ws_data = JSON.parse(ws_event.data) as WebsocketEventPayload<unknown>;
+        switch (ws_data.ev_name) {
+          case 'question-created-event': {
+            const data = ws_data as WebsocketQuestionCreatedEvent;
+            console.debug('WS: 새로운 질문이 생겼어요!,', data.data);
+            MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
+            MyQuestionEv.SendUpdateReq(data.data);
+            toastTimeout = setTimeout(() => {
+              setQuestionsToastMenu(false);
+            }, 8000);
+            setQuestionsToastMenu(true);
+            break;
+          }
+          case 'question-deleted-event': {
+            const data = ws_data as WebsocketQuestionDeletedEvent;
+            console.debug('WS: 질문이 삭제되었어요!', data.data);
+            MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
+            MyQuestionEv.SendDeleteReq(data.data);
             setQuestionsToastMenu(false);
-          }, 8000);
-          setQuestionsToastMenu(true);
-          break;
+            break;
+          }
+          case 'answer-created-event': {
+            const data = ws_data as WebsocketAnswerCreatedEvent;
+            AnswerEv.sendCreatedAnswerEvent(data.data);
+            console.debug('WS: 새로운 답변이 생겼어요!', data.data);
+            break;
+          }
+          case 'answer-deleted-event': {
+            const data = ws_data as WebsocketAnswerDeletedEvent;
+            console.debug('WS: 답변이 삭제되었어요!', data.data);
+            break;
+          }
+          case 'keep-alive': {
+            break;
+          }
         }
-        case 'question-deleted-event': {
-          const data = ws_data as WebsocketQuestionDeletedEvent;
-          console.debug('WS: 질문이 삭제되었어요!', data.data);
-          MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
-          MyQuestionEv.SendDeleteReq(data.data);
-          setQuestionsToastMenu(false);
-          break;
-        }
-        case 'answer-created-event': {
-          const data = ws_data as WebsocketAnswerCreatedEvent;
-          AnswerEv.sendCreatedAnswerEvent(data.data);
-          console.debug('WS: 새로운 답변이 생겼어요!', data.data);
-          break;
-        }
-        case 'answer-deleted-event': {
-          const data = ws_data as WebsocketAnswerDeletedEvent;
-          console.debug('WS: 답변이 삭제되었어요!', data.data);
-          break;
-        }
-        case 'keep-alive': {
-          break;
-        }
-      }
-    };
-    websocket.current.onopen = () => {
-      console.debug('웹소켓이 열렸어요!');
-    };
-    websocket.current.onclose = (ev: CloseEvent) => {
-      console.log('웹소켓이 닫혔어요!', ev);
-    };
-    websocket.current.onerror = (ev: Event) => {
-      console.log(`웹소켓 에러`, ev);
+      };
+
+      websocket.current.onopen = () => {
+        console.debug('웹소켓이 열렸어요!');
+        setWsState(websocket.current?.readyState);
+      };
+      websocket.current.onclose = (ev: CloseEvent) => {
+        console.debug('웹소켓이 닫혔어요!', ev);
+        setWsState(websocket.current?.readyState);
+      };
+      websocket.current.onerror = (ev: Event) => {
+        console.log(`웹소켓 에러`, ev);
+        setWsState(websocket.current?.readyState);
+      };
     };
 
+    const webSocketRetryTimeout = setInterval(() => {
+      if (websocket.current === null || websocket.current?.readyState === 3) {
+        webSocketHandler();
+      }
+    }, Math.random() * 5000);
+
+    webSocketHandler();
     return () => {
       clearTimeout(toastTimeout);
-      if (websocket.current && websocket.current.readyState === 1) {
+      clearInterval(webSocketRetryTimeout);
+      if (websocket.current?.readyState === 1) {
         websocket.current.close();
       }
     };
@@ -156,6 +173,9 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         <Link href="/main" className="btn btn-ghost text-xl">
           Neo-Quesdon
         </Link>
+      </div>
+      <div className="mr-2 tooltip tooltip-bottom" data-tip="스트리밍 연결상태">
+        <WebSocketState connection={wsState} />
       </div>
       <div className="dropdown dropdown-end">
         <div tabIndex={0} role="button" className={`btn btn-ghost btn-circle avatar`}>
