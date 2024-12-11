@@ -150,9 +150,6 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     fn();
   }, []);
 
-  useEffect(() => {
-    console.log(questionsToastMenu);
-  }, [questionsToastMenu]);
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] navbar bg-base-100 shadow rounded-box my-4">
       <div className="flex-1">
@@ -242,7 +239,11 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         className={`toast toast-end w-[16rem] desktop:w-[20rem] z-[1] ${!questionsToastMenu && 'translate-x-full transition-transform'}`}
       >
         <div className="alert shadow flex">
-          <Link href={'/main/questions'} className="flex items-center gap-4">
+          <Link
+            href={'/main/questions'}
+            className="flex items-center gap-4"
+            onClick={() => setQuestionsToastMenu(false)}
+          >
             <FaInfoCircle size={20} />
             <div className="">
               <h3 className="text-lg">새 질문이 있어요!</h3>
