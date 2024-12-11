@@ -3,9 +3,7 @@
 import Link from 'next/link';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { postAnswer } from '../main/questions/action';
-import { RefObject, useContext, useEffect } from 'react';
-import { userProfileMeDto } from '../_dto/fetch-profile/Profile.dto';
-import { MyProfileEv, MyProfileContext } from '../main/_profileContext';
+import { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
 import { createAnswerDto } from '../_dto/create-answer/create-answer.dto';
 import { questionDto } from '@/app/_dto/question/question.dto';
 
@@ -48,12 +46,12 @@ export default function Question({
     reset,
   } = useForm<formValue>({
     defaultValues: {
-      answer: '',
       nsfw: false,
       visibility: defaultVisibility,
+      answer: '',
     },
+    mode: 'onChange',
   });
-  const profile = useContext(MyProfileContext);
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -104,8 +102,46 @@ export default function Question({
     }
   };
 
+  const draftSaveDebounceTimerRef = useRef<NodeJS.Timeout>();
   useEffect(() => {
-    reset({ visibility: defaultVisibility, nsfw: false, answer: '' });
+    return () => {
+      clearTimeout(draftSaveDebounceTimerRef.current);
+    };
+  }, []);
+  const deBounce = (fn: () => void) => {
+    if (draftSaveDebounceTimerRef.current) {
+      clearTimeout(draftSaveDebounceTimerRef.current);
+    }
+    draftSaveDebounceTimerRef.current = setTimeout(() => {
+      fn();
+    }, 500);
+  };
+
+  useLayoutEffect(() => {
+    const questionId = singleQuestion.id;
+    const draft = sessionStorage.getItem(`draftAnswer:${questionId}`);
+    if (draft) {
+      console.debug(`질문 ${questionId} 의 답변 임시저장 복구: ${draft}`);
+      setValue('answer', draft);
+    }
+  }, []);
+
+  watch(({ answer }) => {
+    onTextChanged(answer);
+  });
+  const onTextChanged = (textInput: string | undefined) => {
+    const save = () => {
+      const questionId = singleQuestion.id;
+      if (textInput) {
+        sessionStorage.setItem(`draftAnswer:${questionId}`, textInput);
+        console.debug(`질문 ${questionId} 의 답변 임시 저장됨: ${textInput}`);
+      }
+    };
+    deBounce(save);
+  };
+
+  useEffect(() => {
+    reset({ visibility: defaultVisibility, nsfw: false });
   }, [defaultVisibility]);
 
   return (
