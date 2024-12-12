@@ -173,14 +173,12 @@ export class WebsocketService {
         return;
       }
       exist[index].lastPongTimeStamp = Date.now();
-      this.logger.debug(`Client ${context.id} sent pong! ${data.toString()}`);
     });
 
     context.ws.on('message', (data, isBinary) => {
       if (isBinary) {
         return;
       }
-      this.logger.debug(`Client ${context.id} say`, data.toString());
     });
 
     context.ws.on('error', (err) => {
