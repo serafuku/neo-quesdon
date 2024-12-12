@@ -33,7 +33,8 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const websocket = useRef<WebSocket | null>(null);
   const [wsState, setWsState] = useState<number | undefined>();
   const ws_retry_counter = useRef<number>(0);
-  const [jwtRefreshed, setJwtRefreshed] = useState<boolean>(false);
+  const [loginChecked, setLoginChecked] = useState<boolean>(false);
+  const toastTimeout = useRef<NodeJS.Timeout>();
 
   const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
     const user_handle = localStorage.getItem('user_handle');
@@ -52,6 +53,64 @@ export default function MainHeader({ setUserProfile }: headerProps) {
       return data;
     }
   };
+  const webSocketManager = () => {
+    if (websocket.current) {
+      websocket.current.close();
+    }
+    websocket.current = new WebSocket('/api/websocket');
+    websocket.current.onmessage = (ws_event: MessageEvent) => {
+      const ws_data = JSON.parse(ws_event.data) as WebsocketEventPayload<unknown>;
+      switch (ws_data.ev_name) {
+        case 'question-created-event': {
+          const data = ws_data as WebsocketQuestionCreatedEvent;
+          console.debug('WS: 새로운 질문이 생겼어요!,', data.data);
+          MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
+          MyQuestionEv.SendUpdateReq(data.data);
+          toastTimeout.current = setTimeout(() => {
+            setQuestionsToastMenu(false);
+          }, 8000);
+          setQuestionsToastMenu(true);
+          break;
+        }
+        case 'question-deleted-event': {
+          const data = ws_data as WebsocketQuestionDeletedEvent;
+          console.debug('WS: 질문이 삭제되었어요!', data.data);
+          MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
+          MyQuestionEv.SendDeleteReq(data.data);
+          setQuestionsToastMenu(false);
+          break;
+        }
+        case 'answer-created-event': {
+          const data = ws_data as WebsocketAnswerCreatedEvent;
+          AnswerEv.sendCreatedAnswerEvent(data.data);
+          console.debug('WS: 새로운 답변이 생겼어요!', data.data);
+          break;
+        }
+        case 'answer-deleted-event': {
+          const data = ws_data as WebsocketAnswerDeletedEvent;
+          console.debug('WS: 답변이 삭제되었어요!', data.data);
+          break;
+        }
+        case 'keep-alive': {
+          break;
+        }
+      }
+    };
+
+    websocket.current.onopen = () => {
+      console.debug('웹소켓이 열렸어요!');
+      ws_retry_counter.current = 0;
+      setWsState(websocket.current?.readyState);
+    };
+    websocket.current.onclose = (ev: CloseEvent) => {
+      console.debug('웹소켓이 닫혔어요!', ev);
+      setWsState(websocket.current?.readyState);
+    };
+    websocket.current.onerror = (ev: Event) => {
+      console.log(`웹소켓 에러`, ev);
+      setWsState(websocket.current?.readyState);
+    };
+  };
 
   const onProfileUpdateEvent = (ev: CustomEvent<Partial<userProfileMeDto>>) => {
     const logger = new Logger('onProfileUpdateEvent', { noColor: true });
@@ -66,66 +125,9 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   };
 
   useEffect(() => {
-    let toastTimeout: NodeJS.Timeout;
-    const webSocketManager = () => {
-      if (websocket.current) {
-        websocket.current.close();
-      }
-      websocket.current = new WebSocket('/api/websocket');
-      websocket.current.onmessage = (ws_event: MessageEvent) => {
-        const ws_data = JSON.parse(ws_event.data) as WebsocketEventPayload<unknown>;
-        switch (ws_data.ev_name) {
-          case 'question-created-event': {
-            const data = ws_data as WebsocketQuestionCreatedEvent;
-            console.debug('WS: 새로운 질문이 생겼어요!,', data.data);
-            MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
-            MyQuestionEv.SendUpdateReq(data.data);
-            toastTimeout = setTimeout(() => {
-              setQuestionsToastMenu(false);
-            }, 8000);
-            setQuestionsToastMenu(true);
-            break;
-          }
-          case 'question-deleted-event': {
-            const data = ws_data as WebsocketQuestionDeletedEvent;
-            console.debug('WS: 질문이 삭제되었어요!', data.data);
-            MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
-            MyQuestionEv.SendDeleteReq(data.data);
-            setQuestionsToastMenu(false);
-            break;
-          }
-          case 'answer-created-event': {
-            const data = ws_data as WebsocketAnswerCreatedEvent;
-            AnswerEv.sendCreatedAnswerEvent(data.data);
-            console.debug('WS: 새로운 답변이 생겼어요!', data.data);
-            break;
-          }
-          case 'answer-deleted-event': {
-            const data = ws_data as WebsocketAnswerDeletedEvent;
-            console.debug('WS: 답변이 삭제되었어요!', data.data);
-            break;
-          }
-          case 'keep-alive': {
-            break;
-          }
-        }
-      };
-
-      websocket.current.onopen = () => {
-        console.debug('웹소켓이 열렸어요!');
-        ws_retry_counter.current = 0;
-        setWsState(websocket.current?.readyState);
-      };
-      websocket.current.onclose = (ev: CloseEvent) => {
-        console.debug('웹소켓이 닫혔어요!', ev);
-        setWsState(websocket.current?.readyState);
-      };
-      websocket.current.onerror = (ev: Event) => {
-        console.log(`웹소켓 에러`, ev);
-        setWsState(websocket.current?.readyState);
-      };
-    };
-
+    if (!loginChecked) {
+      return;
+    }
     const webSocketRetryInterval = setInterval(
       () => {
         if (websocket.current === null || websocket.current?.readyState === 3) {
@@ -147,19 +149,20 @@ export default function MainHeader({ setUserProfile }: headerProps) {
 
     webSocketManager();
     return () => {
-      clearTimeout(toastTimeout);
+      clearTimeout(toastTimeout.current);
       clearInterval(webSocketRetryInterval);
       if (websocket.current?.readyState === 1) {
         websocket.current.close();
       }
     };
-  }, [jwtRefreshed]);
+  }, [loginChecked]);
 
   useEffect(() => {
     if (setUserProfile) {
       fetchMyProfile().then((r) => {
         setUserProfile(r);
         setQuestions_num(r?.questions ?? null);
+        setLoginChecked(true);
       });
     }
   }, [setUserProfile]);
@@ -180,7 +183,6 @@ export default function MainHeader({ setUserProfile }: headerProps) {
       if (now - last_token_refresh > 3600) {
         await refreshJwt();
       }
-      setJwtRefreshed(true);
     };
     fn();
   }, []);
