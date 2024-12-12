@@ -92,7 +92,7 @@ export class WebsocketService {
     let context: WsClientType;
     try {
       const cookie = req.headers.cookie;
-      const re = new RE2('(?:jwtToken=)(.+)(?:;)');
+      const re = new RE2('jwtToken=([^;]+);?');
       const token = re.match(cookie ?? '')?.[1];
       tokenBody = await verifyToken(token);
     } catch {}
