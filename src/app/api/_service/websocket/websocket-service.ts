@@ -14,51 +14,59 @@ import {
   WebsocketEventPayload,
   WebsocketKeepAliveEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
-import { AnswerDto } from '@/app/_dto/Answers.dto';
+import { AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
 import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
 import { RedisKvCacheService } from '../kvCache/redisKvCacheService';
-import { blocking } from '@prisma/client';
+import { blocking, PrismaClient } from '@prisma/client';
+import { getIpFromIncomingMessage } from '@/app/api/_utils/getIp/get-ip-from-Request';
+import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
 
-let instance: WebsocketService;
-type ClientList = {
+type WsClientType = {
   id: UUID;
   client_ip: string;
   user_handle?: jwtPayloadType['handle'];
-  pingInterval: NodeJS.Timeout;
+  pingInterval?: NodeJS.Timeout;
+  lastPongTimeStamp: number;
   ws: WebSocket;
-}[];
+};
+type WsClientListType = WsClientType[];
+type WsClientKvType = Map<string, WsClientListType>;
+
 export class WebsocketService {
+  private static instance: WebsocketService;
   private logger = new Logger('WebsocketService');
-  private clientList: ClientList = [];
+  private clientKvMap: WsClientKvType = new Map();
+  private prisma: PrismaClient;
+  private eventService: RedisPubSubService;
   private constructor() {
     this.onConnect = this.onConnect.bind(this);
-    const eventService = RedisPubSubService.getInstance();
+    this.eventService = RedisPubSubService.getInstance();
+    this.prisma = GetPrismaClient.getClient();
 
-    eventService.sub<QuestionCreatedPayload>('question-created-event', (data) => {
+    this.eventService.sub<QuestionCreatedPayload>('question-created-event', (data) => {
       this.logger.debug(`Got Event question-created-even`);
       this.sendToUser<QuestionCreatedPayload>(data.questioneeHandle, {
         ev_name: 'question-created-event',
         data: data,
       });
     });
-
-    eventService.sub<QuestionDeletedPayload>('question-deleted-event', (data) => {
+    this.eventService.sub<QuestionDeletedPayload>('question-deleted-event', (data) => {
       this.logger.debug(`Got Event question-deleted-event`);
       this.sendToUser<QuestionDeletedPayload>(data.handle, {
         ev_name: 'question-deleted-event',
         data: data,
       });
     });
-    eventService.sub<AnswerDto>('answer-created-event', async (data) => {
+    this.eventService.sub<AnswerWithProfileDto>('answer-created-event', async (data) => {
       this.logger.debug(`Got Event answer-created-event`);
       const ev_data: WebsocketAnswerCreatedEvent = {
         ev_name: 'answer-created-event',
         data: data,
       };
-      const filteredClients = await this.filterBlock(this.clientList, data.answeredPersonHandle);
-      this.sendToList<AnswerDto>(filteredClients, ev_data);
+      const filteredClients = await this.filterBlock(data.answeredPersonHandle);
+      this.sendToList<AnswerWithProfileDto>(filteredClients, ev_data);
     });
-    eventService.sub<AnswerDeletedEvPayload>('answer-deleted-event', (data) => {
+    this.eventService.sub<AnswerDeletedEvPayload>('answer-deleted-event', (data) => {
       this.logger.debug(`Got Event answer-deleted-event`);
       this.sendToAll<AnswerDeletedEvPayload>({
         ev_name: 'answer-deleted-event',
@@ -68,106 +76,197 @@ export class WebsocketService {
       });
     });
   }
+
   public static getInstance() {
-    if (!instance) {
-      instance = new WebsocketService();
+    if (!WebsocketService.instance) {
+      WebsocketService.instance = new WebsocketService();
     }
-    return instance;
+    return WebsocketService.instance;
   }
+
+  /**
+   * Websocket connect event 핸들러
+   */
   async onConnect(ws: WebSocket, req: IncomingMessage) {
-    const id = randomUUID();
-    const cookie = req.headers.cookie;
-    const re = new RE2('(?:jwtToken=)(.+)(?:;)');
-    const token = re.match(cookie ?? '')?.[1];
     let tokenBody;
+    let context: WsClientType;
     try {
+      const cookie = req.headers.cookie;
+      const re = new RE2('(?:jwtToken=)(.+)(?:;)');
+      const token = re.match(cookie ?? '')?.[1];
       tokenBody = await verifyToken(token);
     } catch {}
+    const kv_key = tokenBody?.handle ? tokenBody.handle : getIpHash(getIpFromIncomingMessage(req));
 
-    const real_ip_header = req.headers['x-forwarded-for'];
-    let client_ip: string | undefined;
-    if (real_ip_header) {
-      if (typeof real_ip_header !== 'string') {
-        client_ip = real_ip_header[0]?.split(/\s{0,3},\s{0,3}/).at(-1);
-      } else {
-        client_ip = real_ip_header.split(/\s{0,3},\s{0,3}/).at(-1);
-      }
-    }
-    if (client_ip === undefined) {
-      client_ip = req.socket.remoteAddress ?? '??';
-    }
-    this.logger.debug(`new Websocket Client ${id} Connected, ip: ${client_ip}`);
-    const pingInterval = setInterval(() => {
-      const keepAliveData: WebsocketKeepAliveEvent = {
-        ev_name: 'keep-alive',
-        data: `Ping ${Date.now()}`,
+    // Set Connection context
+    {
+      context = {
+        id: randomUUID(),
+        client_ip: getIpFromIncomingMessage(req),
+        pingInterval: undefined,
+        lastPongTimeStamp: Date.now(),
+        ws: ws,
       };
-      ws.send(JSON.stringify(keepAliveData));
-    }, 10000);
-    this.clientList.push({
-      id: id,
-      client_ip: client_ip,
-      ws: ws,
-      user_handle: tokenBody?.handle,
-      pingInterval: pingInterval,
-    });
-    const same_ip_list = this.clientList.filter((c) => {
-      return c.client_ip === client_ip;
-    });
-    if (same_ip_list.length > 10) {
-      this.logger.log(`같은 ip ${client_ip} 에 Websocket 커넥션이 10개가 넘었습니다. 가장 오래된 연결을 종료합니다`);
-      same_ip_list[0].ws.close();
+
+      const pingInterval = setInterval(() => {
+        const keepAliveData: WebsocketKeepAliveEvent = {
+          ev_name: 'keep-alive',
+          data: `Ping ${Date.now()}`,
+        };
+        ws.send(JSON.stringify(keepAliveData));
+        ws.ping(`Mua ${Date.now()}`);
+        if (Date.now() - context.lastPongTimeStamp > 60 * 1000) {
+          this.logger.debug(`Ping Timeout! terminate ${context.id}`);
+          ws.terminate();
+        }
+      }, 10000);
+
+      context.pingInterval = pingInterval;
     }
 
+    // clientKvMap 에 저장
+    // kev: kv_key, value: wsClient[]
+    // kv_key = user_handle or IpHash
+    {
+      const exist = this.clientKvMap.get(kv_key);
+      if (exist) {
+        exist.push(context);
+        const ids = exist.map((c) => c.id);
+        this.logger.debug(`Push exist client list ${kv_key}, ${ids}`);
+      } else {
+        const newList = [context];
+        const ids = newList.map((c) => c.id);
+        this.logger.debug(`make new list ${kv_key},  ${ids}`);
+        this.clientKvMap.set(kv_key, newList);
+      }
+      this.checkMaxConnections(kv_key);
+    }
+
+    context.ws.on('close', (code) => {
+      clearInterval(context.pingInterval);
+      const exist = this.clientKvMap.get(kv_key);
+      if (!exist) {
+        return;
+      }
+      const connection_id = context.id;
+      const idx = exist.findIndex((c) => c.id === connection_id);
+      if (idx < 0) {
+        return;
+      }
+      //배열에서 클라이언트 삭제
+      exist.splice(idx, 1);
+      let deleted = false;
+      if (exist.length === 0) {
+        deleted = this.clientKvMap.delete(kv_key);
+      }
+      this.logger.debug(`bye ${connection_id}. code: ${code}, key deleted: ${deleted}`);
+    });
+
+    context.ws.on('pong', (data) => {
+      const exist = this.clientKvMap.get(kv_key);
+      if (!exist) {
+        return;
+      }
+      const index = exist.findIndex((c) => c.id === context.id);
+      if (index < 0) {
+        this.logger.error(`클라이언트 찾을 수 없음! context:`, context);
+        return;
+      }
+      exist[index].lastPongTimeStamp = Date.now();
+      this.logger.debug(`Client ${context.id} sent pong! ${data.toString()}`);
+    });
+
+    context.ws.on('message', (data, isBinary) => {
+      if (isBinary) {
+        return;
+      }
+      this.logger.debug(`Client ${context.id} say`, data.toString());
+    });
+
+    context.ws.on('error', (err) => {
+      this.logger.error(`WS ERROR`, err);
+    });
+
+    // for Debug
+    this.logger.debug(
+      `new Websocket Client ${context.id} Connected, ip: ${context.client_ip} : ${tokenBody?.handle ? `as user ${tokenBody.handle}.` : '.'}`,
+    );
     const helloData: WebsocketKeepAliveEvent = {
       ev_name: 'keep-alive',
-      data: `Hello ${id}`,
+      data: `Hello ${context.id}`,
     };
-    ws.send(JSON.stringify(helloData));
-
-    ws.on('close', (_code, _reason) => {
-      this.logger.debug('bye', id);
-      this.clientList.forEach((c, i) => {
-        if (c.id === id) {
-          clearInterval(c.pingInterval);
-          this.clientList.splice(i, 1);
-        }
-      });
-    });
-    ws.on('message', (data, _isBinary) => {
-      this.logger.debug(`Client ${id} say`, data.toString());
-    });
-    ws.on('error', (err) => {
-      this.logger.debug(`WS ERROR`, err);
-    });
+    context.ws.send(JSON.stringify(helloData));
+    const exist = Array.from(this.clientKvMap.values(), (v) => v);
+    const allWsList = exist.flatMap((v) => v);
+    this.logger.debug(`Current Websocket connections: , `, allWsList.length);
   }
+
   public sendToUser<T>(handle: string, data: WebsocketEventPayload<T>) {
-    this.clientList.forEach((c) => {
-      if (c.user_handle === handle) {
-        c.ws.send(JSON.stringify(data));
-      }
+    const exist = this.clientKvMap.get(handle);
+    const stringData = JSON.stringify(data);
+    if (!exist) {
+      this.logger.debug(`handle ${handle}'s connection not found`);
+      return;
+    }
+    exist.forEach((c) => {
+      c.ws.send(stringData);
     });
   }
+
   public sendToAll<T>(data: WebsocketEventPayload<T>) {
-    this.clientList.forEach((c) => {
-      c.ws.send(JSON.stringify(data));
+    const all_lists = Array.from(this.clientKvMap.values(), (v) => v);
+    all_lists.forEach((client_list) => {
+      this.sendToList(client_list, data);
     });
   }
 
-  private sendToList<T>(list: ClientList, data: WebsocketEventPayload<T>) {
+  private sendToList<T>(list: WsClientListType, data: WebsocketEventPayload<T>) {
+    const stringData = JSON.stringify(data);
     list.forEach((c) => {
-      c.ws.send(JSON.stringify(data));
+      c.ws.send(stringData);
     });
   }
 
-  private async filterBlock(clients: ClientList, target_handle: string) {
-    const prisma = GetPrismaClient.getClient();
-    const kv = RedisKvCacheService.getInstance();
-    const getBlockListOnlyExist = async (): Promise<blocking[]> => {
-      const all_blockList = await prisma.blocking.findMany({ where: { blockerHandle: target_handle, hidden: false } });
+  private checkMaxConnections(kv_key: string) {
+    const client_list_at_key = this.clientKvMap.get(kv_key);
+    if (!client_list_at_key) {
+      return;
+    }
+    if (client_list_at_key.length > 10) {
+      const target = client_list_at_key[0];
+      const killTimeout = setTimeout(() => {
+        target.ws.terminate();
+        this.logger.debug(
+          `최대 동시 커넥션 제한을 위해 ${target.id} 커넥션을 close시도했지만 클라이언트 응답하지 않음. terminate 합니다. `,
+        );
+      }, 5000);
+
+      const onClose = () => {
+        clearTimeout(killTimeout);
+        this.logger.debug(
+          `최대 동시 커넥션 제한을 위해 ${target.id} 커넥션을 close 했습니다. terminate 타이머를 취소합니다.`,
+        );
+      };
+
+      this.logger.debug(
+        `같은 user/ip ${kv_key} 에 Websocket 커넥션이 10개가 넘었습니다. 가장 오래된 연결 ${target.id} 을 종료합니다...`,
+      );
+      target.ws.addEventListener('close', onClose);
+      target.ws.close();
+    }
+  }
+
+  private async filterBlock(target_handle: string) {
+    const redis_kv_cache = RedisKvCacheService.getInstance();
+    const all_values = Array.from(this.clientKvMap.values(), (v) => v);
+    const client_list = all_values.flatMap((v) => v);
+    const getBlockListOnlyExistFunction = async (): Promise<blocking[]> => {
+      const all_blockList = await this.prisma.blocking.findMany({
+        where: { blockerHandle: target_handle, hidden: false },
+      });
       const existList = [];
       for (const block of all_blockList) {
-        const exist = await prisma.user.findUnique({
+        const exist = await this.prisma.user.findUnique({
           where: { handle: block.blockeeHandle },
         });
         if (exist) {
@@ -176,9 +275,12 @@ export class WebsocketService {
       }
       return existList;
     };
-    const blockList = await kv.get(getBlockListOnlyExist, { key: `block-${target_handle}`, ttl: 600 });
-    const blockedList = await prisma.blocking.findMany({ where: { blockeeHandle: target_handle, hidden: false } });
-    const filteredClients = clients.filter((c) => {
+    const blockList = await redis_kv_cache.get(getBlockListOnlyExistFunction, {
+      key: `block-${target_handle}`,
+      ttl: 600,
+    });
+    const blockedList = await this.prisma.blocking.findMany({ where: { blockeeHandle: target_handle, hidden: false } });
+    const filteredClients = client_list.filter((c) => {
       if (blockList.find((b) => b.blockeeHandle === c.user_handle)) {
         return false;
       }

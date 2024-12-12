@@ -12,7 +12,8 @@ import { createAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
 import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
-import { AnswerDto } from '@/app/_dto/Answers.dto';
+import { AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
+import { profileToDto } from '@/app/api/_utils/profileToDto';
 
 export async function getQuestion(id: number) {
   const prisma = GetPrismaClient.getClient();
@@ -122,20 +123,34 @@ export async function postAnswer(questionId: question['id'] | null, reqData: cre
 
   const question_numbers = await prisma.question.count({ where: { questioneeHandle: tokenPayload.handle } });
   const pubsub_service = RedisPubSubService.getInstance();
+  const profile = await prisma.profile.findUnique({
+    where: { handle: tokenPayload.handle },
+    include: {
+      user: {
+        include: { server: { select: { instances: true, instanceType: true } } },
+      },
+    },
+  });
+  if (!profile) {
+    throw new Error('프로파일을 찾는데 실패');
+  }
+  const profileDto = profileToDto(profile, profile.user.hostName, profile.user.server.instanceType);
   pubsub_service.pub<QuestionDeletedPayload>('question-deleted-event', {
     deleted_id: q.id,
     handle: answeredUser.handle,
     question_numbers: question_numbers,
   });
-  pubsub_service.pub<AnswerDto>('answer-created-event', {
+  pubsub_service.pub<AnswerWithProfileDto>('answer-created-event', {
     id: createdAnswer.id,
     question: createdAnswer.question,
     questioner: createdAnswer.questioner,
     answer: createdAnswer.answer,
     answeredAt: createdAnswer.answeredAt,
+    answeredPerson: profileDto,
     answeredPersonHandle: createdAnswer.answeredPersonHandle,
     nsfwedAnswer: createdAnswer.nsfwedAnswer,
   });
+
   postLogger.log('Created new answer:', answerUrl);
 }
 

@@ -19,7 +19,6 @@ import {
 } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { FaXmark } from 'react-icons/fa6';
 import { AnswerEv, MyQuestionEv } from './_events';
-import { AnswerWithProfileDto } from '../_dto/Answers.dto';
 import WebSocketState from '../_components/webSocketState';
 
 type headerProps = {
@@ -33,6 +32,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const [questionsToastMenu, setQuestionsToastMenu] = useState<boolean>(false);
   const websocket = useRef<WebSocket | null>(null);
   const [wsState, setWsState] = useState<number | undefined>();
+  const ws_retry_counter = useRef<number>(0);
 
   const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
     const user_handle = localStorage.getItem('user_handle');
@@ -66,9 +66,8 @@ export default function MainHeader({ setUserProfile }: headerProps) {
 
   useEffect(() => {
     let toastTimeout: NodeJS.Timeout;
-    const webSocketHandler = () => {
+    const webSocketManager = () => {
       websocket.current = new WebSocket('/api/websocket');
-      setWsState(websocket.current?.readyState);
       websocket.current.onmessage = (ws_event: MessageEvent) => {
         const ws_data = JSON.parse(ws_event.data) as WebsocketEventPayload<unknown>;
         switch (ws_data.ev_name) {
@@ -110,6 +109,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
 
       websocket.current.onopen = () => {
         console.debug('웹소켓이 열렸어요!');
+        ws_retry_counter.current = 0;
         setWsState(websocket.current?.readyState);
       };
       websocket.current.onclose = (ev: CloseEvent) => {
@@ -122,16 +122,29 @@ export default function MainHeader({ setUserProfile }: headerProps) {
       };
     };
 
-    const webSocketRetryTimeout = setInterval(() => {
-      if (websocket.current === null || websocket.current?.readyState === 3) {
-        webSocketHandler();
-      }
-    }, Math.random() * 5000);
+    const webSocketRetryInterval = setInterval(
+      () => {
+        if (websocket.current === null || websocket.current?.readyState === 3) {
+          if (ws_retry_counter.current < 5) {
+            ws_retry_counter.current += 1;
+            console.log('웹소켓 연결 재시도...', ws_retry_counter.current);
+            webSocketManager();
+          } else {
+            console.log('웹소켓 연결 최대 재시도 횟수를 초과했어요!');
+            clearInterval(webSocketRetryInterval);
+            return;
+          }
+        } else {
+          websocket.current.send(`mua: ${Date.now()}`);
+        }
+      },
+      5000 + ws_retry_counter.current * 2000,
+    );
 
-    webSocketHandler();
+    webSocketManager();
     return () => {
       clearTimeout(toastTimeout);
-      clearInterval(webSocketRetryTimeout);
+      clearInterval(webSocketRetryInterval);
       if (websocket.current?.readyState === 1) {
         websocket.current.close();
       }

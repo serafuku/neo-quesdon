@@ -1,5 +1,5 @@
 import { questionDto } from '@/app/_dto/question/question.dto';
-import { AnswerDto } from '../Answers.dto';
+import { AnswerWithProfileDto } from '../Answers.dto';
 
 export const event_name_enum_arr = [
   'question-created-event',
@@ -34,7 +34,7 @@ export class WebsocketKeepAliveEvent extends WebsocketEventPayload<string> {
   ev_name: 'keep-alive';
 }
 
-export class WebsocketAnswerCreatedEvent extends WebsocketEventPayload<AnswerDto> {
+export class WebsocketAnswerCreatedEvent extends WebsocketEventPayload<AnswerWithProfileDto> {
   ev_name: 'answer-created-event';
 }
 
