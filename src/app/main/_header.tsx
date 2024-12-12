@@ -68,6 +68,9 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   useEffect(() => {
     let toastTimeout: NodeJS.Timeout;
     const webSocketManager = () => {
+      if (websocket.current) {
+        websocket.current.close();
+      }
       websocket.current = new WebSocket('/api/websocket');
       websocket.current.onmessage = (ws_event: MessageEvent) => {
         const ws_data = JSON.parse(ws_event.data) as WebsocketEventPayload<unknown>;
