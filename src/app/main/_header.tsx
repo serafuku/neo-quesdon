@@ -33,6 +33,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const websocket = useRef<WebSocket | null>(null);
   const [wsState, setWsState] = useState<number | undefined>();
   const ws_retry_counter = useRef<number>(0);
+  const [jwtRefreshed, setJwtRefreshed] = useState<boolean>(false);
 
   const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
     const user_handle = localStorage.getItem('user_handle');
@@ -149,7 +150,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         websocket.current.close();
       }
     };
-  }, []);
+  }, [jwtRefreshed]);
 
   useEffect(() => {
     if (setUserProfile) {
@@ -176,6 +177,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
       if (now - last_token_refresh > 3600) {
         await refreshJwt();
       }
+      setJwtRefreshed(true);
     };
     fn();
   }, []);
