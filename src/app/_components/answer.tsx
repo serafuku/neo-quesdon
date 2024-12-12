@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { Dispatch, RefObject, SetStateAction, useEffect, useState } from 'react';
 import NameComponents from './NameComponents';
-import { AnswerDto, AnswerWithProfileDto } from '../_dto/Answers.dto';
+import { AnswerWithProfileDto } from '../_dto/Answers.dto';
 import { userProfileDto } from '../_dto/fetch-profile/Profile.dto';
 import { useParams } from 'next/navigation';
 
 interface askProps {
-  value: AnswerDto;
+  value: AnswerWithProfileDto;
   id: string;
   ref?: RefObject<HTMLDialogElement>;
   idState?: Dispatch<SetStateAction<string>>;

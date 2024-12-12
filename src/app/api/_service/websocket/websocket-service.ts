@@ -14,7 +14,7 @@ import {
   WebsocketEventPayload,
   WebsocketKeepAliveEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
-import { AnswerDto } from '@/app/_dto/Answers.dto';
+import { AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
 import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
 import { RedisKvCacheService } from '../kvCache/redisKvCacheService';
 import { blocking, PrismaClient } from '@prisma/client';
@@ -57,14 +57,14 @@ export class WebsocketService {
         data: data,
       });
     });
-    this.eventService.sub<AnswerDto>('answer-created-event', async (data) => {
+    this.eventService.sub<AnswerWithProfileDto>('answer-created-event', async (data) => {
       this.logger.debug(`Got Event answer-created-event`);
       const ev_data: WebsocketAnswerCreatedEvent = {
         ev_name: 'answer-created-event',
         data: data,
       };
       const filteredClients = await this.filterBlock(data.answeredPersonHandle);
-      this.sendToList<AnswerDto>(filteredClients, ev_data);
+      this.sendToList<AnswerWithProfileDto>(filteredClients, ev_data);
     });
     this.eventService.sub<AnswerDeletedEvPayload>('answer-deleted-event', (data) => {
       this.logger.debug(`Got Event answer-deleted-event`);
