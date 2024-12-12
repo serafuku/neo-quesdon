@@ -131,12 +131,10 @@ export class WebsocketService {
       const exist = this.clientKvMap.get(kv_key);
       if (exist) {
         exist.push(context);
-        const ids = exist.map((c) => c.id);
-        this.logger.debug(`Push exist client list ${kv_key}, ${ids}`);
+        this.logger.debug(`Push exist to client list ${kv_key}, Clients in key: ${exist.length}`);
       } else {
         const newList = [context];
-        const ids = newList.map((c) => c.id);
-        this.logger.debug(`make new list ${kv_key},  ${ids}`);
+        this.logger.debug(`Make new key ${kv_key}, Clients in key: ${newList.length}`);
         this.clientKvMap.set(kv_key, newList);
       }
       this.checkMaxConnections(kv_key);
@@ -159,10 +157,12 @@ export class WebsocketService {
       if (exist.length === 0) {
         deleted = this.clientKvMap.delete(kv_key);
       }
-      this.logger.debug(`bye ${connection_id}. code: ${code}, key deleted: ${deleted}`);
+      this.logger.debug(
+        `Disconnect ${connection_id}. code: ${code}, key: ${kv_key}, key-deleted: ${deleted}, Remaining Clients from ${kv_key}: ${exist.length}`,
+      );
     });
 
-    context.ws.on('pong', (data) => {
+    context.ws.on('pong', () => {
       const exist = this.clientKvMap.get(kv_key);
       if (!exist) {
         return;
@@ -187,25 +187,26 @@ export class WebsocketService {
 
     // for Debug
     this.logger.debug(
-      `new Websocket Client ${context.id} Connected, ip: ${context.client_ip} : ${tokenBody?.handle ? `as user ${tokenBody.handle}.` : '.'}`,
+      `new Websocket Client ${context.id} Connected, ip: ${context.client_ip} ${tokenBody?.handle ? `as user ${tokenBody.handle}.` : '.'}`,
     );
     const helloData: WebsocketKeepAliveEvent = {
       ev_name: 'keep-alive',
       data: `Hello ${context.id}`,
     };
     context.ws.send(JSON.stringify(helloData));
-    const exist = Array.from(this.clientKvMap.values(), (v) => v);
-    const allWsList = exist.flatMap((v) => v);
-    this.logger.debug(`Current Websocket connections: , `, allWsList.length);
+    const allLists = Array.from(this.clientKvMap.values(), (v) => v);
+    const allWsList = allLists.flatMap((v) => v);
+    this.logger.debug(`Current Total Websocket connections: `, allWsList.length);
   }
 
   public sendToUser<T>(handle: string, data: WebsocketEventPayload<T>) {
     const exist = this.clientKvMap.get(handle);
     const stringData = JSON.stringify(data);
     if (!exist) {
-      this.logger.debug(`handle ${handle}'s connection not found`);
+      this.logger.debug(`${handle}'s WebSocket connection not found. skip.`);
       return;
     }
+    this.logger.debug(`Send to ${handle}'s connections...`);
     exist.forEach((c) => {
       c.ws.send(stringData);
     });
