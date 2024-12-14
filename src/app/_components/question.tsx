@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { postAnswer } from '../main/questions/action';
 import { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
-import { createAnswerDto } from '../_dto/create-answer/create-answer.dto';
+import { CreateAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
 import { questionDto } from '@/app/_dto/question/question.dto';
 
 interface formValue {
@@ -82,18 +81,19 @@ export default function Question({
     }
 
     const questionId = singleQuestion.id;
-    const typedAnswer: createAnswerDto = {
-      answer: e.answer,
-      nsfwedAnswer: e.nsfw,
-      visibility: e.visibility,
-    };
     const filteredQuestions = multipleQuestions.filter((el) => el.id !== questionId);
 
     setQuestions(filteredQuestions);
     setIsLoading(true);
     answerRef.current?.showModal();
     try {
-      await postAnswer(questionId, typedAnswer);
+      const req: CreateAnswerDto = {
+        questionId: questionId,
+        answer: e.answer,
+        nsfwedAnswer: e.nsfw,
+        visibility: e.visibility,
+      };
+      await postAnswer(req);
     } catch (err) {
       answerRef.current?.close();
       alert(err);
@@ -220,4 +220,15 @@ export default function Question({
       </div>
     </div>
   );
+}
+
+async function postAnswer(req: CreateAnswerDto) {
+  const res = await fetch('/api/db/create-answer', {
+    method: 'POST',
+    body: JSON.stringify(req),
+    headers: { 'Content-type': 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`답변을 작성하는데 실패했어요!, ${await res.text()}`);
+  }
 }
