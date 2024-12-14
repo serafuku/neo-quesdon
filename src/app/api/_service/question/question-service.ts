@@ -11,6 +11,7 @@ import { RateLimit } from '@/_service/ratelimiter/decorator';
 import re2 from 're2';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
 import { QuestionCreatedPayload, QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { isInt } from 'class-validator';
 
 export class QuestionService {
   private logger = new Logger('QuestionService');
@@ -38,7 +39,7 @@ export class QuestionService {
         headers: { 'Cache-Control': 'private, no-store, max-age=0' },
       });
     } catch {
-      sendApiError(400, 'Fail to Get my Questions');
+      sendApiError(500, 'Fail to Get my Questions');
     }
   }
 
@@ -168,9 +169,12 @@ export class QuestionService {
   @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
   public async deleteQuestionApi(_req: NextRequest, id: number, @JwtPayload tokenPayload: jwtPayloadType) {
     try {
+      if (!isInt(id)) {
+        return sendApiError(400, 'Bad QuestionId');
+      }
       const q = await this.prisma.question.findUnique({ where: { id: id } });
       if (!q) {
-        return sendApiError(400, 'NO such question!');
+        return sendApiError(400, 'No such question!');
       }
       if (q.questioneeHandle !== tokenPayload.handle) {
         return sendApiError(403, 'You can not delete this question!');
@@ -191,7 +195,7 @@ export class QuestionService {
       return new NextResponse(null, { status: 200, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
     } catch (err) {
       this.logger.error('Fail to Delete question', err);
-      sendApiError(400, 'Fail to Delete question!');
+      return sendApiError(500, 'Fail to Delete question!');
     }
   }
 

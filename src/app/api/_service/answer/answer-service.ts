@@ -15,7 +15,7 @@ import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-an
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
 import { RedisPubSubService } from '@/_service/redis-pubsub/redis-event.service';
 import { AnswerDeletedEvPayload, QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
-import { createAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
+import { CreateAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
 import { profileToDto } from '@/api/_utils/profileToDto';
 import { mastodonTootAnswers, MkNoteAnswers } from '@/app';
 import { createHash } from 'crypto';
@@ -39,13 +39,13 @@ export class AnswerService {
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 300 }, 'user')
   public async createAnswerApi(req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
-    let typedAnswer: createAnswerDto;
+    let data: CreateAnswerDto;
     try {
-      typedAnswer = await validateStrict(createAnswerDto, await req.json());
+      data = await validateStrict(CreateAnswerDto, await req.json());
     } catch (err) {
       return sendApiError(400, `${JSON.stringify(err)}`);
     }
-    const questionId = typedAnswer.questionId;
+    const questionId = data.questionId;
     const q = await this.prisma.question.findUnique({ where: { id: questionId } });
     if (!q) {
       return sendApiError(400, 'No such question');
@@ -72,9 +72,9 @@ export class AnswerService {
       data: {
         question: q.question,
         questioner: q.questioner,
-        answer: typedAnswer.answer,
+        answer: data.answer,
         answeredPersonHandle: tokenPayload.handle,
-        nsfwedAnswer: typedAnswer.nsfwedAnswer,
+        nsfwedAnswer: data.nsfwedAnswer,
       },
     });
     const answerUrl = `${process.env.WEB_URL}/main/user/${answeredUser.handle}/${createdAnswer.id}`;
@@ -82,19 +82,19 @@ export class AnswerService {
     if (!profile.stopPostAnswer) {
       let title;
       let text;
-      if (typedAnswer.nsfwedAnswer === true) {
+      if (data.nsfwedAnswer === true) {
         title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo_quesdon`;
         if (q.questioner) {
-          text = `질문자:${q.questioner}\nQ:${q.question}\nA: ${typedAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `질문자:${q.questioner}\nQ:${q.question}\nA: ${data.answer}\n#neo_quesdon ${answerUrl}`;
         } else {
-          text = `Q: ${q.question}\nA: ${typedAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `Q: ${q.question}\nA: ${data.answer}\n#neo_quesdon ${answerUrl}`;
         }
       } else {
         title = `Q: ${q.question} #neo_quesdon`;
         if (q.questioner) {
-          text = `질문자:${q.questioner}\nA: ${typedAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `질문자:${q.questioner}\nA: ${data.answer}\n#neo_quesdon ${answerUrl}`;
         } else {
-          text = `A: ${typedAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `A: ${data.answer}\n#neo_quesdon ${answerUrl}`;
         }
       }
       try {
@@ -103,14 +103,11 @@ export class AnswerService {
           case 'cherrypick':
             await mkMisskeyNote(
               { user: answeredUser, server: server },
-              { title: title, text: text, visibility: typedAnswer.visibility },
+              { title: title, text: text, visibility: data.visibility },
             );
             break;
           case 'mastodon':
-            await mastodonToot(
-              { user: answeredUser },
-              { title: title, text: text, visibility: typedAnswer.visibility },
-            );
+            await mastodonToot({ user: answeredUser }, { title: title, text: text, visibility: data.visibility });
             break;
           default:
             break;

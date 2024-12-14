@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
-import { createAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
+import { CreateAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
 import { questionDto } from '@/app/_dto/question/question.dto';
 
 interface formValue {
@@ -81,19 +81,19 @@ export default function Question({
     }
 
     const questionId = singleQuestion.id;
-    const typedAnswer: createAnswerDto = {
-      questionId: questionId,
-      answer: e.answer,
-      nsfwedAnswer: e.nsfw,
-      visibility: e.visibility,
-    };
     const filteredQuestions = multipleQuestions.filter((el) => el.id !== questionId);
 
     setQuestions(filteredQuestions);
     setIsLoading(true);
     answerRef.current?.showModal();
     try {
-      await postAnswer(typedAnswer);
+      const req: CreateAnswerDto = {
+        questionId: questionId,
+        answer: e.answer,
+        nsfwedAnswer: e.nsfw,
+        visibility: e.visibility,
+      };
+      await postAnswer(req);
     } catch (err) {
       answerRef.current?.close();
       alert(err);
@@ -222,10 +222,10 @@ export default function Question({
   );
 }
 
-async function postAnswer(typedAnswer: createAnswerDto) {
+async function postAnswer(req: CreateAnswerDto) {
   const res = await fetch('/api/db/create-answer', {
     method: 'POST',
-    body: JSON.stringify(typedAnswer),
+    body: JSON.stringify(req),
     headers: { 'Content-type': 'application/json' },
   });
   if (!res.ok) {

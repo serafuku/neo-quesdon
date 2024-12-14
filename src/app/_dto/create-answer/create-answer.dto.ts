@@ -1,7 +1,7 @@
 import { IsBoolean, IsEnum, IsNumber, IsString, MaxLength } from 'class-validator';
 import { $Enums } from '@prisma/client';
 
-export class createAnswerDto {
+export class CreateAnswerDto {
   @IsNumber()
   questionId: number;
 
