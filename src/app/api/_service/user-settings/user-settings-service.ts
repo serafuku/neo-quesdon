@@ -66,11 +66,6 @@ export class UserSettingsService {
     }
     const prisma = GetPrismaClient.getClient();
     if (data.wordMuteList) {
-      const escaped_list = data.wordMuteList.map((word) => {
-        // muteList 에 /asdf[a-zA-Z]+/ 같은 /로 감싸진 Regex를 넣은경우 / 를 제거
-        return word.replace(/^\/|\/$/g, '');
-      });
-      data.wordMuteList = escaped_list;
       this.onUpdateWordMute(jwtBody.handle, data.wordMuteList);
     }
     const updated = await prisma.profile.update({ where: { handle: jwtBody.handle }, data: data });

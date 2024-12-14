@@ -33,7 +33,8 @@ async function updateUserSettings(value: FormValue) {
     wordMuteList: value.wordMuteList
       .split('\n')
       .map((v) => v.trim())
-      .filter((v) => v.length > 0),
+      .filter((v) => v.length > 0)
+      .map((word) => word.replace(/^\/|\/[igmsuy]{0,6}$/g, '')),
   };
   try {
     const res = await fetch('/api/user/settings', {
