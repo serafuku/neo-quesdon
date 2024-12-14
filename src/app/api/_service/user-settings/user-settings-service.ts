@@ -6,6 +6,9 @@ import { validateStrict } from '@/utils/validator/strictValidator';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
+import RE2 from 're2';
+import { RedisPubSubService } from '@/_service/redis-pubsub/redis-event.service';
+import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 export class UserSettingsService {
   private constructor() {}
@@ -54,12 +57,45 @@ export class UserSettingsService {
     let data;
     try {
       const body = await req.json();
+      if (!jwtBody) {
+        throw new Error('jwtBody not found?');
+      }
       data = await validateStrict(UserSettingsUpdateDto, body);
     } catch {
       return sendApiError(400, 'Bad Request');
     }
     const prisma = GetPrismaClient.getClient();
-    const updated = await prisma.profile.update({ where: { handle: jwtBody!.handle }, data: data });
+    if (data.wordMuteList) {
+      this.onUpdateWordMute(jwtBody.handle, data.wordMuteList);
+    }
+    const updated = await prisma.profile.update({ where: { handle: jwtBody.handle }, data: data });
     return NextResponse.json(updated);
+  }
+
+  private async onUpdateWordMute(userHandle: string, wordMuteList: string[]) {
+    // Filter existing questions.
+    const prisma = GetPrismaClient.getClient();
+    const questions = await prisma.question.findMany({ where: { questioneeHandle: userHandle } });
+    const pubsubService = RedisPubSubService.getInstance();
+    const deleted_ids: QuestionDeletedPayload['deleted_id'][] = [];
+    for (const q of questions) {
+      const q_text = q.question;
+      for (const word of wordMuteList) {
+        const re = new RE2(word);
+        const matched = q_text.match(re);
+        if (matched) {
+          const d = await prisma.question.delete({ where: { id: q.id } });
+          deleted_ids.push(d.id);
+        }
+      }
+    }
+    deleted_ids.forEach(async (deleted_id) => {
+      const ev_payload: QuestionDeletedPayload = {
+        deleted_id: deleted_id,
+        question_numbers: questions.length - deleted_ids.length,
+        handle: userHandle,
+      };
+      await pubsubService.pub<QuestionDeletedPayload>('question-deleted-event', ev_payload);
+    });
   }
 }

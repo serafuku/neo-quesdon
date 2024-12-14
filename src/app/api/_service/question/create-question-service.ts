@@ -84,8 +84,10 @@ export class CreateQuestionApiService {
       }
 
       const wordMuteList = questionee_profile.wordMuteList;
+
+      // Random delay to prevent word mutes from being discovered by timing attacks.
       await new Promise<void>((resolve) => {
-        const random_delay = Math.random() * 10;
+        const random_delay = Math.random() * 50;
         setTimeout(() => {
           resolve();
         }, random_delay);
@@ -94,8 +96,10 @@ export class CreateQuestionApiService {
         const re = new re2(word);
         const matched = data.question.match(re);
         if (matched) {
-          // 조용히 질문을 드랍
-          this.logger.log(`Drop question! Pattern: ${word} Match: ${matched.toString()}`);
+          // 조용히 질문을 삭제
+          this.logger.log(
+            `Drop question! Pattern: ${word} Match: ${matched.toString()}, question ${data.question.replace(/(?:\r\n|\r|\n)/g, '\\n')}`,
+          );
           return NextResponse.json({}, { status: 200 });
         }
       }
