@@ -33,7 +33,10 @@ export class QuestionService {
   @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
   public async GetMyQuestionsApi(_req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
     try {
-      const questions = await this.prisma.question.findMany({ where: { questioneeHandle: tokenPayload.handle } });
+      const questions = await this.prisma.question.findMany({
+        where: { questioneeHandle: tokenPayload.handle },
+        orderBy: { questionedAt: 'desc' },
+      });
       return NextResponse.json(questions, {
         status: 200,
         headers: { 'Cache-Control': 'private, no-store, max-age=0' },
@@ -196,6 +199,31 @@ export class QuestionService {
     } catch (err) {
       this.logger.error('Fail to Delete question', err);
       return sendApiError(500, 'Fail to Delete question!');
+    }
+  }
+
+  @Auth()
+  @RateLimit({ bucket_time: 300, req_limit: 10 }, 'user')
+  public async deleteAllQuestionsApi(_req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
+    const userHandle = tokenPayload.handle;
+    try {
+      const questions = await this.prisma.question.findMany({ where: { questioneeHandle: userHandle } });
+      const deleted = await this.prisma.question.deleteMany({ where: { questioneeHandle: userHandle } });
+      this.logger.log(`Deleted ${deleted.count} Questions`);
+      questions.forEach((q) => {
+        this.eventService.pub<QuestionDeletedPayload>('question-deleted-event', {
+          deleted_id: q.id,
+          question_numbers: questions.length - deleted.count,
+          handle: userHandle,
+        });
+      });
+      return NextResponse.json(
+        { message: `${deleted.count} Questions deleted!` },
+        { status: 200, headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
+      );
+    } catch (err) {
+      this.logger.error('Fail to delete questions', err);
+      return sendApiError(500, 'Fail to delete questions');
     }
   }
 

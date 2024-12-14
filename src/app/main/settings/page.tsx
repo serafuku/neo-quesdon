@@ -11,7 +11,8 @@ import BlockList from '@/app/main/settings/_table';
 import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { AccountCleanReqDto } from '@/app/_dto/account-clean/account-clean.dto';
-import { FaEraser, FaLock, FaUserLargeSlash } from 'react-icons/fa6';
+import { FaLock, FaUserLargeSlash } from 'react-icons/fa6';
+import { MdDeleteSweep, MdOutlineCleaningServices } from 'react-icons/md';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -65,6 +66,7 @@ export default function Settings() {
   const logoutAllModalRef = useRef<HTMLDialogElement>(null);
   const accountCleanModalRef = useRef<HTMLDialogElement>(null);
   const importBlockModalRef = useRef<HTMLDialogElement>(null);
+  const deleteAllQuestionsModalRef = useRef<HTMLDialogElement>(null);
 
   const {
     register,
@@ -166,6 +168,17 @@ export default function Settings() {
     setTimeout(() => {
       setButtonClicked(false);
     }, 2000);
+  };
+
+  const onDeleteAllQuestions = async () => {
+    setButtonClicked(true);
+    const res = await fetch('/api/db/questions', {
+      method: 'DELETE',
+    });
+    setButtonClicked(false);
+    if (!res.ok) {
+      throw new Error('질문을 모두 삭제하는데 실패했어요!');
+    }
   };
 
   return (
@@ -314,7 +327,7 @@ export default function Settings() {
                           </button>
                           <Divider />
                           <div className="font-normal text-xl py-3 flex items-center gap-2">
-                            <FaEraser />
+                            <MdOutlineCleaningServices />
                             계정 청소하기
                           </div>
                           <div className="font-thin px-4 py-2 break-keep">
@@ -329,6 +342,23 @@ export default function Settings() {
                             className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-error'}`}
                           >
                             {buttonClicked ? '잠깐만요...' : '모든 답변을 삭제'}
+                          </button>
+                          <Divider />
+                          <div className="font-normal text-xl py-3 flex items-center gap-2">
+                            <MdDeleteSweep size={24} />
+                            모든 질문 삭제하기
+                          </div>
+                          <div className="font-thin px-4 py-2 break-keep">
+                            아직 답변하지 않은 모든 질문들을 지워요. 지워진 글은 되돌릴 수 없으니 주의하세요.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              deleteAllQuestionsModalRef.current?.showModal();
+                            }}
+                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-error'}`}
+                          >
+                            {buttonClicked ? '잠깐만요...' : '모든 질문을 삭제'}
                           </button>
                         </div>
                       </CollapseMenu>
@@ -345,6 +375,14 @@ export default function Settings() {
             cancelButtonText={'아니오'}
             ref={logoutAllModalRef}
             onClick={onLogoutAll}
+          />
+          <DialogModalTwoButton
+            title={'경고'}
+            body={'미답변 질문들을 모두 지울까요? \n이 작업은 시간이 걸리고, 지워진 질문은 복구할 수 없어요!'}
+            confirmButtonText={'네'}
+            cancelButtonText={'아니오'}
+            ref={deleteAllQuestionsModalRef}
+            onClick={onDeleteAllQuestions}
           />
           <DialogModalTwoButton
             title={'경고'}
