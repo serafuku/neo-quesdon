@@ -199,6 +199,31 @@ export class QuestionService {
     }
   }
 
+  @Auth()
+  @RateLimit({ bucket_time: 300, req_limit: 10 }, 'user')
+  public async deleteAllQuestionsApi(_req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
+    const userHandle = tokenPayload.handle;
+    try {
+      const questions = await this.prisma.question.findMany({ where: { questioneeHandle: userHandle } });
+      const deleted = await this.prisma.question.deleteMany({ where: { questioneeHandle: userHandle } });
+      this.logger.log(`Deleted ${deleted.count} Questions`);
+      questions.forEach((q) => {
+        this.eventService.pub<QuestionDeletedPayload>('question-deleted-event', {
+          deleted_id: q.id,
+          question_numbers: questions.length - deleted.count,
+          handle: userHandle,
+        });
+      });
+      return NextResponse.json(
+        { message: `${deleted.count} Questions deleted!` },
+        { status: 200, headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
+      );
+    } catch (err) {
+      this.logger.error('Fail to delete questions', err);
+      return sendApiError(500, 'Fail to delete questions');
+    }
+  }
+
   private async sendNotify(questionee: user, questioner: string | null, question: string, url: string): Promise<void> {
     const notify_host = process.env.NOTI_HOST;
     this.logger.log(`try to send notification to ${questionee.handle}`);
