@@ -7,6 +7,7 @@ import { createHash } from 'crypto';
 import { MisskeyBlockingApiResponse } from '@/app/api/_misskey-entities/blocking';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
 import { MastodonUser } from '@/app/api/_mastodon-entities/user';
+import { BlockingService } from '@/_service/blocking/blocking-service';
 
 const IMPORT_BLOCK = 'importBlock';
 
@@ -51,6 +52,7 @@ export class ImportBlockQueueService {
 
 async function process(job: Job<importBlockType>) {
   const prisma = GetPrismaClient.getClient();
+  const blockingService = BlockingService.get();
   const userHandle = job.data.userHandle;
   let user: user;
   let server: server;
@@ -106,28 +108,8 @@ async function process(job: Job<importBlockType>) {
 
         for (const b of data) {
           const blockeeHandle = `@${b.blockee.username}@${b.blockee.host ?? user.hostName}`;
-
-          await prisma.blocking.upsert({
-            where: {
-              blockeeHandle_blockerHandle_hidden_imported: {
-                blockeeHandle: blockeeHandle,
-                blockerHandle: user.handle,
-                hidden: false,
-                imported: true,
-              },
-            },
-            create: {
-              blockeeHandle: blockeeHandle,
-              blockerHandle: user.handle,
-              hidden: false,
-              imported: true,
-            },
-            update: {
-              createdAt: new Date(Date.now()),
-            },
-          });
+          await blockingService.createBlock(blockeeHandle, userHandle, true, false);
         }
-
         logger.debug(`${counter} Block imported`);
       }
 
@@ -162,25 +144,7 @@ async function process(job: Job<importBlockType>) {
         for (const b of data) {
           const blockeeDomain = new URL(b.url).hostname;
           const blockeeHandle = `@${b.username}@${blockeeDomain}`;
-          await prisma.blocking.upsert({
-            where: {
-              blockeeHandle_blockerHandle_hidden_imported: {
-                blockeeHandle: blockeeHandle,
-                blockerHandle: user.handle,
-                hidden: false,
-                imported: true,
-              },
-            },
-            create: {
-              blockeeHandle: blockeeHandle,
-              blockerHandle: user.handle,
-              hidden: false,
-              imported: true,
-            },
-            update: {
-              createdAt: new Date(Date.now()),
-            },
-          });
+          await blockingService.createBlock(blockeeHandle, userHandle, true, false);
         }
         logger.debug(`Processed ${counter} blocks...`);
 

@@ -3,5 +3,5 @@ import { BlockingService } from '@/app/api/_service/blocking/blocking-service';
 
 export async function POST(req: NextRequest) {
   const service = BlockingService.get();
-  return await service.createBlock(req);
+  return await service.createBlockApi(req);
 }

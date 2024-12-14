@@ -16,11 +16,14 @@ import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
 import { Logger } from '@/utils/logger/Logger';
 import { QueueService } from '@/app/api/_service/queue/queueService';
+import { RedisPubSubService } from '@/_service/redis-pubsub/redis-event.service';
+import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 export class BlockingService {
   private static instance: BlockingService;
   private prisma: PrismaClient;
   private redisKvService: RedisKvCacheService;
+  private redisPubsubService: RedisPubSubService;
   private logger = new Logger('BlockingService');
   private queueService: QueueService;
 
@@ -28,6 +31,7 @@ export class BlockingService {
     this.prisma = GetPrismaClient.getClient();
     this.redisKvService = RedisKvCacheService.getInstance();
     this.queueService = QueueService.get();
+    this.redisPubsubService = RedisPubSubService.getInstance();
   }
   public static get() {
     if (!BlockingService.instance) {
@@ -38,7 +42,7 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 60 }, 'user')
-  public async createBlock(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
+  public async createBlockApi(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
     let data;
     try {
       data = await validateStrict(CreateBlockDto, await req.json());
@@ -51,21 +55,12 @@ export class BlockingService {
     if (user === null || targetUser === null) {
       return sendApiError(400, 'Bad Request. User not found');
     }
-    const targetHandle = targetUser.handle;
-
-    const dbData = {
-      blockeeHandle: targetHandle,
-      blockerHandle: user.handle,
-      hidden: false,
-      imported: false,
-    };
     try {
-      await this.prisma.blocking.create({ data: dbData });
-    } catch {
-      return sendApiError(400, '이미 차단된 사용자입니다!');
+      await this.createBlock(targetUser.handle, user.handle, false);
+    } catch (err) {
+      return sendApiError(500, JSON.stringify(err));
     }
 
-    await this.redisKvService.drop(`block-${user.handle}`);
     return NextResponse.json({}, { status: 200 });
   }
 
@@ -182,5 +177,48 @@ export class BlockingService {
         headers: { 'content-type': 'application/json' },
       },
     );
+  }
+
+  /**
+   * 블락을 생성하고, 미답변 질문중 블락대상의 것은 삭제
+   * @param blockeeHandle 블락될 대상의 핸들
+   * @param myHandle  내 핸들
+   * @param imported ImportBlock에 의해서 가져온 Block인 경우 true
+   * @param isHidden 익명질문의 유저를 차단하는 경우 true (구현 예정)
+   */
+  public async createBlock(blockeeHandle: string, myHandle: string, imported?: boolean, isHidden?: boolean) {
+    const dbData = {
+      blockeeHandle: blockeeHandle,
+      blockerHandle: myHandle,
+      hidden: isHidden ? true : false,
+      imported: imported ? true : false,
+      createdAt: new Date(Date.now()),
+    };
+    await this.prisma.blocking.upsert({
+      where: {
+        blockeeHandle_blockerHandle_hidden_imported: {
+          blockeeHandle: dbData.blockeeHandle,
+          blockerHandle: dbData.blockerHandle,
+          hidden: dbData.hidden,
+          imported: dbData.imported,
+        },
+      },
+      create: dbData,
+      update: dbData,
+    });
+
+    //기존 질문의 필터링
+    const question_list = await this.prisma.question.findMany({ where: { questioneeHandle: myHandle } });
+    const remove_list = question_list.filter((q) => q.questioner === blockeeHandle);
+    remove_list.forEach(async (r) => {
+      await this.prisma.question.delete({ where: { id: r.id } });
+      const ev_data: QuestionDeletedPayload = {
+        deleted_id: r.id,
+        question_numbers: question_list.length - remove_list.length,
+        handle: myHandle,
+      };
+      await this.redisPubsubService.pub<QuestionDeletedPayload>('question-deleted-event', ev_data);
+    });
+    await this.redisKvService.drop(`block-${myHandle}`);
   }
 }
