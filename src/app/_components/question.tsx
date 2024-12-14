@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { postAnswer } from '../main/questions/action';
 import { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
-import { createAnswerDto } from '../_dto/create-answer/create-answer.dto';
+import { createAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
 import { questionDto } from '@/app/_dto/question/question.dto';
 
 interface formValue {
@@ -83,6 +82,7 @@ export default function Question({
 
     const questionId = singleQuestion.id;
     const typedAnswer: createAnswerDto = {
+      questionId: questionId,
       answer: e.answer,
       nsfwedAnswer: e.nsfw,
       visibility: e.visibility,
@@ -93,7 +93,7 @@ export default function Question({
     setIsLoading(true);
     answerRef.current?.showModal();
     try {
-      await postAnswer(questionId, typedAnswer);
+      await postAnswer(typedAnswer);
     } catch (err) {
       answerRef.current?.close();
       alert(err);
@@ -220,4 +220,15 @@ export default function Question({
       </div>
     </div>
   );
+}
+
+async function postAnswer(typedAnswer: createAnswerDto) {
+  const res = await fetch('/api/db/create-answer', {
+    method: 'POST',
+    body: JSON.stringify(typedAnswer),
+    headers: { 'Content-type': 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`답변을 작성하는데 실패했어요!, ${await res.text()}`);
+  }
 }

@@ -91,7 +91,7 @@ export default function Profile() {
    */
   const mkQuestionCreateApi = async (q: CreateQuestionDto): Promise<Response> => {
     try {
-      const res = await fetch('/api/db/create-question', {
+      const res = await fetch('/api/db/questions', {
         method: 'POST',
         body: JSON.stringify(q),
       });

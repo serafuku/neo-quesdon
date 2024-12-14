@@ -2,7 +2,6 @@
 
 import Question from '@/app/_components/question';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { deleteQuestion } from '@/app/main/questions/action';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
 import { MyProfileContext } from '@/app/main/_profileContext';
@@ -12,7 +11,7 @@ import { Logger } from '@/utils/logger/Logger';
 import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 const fetchQuestions = async (): Promise<questionDto[] | null> => {
-  const res = await fetch('/api/db/fetch-my-questions');
+  const res = await fetch('/api/db/questions');
 
   try {
     if (res.status === 401) {
@@ -28,6 +27,16 @@ const fetchQuestions = async (): Promise<questionDto[] | null> => {
   }
 };
 
+async function deleteQuestion(id: number) {
+  const res = await fetch(`/api/db/questions/${id}`, {
+    method: 'DELETE',
+    cache: 'no-cache',
+  });
+  if (!res.ok) {
+    throw new Error(`질문을 삭제하는데 실패했어요! ${await res.text()}`);
+  }
+}
+
 export default function Questions() {
   const [questions, setQuestions] = useState<questionDto[] | null>();
   const profile = useContext(MyProfileContext);
@@ -36,13 +45,13 @@ export default function Questions() {
   const answeredQuestionModalRef = useRef<HTMLDialogElement>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const onNewQuestion = (ev: CustomEvent<questionDto>) => {
+  const onNewQuestionEvent = (ev: CustomEvent<questionDto>) => {
     const logger = new Logger('onNewQuestion', { noColor: true });
     logger.log('New Question has arrived: ', ev.detail);
     setQuestions((prev) => (prev ? [ev.detail, ...prev] : []));
   };
 
-  const onDeleteQuestion = (ev: CustomEvent<QuestionDeletedPayload>) => {
+  const onDeleteQuestionEvent = (ev: CustomEvent<QuestionDeletedPayload>) => {
     const logger = new Logger('onNewQuestion', { noColor: true });
     logger.log('Question Deleted: ', ev.detail);
     setQuestions((prev) => prev && prev.filter((el) => el.id !== ev.detail.deleted_id));
@@ -52,12 +61,12 @@ export default function Questions() {
     fetchQuestions().then((r) => {
       setQuestions(r);
     });
-    MyQuestionEv.addCreatedEventListener(onNewQuestion);
-    MyQuestionEv.addDeletedEventListner(onDeleteQuestion);
+    MyQuestionEv.addCreatedEventListener(onNewQuestionEvent);
+    MyQuestionEv.addDeletedEventListner(onDeleteQuestionEvent);
 
     return () => {
-      MyQuestionEv.removeCreatedEventListener(onNewQuestion);
-      MyQuestionEv.removeDeletedEventListener(onDeleteQuestion);
+      MyQuestionEv.removeCreatedEventListener(onNewQuestionEvent);
+      MyQuestionEv.removeDeletedEventListener(onDeleteQuestionEvent);
     };
   }, []);
 

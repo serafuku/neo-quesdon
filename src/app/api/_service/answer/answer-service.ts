@@ -8,26 +8,147 @@ import type { jwtPayloadType } from '@/api/_utils/jwt/jwtPayloadType';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
-import { $Enums, blocking, profile } from '@prisma/client';
+import { $Enums, blocking, profile, user, server, PrismaClient } from '@prisma/client';
 import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
 import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
-import { RedisPubSubService } from '../redis-pubsub/redis-event.service';
-import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { RedisPubSubService } from '@/_service/redis-pubsub/redis-event.service';
+import { AnswerDeletedEvPayload, QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { createAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
+import { profileToDto } from '@/api/_utils/profileToDto';
+import { mastodonTootAnswers, MkNoteAnswers } from '@/app';
+import { createHash } from 'crypto';
 
 export class AnswerService {
   private static instance: AnswerService;
   private logger = new Logger('AnswerService');
   private event_service: RedisPubSubService;
+  private prisma: PrismaClient;
   private constructor() {
+    this.prisma = GetPrismaClient.getClient();
     this.event_service = RedisPubSubService.getInstance();
   }
-  public static get() {
+  public static getInstance() {
     if (!AnswerService.instance) {
       AnswerService.instance = new AnswerService();
     }
     return AnswerService.instance;
+  }
+
+  @Auth()
+  @RateLimit({ bucket_time: 300, req_limit: 300 }, 'user')
+  public async createAnswerApi(req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
+    let typedAnswer: createAnswerDto;
+    try {
+      typedAnswer = await validateStrict(createAnswerDto, await req.json());
+    } catch (err) {
+      return sendApiError(400, `${JSON.stringify(err)}`);
+    }
+    const questionId = typedAnswer.questionId;
+    const q = await this.prisma.question.findUnique({ where: { id: questionId } });
+    if (!q) {
+      return sendApiError(400, 'No such question');
+    }
+    if (q.questioneeHandle !== tokenPayload.handle) {
+      return sendApiError(403, `This question is not for you`);
+    }
+    const answeredUser = await this.prisma.user.findUnique({
+      where: {
+        handle: tokenPayload.handle,
+      },
+      include: {
+        profile: true,
+        server: true,
+      },
+    });
+    if (!answeredUser || !answeredUser.profile) {
+      return sendApiError(500, 'User or Profile not found');
+    }
+
+    const server = answeredUser.server;
+    const profile = answeredUser.profile;
+    const createdAnswer = await this.prisma.answer.create({
+      data: {
+        question: q.question,
+        questioner: q.questioner,
+        answer: typedAnswer.answer,
+        answeredPersonHandle: tokenPayload.handle,
+        nsfwedAnswer: typedAnswer.nsfwedAnswer,
+      },
+    });
+    const answerUrl = `${process.env.WEB_URL}/main/user/${answeredUser.handle}/${createdAnswer.id}`;
+
+    if (!profile.stopPostAnswer) {
+      let title;
+      let text;
+      if (typedAnswer.nsfwedAnswer === true) {
+        title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo_quesdon`;
+        if (q.questioner) {
+          text = `질문자:${q.questioner}\nQ:${q.question}\nA: ${typedAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+        } else {
+          text = `Q: ${q.question}\nA: ${typedAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+        }
+      } else {
+        title = `Q: ${q.question} #neo_quesdon`;
+        if (q.questioner) {
+          text = `질문자:${q.questioner}\nA: ${typedAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+        } else {
+          text = `A: ${typedAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+        }
+      }
+      try {
+        switch (server.instanceType) {
+          case 'misskey':
+          case 'cherrypick':
+            await mkMisskeyNote(
+              { user: answeredUser, server: server },
+              { title: title, text: text, visibility: typedAnswer.visibility },
+            );
+            break;
+          case 'mastodon':
+            await mastodonToot(
+              { user: answeredUser },
+              { title: title, text: text, visibility: typedAnswer.visibility },
+            );
+            break;
+          default:
+            break;
+        }
+      } catch (err) {
+        this.logger.warn('답변 작성 실패!', err);
+        /// 미스키/마스토돈에 글 올리는데 실패했으면 다시 answer 삭제
+        await this.prisma.answer.delete({ where: { id: createdAnswer.id } });
+        sendApiError(500, '답변 작성에 실패했어요!');
+      }
+    }
+
+    await this.prisma.question.delete({
+      where: {
+        id: q.id,
+      },
+    });
+
+    const question_numbers = await this.prisma.question.count({ where: { questioneeHandle: tokenPayload.handle } });
+    const profileDto = profileToDto(answeredUser.profile, answeredUser.hostName, answeredUser.server.instanceType);
+    this.event_service.pub<QuestionDeletedPayload>('question-deleted-event', {
+      deleted_id: q.id,
+      handle: answeredUser.handle,
+      question_numbers: question_numbers,
+    });
+    this.event_service.pub<AnswerWithProfileDto>('answer-created-event', {
+      id: createdAnswer.id,
+      question: createdAnswer.question,
+      questioner: createdAnswer.questioner,
+      answer: createdAnswer.answer,
+      answeredAt: createdAnswer.answeredAt,
+      answeredPerson: profileDto,
+      answeredPersonHandle: createdAnswer.answeredPersonHandle,
+      nsfwedAnswer: createdAnswer.nsfwedAnswer,
+    });
+
+    this.logger.log('Created new answer:', answerUrl);
+    return new NextResponse(null, { status: 201 });
   }
 
   @Auth()
@@ -241,5 +362,124 @@ export class AnswerService {
     });
 
     return filteredAnswers;
+  }
+}
+
+async function mkMisskeyNote(
+  {
+    user,
+    server,
+  }: {
+    user: user;
+    server: server;
+  },
+  {
+    title,
+    text,
+    visibility,
+  }: {
+    title: string;
+    text: string;
+    visibility: MkNoteAnswers['visibility'];
+  },
+) {
+  const NoteLogger = new Logger('mkMisskeyNote');
+  // 미스키 CW길이제한 처리
+  if (title.length > 100) {
+    title = title.substring(0, 90) + '.....';
+  }
+  const i = createHash('sha256')
+    .update(user.token + server.appSecret, 'utf-8')
+    .digest('hex');
+  const newAnswerNote: MkNoteAnswers = {
+    i: i,
+    cw: title,
+    text: text,
+    visibility: visibility,
+  };
+  try {
+    const res = await fetch(`https://${user.hostName}/api/notes/create`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${i}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newAnswerNote),
+    });
+    if (res.status === 401 || res.status === 403) {
+      NoteLogger.warn('User Revoked Access token. JWT를 Revoke합니다... Detail:', await res.text());
+      const prisma = GetPrismaClient.getClient();
+      await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: user.jwtIndex + 1 } });
+      throw new Error('Note Create Fail! (Token Revoked)');
+    } else if (!res.ok) {
+      throw new Error(`Note Create Fail! ${await res.text()}`);
+    } else {
+      NoteLogger.log(`Note Created! ${res.statusText}`);
+    }
+  } catch (err) {
+    NoteLogger.warn(err);
+    throw err;
+  }
+}
+
+async function mastodonToot(
+  {
+    user,
+  }: {
+    user: user;
+  },
+  {
+    title,
+    text,
+    visibility,
+  }: {
+    title: string;
+    text: string;
+    visibility: MkNoteAnswers['visibility'];
+  },
+) {
+  const tootLogger = new Logger('mastodonToot');
+  let newVisibility: 'public' | 'unlisted' | 'private';
+  switch (visibility) {
+    case 'public':
+      newVisibility = 'public';
+      break;
+    case 'home':
+      newVisibility = 'unlisted';
+      break;
+    case 'followers':
+      newVisibility = 'private';
+      break;
+    default:
+      newVisibility = 'public';
+      break;
+  }
+  const newAnswerToot: mastodonTootAnswers = {
+    spoiler_text: title,
+    status: text,
+    visibility: newVisibility,
+  };
+  try {
+    const res = await fetch(`https://${user.hostName}/api/v1/statuses`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${user.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newAnswerToot),
+    });
+    if (res.status === 401 || res.status === 403) {
+      tootLogger.warn('User Revoked Access token. JWT를 Revoke합니다.. Detail:', await res.text());
+      const prisma = GetPrismaClient.getClient();
+      await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: user.jwtIndex + 1 } });
+      throw new Error('Toot Create Fail! (Token Revoked)');
+    } else if (!res.ok) {
+      throw new Error(`HTTP Error! status:${await res.text()}`);
+    } else {
+      tootLogger.log(`Toot Created! ${res.statusText}`);
+    }
+  } catch (err) {
+    tootLogger.warn(`Toot Create Fail!`, err);
+    throw err;
   }
 }

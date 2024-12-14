@@ -1,6 +1,6 @@
 import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
-import type { user } from '@prisma/client';
-import { type NextRequest, NextResponse } from 'next/server';
+import type { PrismaClient, user } from '@prisma/client';
+import { NextRequest, NextResponse } from 'next/server';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
@@ -10,27 +10,41 @@ import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
 import re2 from 're2';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
-import { QuestionCreatedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { QuestionCreatedPayload, QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
-export class CreateQuestionApiService {
-  private logger = new Logger('create-question');
-  private static instance: CreateQuestionApiService;
+export class QuestionService {
+  private logger = new Logger('QuestionService');
+  private static instance: QuestionService;
   private eventService: RedisPubSubService;
+  private prisma: PrismaClient;
   private constructor() {
     this.eventService = RedisPubSubService.getInstance();
+    this.prisma = GetPrismaClient.getClient();
   }
-  public static get() {
-    if (!CreateQuestionApiService.instance) {
-      CreateQuestionApiService.instance = new CreateQuestionApiService();
+  public static getInstance() {
+    if (!QuestionService.instance) {
+      QuestionService.instance = new QuestionService();
     }
-    return CreateQuestionApiService.instance;
+    return QuestionService.instance;
+  }
+
+  @Auth()
+  @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
+  public async GetMyQuestionsApi(_req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
+    try {
+      const questions = await this.prisma.question.findMany({ where: { questioneeHandle: tokenPayload.handle } });
+      return NextResponse.json(questions, {
+        status: 200,
+        headers: { 'Cache-Control': 'private, no-store, max-age=0' },
+      });
+    } catch {
+      sendApiError(400, 'Fail to Get my Questions');
+    }
   }
 
   @RateLimit({ bucket_time: 100, req_limit: 10 }, 'user-or-ip')
   @Auth({ isOptional: true })
-  public async CreateQuestion(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
-    const prisma = GetPrismaClient.getClient();
-
+  public async CreateQuestionApi(req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
     try {
       let data;
       try {
@@ -40,12 +54,12 @@ export class CreateQuestionApiService {
         return sendApiError(400, `${errors}`);
       }
 
-      const questionee_user = await prisma.user.findUniqueOrThrow({
+      const questionee_user = await this.prisma.user.findUniqueOrThrow({
         where: {
           handle: data.questionee,
         },
       });
-      const questionee_profile = await prisma.profile.findUniqueOrThrow({
+      const questionee_profile = await this.prisma.profile.findUniqueOrThrow({
         where: {
           handle: questionee_user.handle,
         },
@@ -60,7 +74,7 @@ export class CreateQuestionApiService {
       }
       // 블락 여부 검사
       if (tokenPayload?.handle) {
-        const blocked = await prisma.blocking.findFirst({
+        const blocked = await this.prisma.blocking.findFirst({
           where: { blockeeHandle: tokenPayload.handle, blockerHandle: questionee_user.handle },
         });
         if (blocked) {
@@ -105,7 +119,7 @@ export class CreateQuestionApiService {
       }
 
       //질문 생성
-      const newQuestion = await prisma.question.create({
+      const newQuestion = await this.prisma.question.create({
         data: {
           question: data.question,
           questioner: data.questioner,
@@ -114,7 +128,7 @@ export class CreateQuestionApiService {
       });
 
       // 웹소켓으로 업데이트 전송
-      const question_numbers = await prisma.question.count({
+      const question_numbers = await this.prisma.question.count({
         where: {
           questioneeHandle: questionee_user.handle,
         },
@@ -129,7 +143,7 @@ export class CreateQuestionApiService {
       };
       this.eventService.pub<QuestionCreatedPayload>('question-created-event', ev_data);
 
-      const userSettings = await prisma.profile.findUnique({
+      const userSettings = await this.prisma.profile.findUnique({
         where: {
           handle: data.questionee,
         },
@@ -147,6 +161,37 @@ export class CreateQuestionApiService {
       return NextResponse.json({}, { status: 200 });
     } catch (err) {
       return NextResponse.json(`Error! ${err}`, { status: 500 });
+    }
+  }
+
+  @Auth()
+  @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
+  public async deleteQuestionApi(_req: NextRequest, id: number, @JwtPayload tokenPayload: jwtPayloadType) {
+    try {
+      const q = await this.prisma.question.findUnique({ where: { id: id } });
+      if (!q) {
+        return sendApiError(400, 'NO such question!');
+      }
+      if (q.questioneeHandle !== tokenPayload.handle) {
+        return sendApiError(403, 'You can not delete this question!');
+      }
+
+      await this.prisma.question.delete({
+        where: {
+          id: id,
+        },
+      });
+
+      const question_numbers = await this.prisma.question.count({ where: { questioneeHandle: tokenPayload.handle } });
+      this.eventService.pub<QuestionDeletedPayload>('question-deleted-event', {
+        deleted_id: id,
+        handle: tokenPayload.handle,
+        question_numbers: question_numbers,
+      });
+      return new NextResponse(null, { status: 200, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+    } catch (err) {
+      this.logger.error('Fail to Delete question', err);
+      sendApiError(400, 'Fail to Delete question!');
     }
   }
 
