@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class FetchAllAnswersReqDto {
@@ -15,6 +16,12 @@ export class FetchAllAnswersReqDto {
 
   @IsOptional()
   @IsInt()
+  @Transform((params) => {
+    if (typeof params.value === 'string') {
+      return parseInt(params.value, 10);
+    }
+    return params.value;
+  })
   @Min(1)
   @Max(100)
   limit?: number;

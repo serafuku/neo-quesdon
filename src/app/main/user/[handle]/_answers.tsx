@@ -41,9 +41,14 @@ export default function UserPage() {
   const answerDeleteModalRef = useRef<HTMLDialogElement>(null);
 
   const fetchUserAnswers = async (q: FetchUserAnswersDto): Promise<ResponseType> => {
-    const res = await fetch('/api/db/fetch-user-answers', {
-      method: 'POST',
-      body: JSON.stringify(q),
+    const params = Object.entries(q)
+      .map((e) => {
+        const [key, value] = e;
+        return `${key}=${encodeURIComponent(value)}`;
+      })
+      .join('&');
+    const res = await fetch(`/api/db/answers/${handle}?${params}`, {
+      method: 'GET',
     });
     try {
       if (res.ok) {
@@ -58,9 +63,8 @@ export default function UserPage() {
   };
 
   const handleDeleteAnswer = async (id: string) => {
-    const res = await fetch('/api/db/delete-answer', {
-      method: 'POST',
-      body: JSON.stringify({ id: id }),
+    const res = await fetch(`/api/db/answers/${handle}/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
     });
     if (!res.ok) {
       alert(`답변을 삭제하는데 실패하였습니다! ${await res.text()}`);
@@ -82,7 +86,6 @@ export default function UserPage() {
   useEffect(() => {
     if (userProfile) {
       fetchUserAnswers({
-        answeredPersonHandle: userProfile.handle,
         sort: 'DESC',
         limit: 20,
       }).then(({ answers, count }: ResponseType) => {
@@ -106,7 +109,6 @@ export default function UserPage() {
             sort: 'DESC',
             limit: 20,
             untilId: untilId,
-            answeredPersonHandle: profileHandle,
           }).then((r) => {
             if (r.answers.length === 0) {
               setLoading(false);

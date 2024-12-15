@@ -1,4 +1,3 @@
-import { DeleteAnswerDto } from '@/app/_dto/delete-answer/delete-answer.dto';
 import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,6 +18,8 @@ import { CreateAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
 import { profileToDto } from '@/api/_utils/profileToDto';
 import { mastodonTootAnswers, MkNoteAnswers } from '@/app';
 import { createHash } from 'crypto';
+import { isString } from 'class-validator';
+import RE2 from 're2';
 
 export class AnswerService {
   private static instance: AnswerService;
@@ -150,17 +151,14 @@ export class AnswerService {
 
   @Auth()
   @RateLimit({ bucket_time: 600, req_limit: 300 }, 'user')
-  public async deleteAnswer(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
-    let data: DeleteAnswerDto;
-    try {
-      data = await validateStrict(DeleteAnswerDto, await req.json());
-    } catch (err) {
-      return sendApiError(400, `Bad Request ${err}`);
+  public async deleteAnswer(req: NextRequest, answerId: string, @JwtPayload tokenPayload: jwtPayloadType) {
+    if (!isString(answerId)) {
+      return sendApiError(400, 'answerId is not string');
     }
     const prisma = GetPrismaClient.getClient();
 
     const willBeDeletedAnswer = await prisma.answer.findUnique({
-      where: { id: data.id },
+      where: { id: answerId },
     });
     if (!willBeDeletedAnswer) {
       // 그런 답변이 없음
@@ -171,9 +169,9 @@ export class AnswerService {
       return sendApiError(403, 'This is Not Your Answer!');
     }
     try {
-      this.logger.log(`Delete answer... : ${data.id}`);
-      await prisma.answer.delete({ where: { id: data.id } });
-      await this.event_service.pub<AnswerDeletedEvPayload>('answer-deleted-event', { deleted_id: data.id });
+      this.logger.log(`Delete answer... : ${answerId}`);
+      await prisma.answer.delete({ where: { id: answerId } });
+      await this.event_service.pub<AnswerDeletedEvPayload>('answer-deleted-event', { deleted_id: answerId });
 
       return NextResponse.json({ message: 'Delete Answer Successful' }, { status: 200 });
     } catch (err) {
@@ -184,12 +182,18 @@ export class AnswerService {
 
   @Auth({ isOptional: true })
   @RateLimit({ bucket_time: 600, req_limit: 600 }, 'ip')
-  public async fetchAll(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
+  public async GetAllAnswersApi(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
     const prisma = GetPrismaClient.getClient();
+    const searchParams = req.nextUrl.searchParams;
 
     let data;
     try {
-      data = await validateStrict(FetchAllAnswersReqDto, await req.json());
+      data = await validateStrict(FetchAllAnswersReqDto, {
+        untilId: searchParams.get('untilId') ?? undefined,
+        sinceId: searchParams.get('sinceId') ?? undefined,
+        sort: searchParams.get('sort') ?? undefined,
+        limit: searchParams.get('limit') ?? undefined,
+      });
     } catch (err) {
       return sendApiError(400, `${err}`);
     }
@@ -256,12 +260,19 @@ export class AnswerService {
   }
 
   @RateLimit({ bucket_time: 600, req_limit: 300 }, 'ip')
-  public async fetchUserAnswers(req: NextRequest) {
+  public async fetchUserAnswers(req: NextRequest, userHandle: string) {
     const prisma = GetPrismaClient.getClient();
+    const searchParams = req.nextUrl.searchParams;
+    const query_params = {
+      limit: searchParams.get('limit') ?? undefined,
+      sinceId: searchParams.get('sinceId') ?? undefined,
+      untilId: searchParams.get('untilId') ?? undefined,
+      sort: searchParams.get('sort') ?? undefined,
+    };
     try {
       let data;
       try {
-        data = await validateStrict(FetchUserAnswersDto, await req.json());
+        data = await validateStrict(FetchUserAnswersDto, query_params);
       } catch (err) {
         return sendApiError(400, `${err}`);
       }
@@ -273,12 +284,14 @@ export class AnswerService {
       //내림차순이 기본값
       const orderBy = data.sort === 'ASC' ? 'asc' : 'desc';
 
-      if (!data.answeredPersonHandle) {
-        throw new Error(`answeredPersonHandle is null`);
+      const re = new RE2(/^@.+@.+/);
+      if (!userHandle || !re.match(userHandle)) {
+        return sendApiError(400, 'User handle validation Error!');
       }
+
       const res = await prisma.answer.findMany({
         where: {
-          answeredPersonHandle: data.answeredPersonHandle,
+          answeredPersonHandle: userHandle,
           id: {
             ...(typeof sinceId === 'string' ? { gt: sinceId } : {}),
             ...(typeof untilId === 'string' ? { lt: untilId } : {}),
@@ -295,7 +308,7 @@ export class AnswerService {
 
       const answerCount = await prisma.profile.findMany({
         where: {
-          handle: data.answeredPersonHandle,
+          handle: userHandle,
         },
         select: {
           _count: {
@@ -306,10 +319,13 @@ export class AnswerService {
         },
       });
 
-      return NextResponse.json({
-        answers: res,
-        count: answerCount[0]._count.answer,
-      });
+      return NextResponse.json(
+        {
+          answers: res,
+          count: answerCount[0]._count.answer,
+        },
+        { headers: { 'Content-type': 'application/json', 'Cache-Control': 'private, no-store, max-age=0' } },
+      );
     } catch (err) {
       this.logger.log(err);
     }
