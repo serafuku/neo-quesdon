@@ -177,17 +177,6 @@ export class RefreshFollowWorkerService {
         }
         const data = (await res.json()) as MastodonUser[];
         counter += data.length;
-
-        const link_header = res.headers.get('link');
-        if (!link_header) {
-          throw new UnrecoverableError(`Mastodon Server does not give Next header`);
-        }
-
-        if (data.length === 0) {
-          logger.log(`${counter} follow imported`);
-          break;
-        }
-
         for (const f of data) {
           const followeeDomain = new URL(f.url).hostname;
           const followeeHandle = `@${f.username}@${followeeDomain}`;
@@ -208,6 +197,17 @@ export class RefreshFollowWorkerService {
           });
         }
         logger.debug(`Processed ${counter} follows...`);
+
+        if (data.length === 0) {
+          logger.log(`${counter} follow imported`);
+          break;
+        }
+        const link_header = res.headers.get('link');
+        if (!link_header) {
+          logger.debug(`Mastodon Server does not give link Header (Maybe End of list)`);
+          logger.log(`${counter} follow imported`);
+          break;
+        }
 
         const next_url = link_header.match(/(?:<)(https:\/\/.+)(?:>; rel="next")/)?.[1];
         if (!next_url) {
