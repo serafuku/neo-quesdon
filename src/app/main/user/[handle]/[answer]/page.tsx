@@ -13,9 +13,8 @@ export default function SingleAnswer() {
   const { answer } = useParams() as { answer: string };
 
   const handleDeleteAnswer = async (id: string) => {
-    const res = await fetch('/api/db/delete-answer', {
-      method: 'POST',
-      body: JSON.stringify({ id: id }),
+    const res = await fetch(`/api/db/answers/${id}`, {
+      method: 'DELETE',
     });
     try {
       if (res.ok) {

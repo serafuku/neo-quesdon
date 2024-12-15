@@ -71,12 +71,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 }
 
 async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
-  const res = await fetch('/api/db/fetch-all-answers', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(req),
+  const query: string[] = [];
+  for (const [key, value] of Object.entries(req)) {
+    query.push(`${key}=${value}`);
+  }
+  const url = `/api/db/answers?${query.join('&')}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    cache: 'no-cache',
   });
   try {
     if (res.ok) {

@@ -223,7 +223,7 @@ export default function Question({
 }
 
 async function postAnswer(req: CreateAnswerDto) {
-  const res = await fetch('/api/db/create-answer', {
+  const res = await fetch('/api/db/answers', {
     method: 'POST',
     body: JSON.stringify(req),
     headers: { 'Content-type': 'application/json' },
