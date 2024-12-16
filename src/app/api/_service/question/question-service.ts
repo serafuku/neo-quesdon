@@ -128,6 +128,7 @@ export class QuestionService {
           question: data.question,
           questioner: data.questioner,
           questioneeHandle: data.questionee,
+          isAnonymous: data.questioner ? false : true, //임시
         },
       });
 
