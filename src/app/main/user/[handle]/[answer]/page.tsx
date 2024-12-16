@@ -23,7 +23,7 @@ export default function SingleAnswer() {
   }
 
   const handleDeleteAnswer = async (id: string) => {
-    const res = await fetch(`/api/db/answers/${id}`, {
+    const res = await fetch(`/api/db/answers/${userHandle}/${id}`, {
       method: 'DELETE',
     });
     try {
