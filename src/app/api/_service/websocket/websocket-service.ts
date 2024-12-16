@@ -14,7 +14,7 @@ import {
   WebsocketEventPayload,
   WebsocketKeepAliveEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
-import { AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
+import { AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
 import { RedisKvCacheService } from '../kvCache/redisKvCacheService';
 import { blocking, PrismaClient } from '@prisma/client';

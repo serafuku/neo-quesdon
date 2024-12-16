@@ -4,7 +4,7 @@ import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import NameComponents from '@/app/_components/NameComponents';
 import { SearchBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
-import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
+import { CreateQuestionDto } from '@/app/_dto/questions/create-question.dto';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import josa from '@/app/api/_utils/josa';
 import Link from 'next/link';

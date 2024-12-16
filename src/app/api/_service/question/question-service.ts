@@ -1,4 +1,4 @@
-import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
+import { CreateQuestionDto } from '@/app/_dto/questions/create-question.dto';
 import type { PrismaClient, user } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { validateStrict } from '@/utils/validator/strictValidator';

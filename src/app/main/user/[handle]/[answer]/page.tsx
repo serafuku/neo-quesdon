@@ -4,7 +4,7 @@ import Answer from '@/app/_components/answer';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { fetchAnswer } from './action';
-import { AnswerDto } from '@/app/_dto/Answers.dto';
+import { AnswerDto } from '@/app/_dto/answers/Answers.dto';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 
 export default function SingleAnswer() {
