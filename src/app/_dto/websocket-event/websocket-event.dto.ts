@@ -1,5 +1,6 @@
 import { questionDto } from '@/app/_dto/questions/question.dto';
 import { AnswerWithProfileDto } from '../answers/Answers.dto';
+import { NotificationTypes } from '@/app/_dto/notification/notification.dto';
 
 export const event_name_enum_arr = [
   'question-created-event',
@@ -7,7 +8,9 @@ export const event_name_enum_arr = [
   'keep-alive',
   'answer-created-event',
   'answer-deleted-event',
+  'websocket-notification-event',
 ] as const;
+
 export type websocketEventNameType = (typeof event_name_enum_arr)[number];
 export class WebsocketEventPayload<T> {
   ev_name: websocketEventNameType;
@@ -43,4 +46,8 @@ export type AnswerDeletedEvPayload = {
 };
 export class WebsocketAnswerDeletedEvent extends WebsocketEventPayload<AnswerDeletedEvPayload> {
   ev_name: 'answer-deleted-event';
+}
+
+export class WebsocketNotificationEvent extends WebsocketEventPayload<NotificationTypes> {
+  ev_name: 'websocket-notification-event';
 }
