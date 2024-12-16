@@ -331,6 +331,38 @@ export class AnswerService {
     }
   }
 
+  @RateLimit({ bucket_time: 300, req_limit: 600 }, 'ip')
+  public async GetSingleAnswerApi(_req: NextRequest, answerId: string) {
+    const answer = await this.prisma.answer.findUnique({
+      include: { answeredPerson: { include: { user: { include: { server: { select: { instanceType: true } } } } } } },
+      where: {
+        id: answerId,
+      },
+    });
+    if (!answer) {
+      return sendApiError(404, 'Not found');
+    }
+    const profileDto = profileToDto(
+      answer.answeredPerson,
+      answer.answeredPerson.user.hostName,
+      answer.answeredPerson.user.server.instanceType,
+    );
+    const dto: AnswerWithProfileDto = {
+      id: answer.id,
+      question: answer.question,
+      questioner: answer.questioner,
+      answer: answer.answer,
+      answeredAt: answer.answeredAt,
+      answeredPerson: profileDto,
+      answeredPersonHandle: answer.answeredPersonHandle,
+      nsfwedAnswer: answer.nsfwedAnswer,
+    };
+    return NextResponse.json(dto, {
+      status: 200,
+      headers: { 'Content-type': 'application/json', 'Cache-Control': 'public, max-age=60' },
+    });
+  }
+
   private profileToDto(profile: profile, hostName: string, instanceType: $Enums.InstanceType): userProfileDto {
     const data: userProfileDto = {
       handle: profile.handle,

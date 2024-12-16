@@ -7,3 +7,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ a
   const answerId = (await params).answerId;
   return await service.deleteAnswer(req, answerId, null as unknown as jwtPayloadType);
 }
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ answerId: string }> }) {
+  const service = AnswerService.getInstance();
+  const { answerId } = await params;
+  return await service.GetSingleAnswerApi(req, answerId);
+}
