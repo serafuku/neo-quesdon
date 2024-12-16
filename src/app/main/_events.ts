@@ -1,7 +1,7 @@
 import { Logger } from '@/utils/logger/Logger';
-import { questionDto } from '../_dto/question/question.dto';
+import { questionDto } from '../_dto/questions/question.dto';
 import { QuestionDeletedPayload } from '../_dto/websocket-event/websocket-event.dto';
-import { AnswerWithProfileDto } from '../_dto/Answers.dto';
+import { AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
 
 const QuestionCreateEvent = 'QuestionCreateEvent';
 const QuestionDeleteEvent = 'QuestionDeleteEvent';

@@ -1,4 +1,4 @@
-import { CreateQuestionDto } from '@/app/_dto/create_question/create-question.dto';
+import { CreateQuestionDto } from '@/app/_dto/questions/create-question.dto';
 import type { PrismaClient, user } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { validateStrict } from '@/utils/validator/strictValidator';
@@ -128,6 +128,7 @@ export class QuestionService {
           question: data.question,
           questioner: data.questioner,
           questioneeHandle: data.questionee,
+          isAnonymous: data.questioner ? false : true, //임시
         },
       });
 

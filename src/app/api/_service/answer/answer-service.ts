@@ -8,13 +8,13 @@ import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { $Enums, blocking, profile, user, server, PrismaClient } from '@prisma/client';
-import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/Answers.dto';
-import { FetchAllAnswersReqDto } from '@/app/_dto/fetch-all-answers/fetch-all-answers.dto';
-import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
+import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
+import { FetchAllAnswersReqDto } from '@/app/_dto/answers/fetch-all-answers.dto';
+import { FetchUserAnswersDto } from '@/app/_dto/answers/fetch-user-answers.dto';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
 import { RedisPubSubService } from '@/_service/redis-pubsub/redis-event.service';
 import { AnswerDeletedEvPayload, QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
-import { CreateAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
+import { CreateAnswerDto } from '@/app/_dto/answers/create-answer.dto';
 import { profileToDto } from '@/api/_utils/profileToDto';
 import { mastodonTootAnswers, MkNoteAnswers } from '@/app';
 import { createHash } from 'crypto';
@@ -329,6 +329,38 @@ export class AnswerService {
     } catch (err) {
       this.logger.log(err);
     }
+  }
+
+  @RateLimit({ bucket_time: 300, req_limit: 600 }, 'ip')
+  public async GetSingleAnswerApi(_req: NextRequest, answerId: string) {
+    const answer = await this.prisma.answer.findUnique({
+      include: { answeredPerson: { include: { user: { include: { server: { select: { instanceType: true } } } } } } },
+      where: {
+        id: answerId,
+      },
+    });
+    if (!answer) {
+      return sendApiError(404, 'Not found');
+    }
+    const profileDto = profileToDto(
+      answer.answeredPerson,
+      answer.answeredPerson.user.hostName,
+      answer.answeredPerson.user.server.instanceType,
+    );
+    const dto: AnswerWithProfileDto = {
+      id: answer.id,
+      question: answer.question,
+      questioner: answer.questioner,
+      answer: answer.answer,
+      answeredAt: answer.answeredAt,
+      answeredPerson: profileDto,
+      answeredPersonHandle: answer.answeredPersonHandle,
+      nsfwedAnswer: answer.nsfwedAnswer,
+    };
+    return NextResponse.json(dto, {
+      status: 200,
+      headers: { 'Content-type': 'application/json', 'Cache-Control': 'public, max-age=60' },
+    });
   }
 
   private profileToDto(profile: profile, hostName: string, instanceType: $Enums.InstanceType): userProfileDto {

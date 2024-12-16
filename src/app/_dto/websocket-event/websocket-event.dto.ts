@@ -1,5 +1,5 @@
-import { questionDto } from '@/app/_dto/question/question.dto';
-import { AnswerWithProfileDto } from '../Answers.dto';
+import { questionDto } from '@/app/_dto/questions/question.dto';
+import { AnswerWithProfileDto } from '../answers/Answers.dto';
 
 export const event_name_enum_arr = [
   'question-created-event',

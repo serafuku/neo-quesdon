@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
-import { CreateAnswerDto } from '@/app/_dto/create-answer/create-answer.dto';
-import { questionDto } from '@/app/_dto/question/question.dto';
+import { CreateAnswerDto } from '@/app/_dto/answers/create-answer.dto';
+import { questionDto } from '@/app/_dto/questions/question.dto';
 
 interface formValue {
   answer: string;

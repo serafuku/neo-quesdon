@@ -1,4 +1,4 @@
-import { userProfileDto } from './fetch-profile/Profile.dto';
+import { userProfileDto } from '../fetch-profile/Profile.dto';
 
 export interface AnswerDto {
   id: string;

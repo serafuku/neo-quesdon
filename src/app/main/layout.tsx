@@ -4,8 +4,8 @@ import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import MainHeader from '@/app/main/_header';
 import { createContext, useEffect, useState } from 'react';
 import { MyProfileContext } from '@/app/main/_profileContext';
-import { FetchAllAnswersReqDto } from '../_dto/fetch-all-answers/fetch-all-answers.dto';
-import { AnswerListWithProfileDto, AnswerWithProfileDto } from '../_dto/Answers.dto';
+import { FetchAllAnswersReqDto } from '../_dto/answers/fetch-all-answers.dto';
+import { AnswerListWithProfileDto, AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
 import { AnswerEv } from './_events';
 
 type MainPageContextType = {

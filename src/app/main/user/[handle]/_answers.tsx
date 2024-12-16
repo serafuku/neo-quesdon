@@ -4,8 +4,8 @@ import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import Answer from '@/app/_components/answer';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
-import { AnswerDto } from '@/app/_dto/Answers.dto';
-import { FetchUserAnswersDto } from '@/app/_dto/fetch-user-answers/fetch-user-answers.dto';
+import { AnswerDto } from '@/app/_dto/answers/Answers.dto';
+import { FetchUserAnswersDto } from '@/app/_dto/answers/fetch-user-answers.dto';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 
 type ResponseType = {

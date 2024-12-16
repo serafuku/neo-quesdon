@@ -3,17 +3,27 @@
 import Answer from '@/app/_components/answer';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { fetchAnswer } from './action';
-import { AnswerDto } from '@/app/_dto/Answers.dto';
+import { AnswerDto } from '@/app/_dto/answers/Answers.dto';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 
 export default function SingleAnswer() {
   const [answerBody, setAnswerBody] = useState<AnswerDto>();
   const singleQuestionDeleteModalRef = useRef<HTMLDialogElement>(null);
   const { answer } = useParams() as { answer: string };
+  const { userHandle } = useParams() as { userHandle: string };
+
+  async function fetchAnswer(id: string) {
+    const res = await fetch(`/api/db/answers/${userHandle}/${id}`, {
+      method: 'GET',
+    });
+    if (!res.ok) {
+      throw new Error(`Fail to fetch answer! ${await res.text()}`);
+    }
+    return await res.json();
+  }
 
   const handleDeleteAnswer = async (id: string) => {
-    const res = await fetch(`/api/db/answers/${id}`, {
+    const res = await fetch(`/api/db/answers/${userHandle}/${id}`, {
       method: 'DELETE',
     });
     try {
