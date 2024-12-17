@@ -22,13 +22,14 @@ model user {
   handle       String   @unique
   name         String[]
   token        String
-  userId       String   /// Misskey/Mastodon 의 내부 ID
+  userId       String /// Misskey/Mastodon 의 내부 ID
   profile      profile?
   jwtIndex     Int      @default(0)
   server       server   @relation(references: [instances], fields: [hostName], onUpdate: Cascade, onDelete: Cascade)
 
-  blocking  blocking[]  @relation("blocks")
-  following following[] @relation("user")
+  blocking     blocking[]     @relation("blocks")
+  following    following[]    @relation("user")
+  Notification Notification[] @relation("Notification")
 }
 
 enum PostVisibility {
@@ -76,7 +77,7 @@ model question {
   questionee       profile  @relation(fields: [questioneeHandle], references: [handle], onDelete: Cascade)
   questioneeHandle String
   questionedAt     DateTime @default(now())
-  isAnonymous          Boolean  /// is Anonymous question?
+  isAnonymous      Boolean /// is Anonymous question?
 
   @@index([questioneeHandle])
 }
@@ -119,4 +120,22 @@ model following {
   @@unique([followerHandle, followeeHandle])
   @@index([followeeHandle])
   @@index([followerHandle])
+}
+
+enum NotiType {
+  answer_on_my_question
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userHandle String
+  createdAt  DateTime @default(now())
+  read       Boolean  @default(false)
+  notiType   NotiType
+  data       String
+  user       user     @relation("Notification", fields: [userHandle], references: [handle], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([read])
+  @@index([notiType])
 }

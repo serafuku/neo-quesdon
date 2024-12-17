@@ -146,7 +146,7 @@ export class AnswerService {
     this.event_service.pub<AnswerWithProfileDto>('answer-created-event', answerWithProfileDto);
 
     if (isHandle(q.questioner)) {
-      this.notificationService.sendAnswerOnMyQuestionNotification(q.questioner!, answerWithProfileDto);
+      this.notificationService.AnswerOnMyQuestionNotification(q.questioner!, answerWithProfileDto);
     }
     this.logger.log('Created new answer:', answerUrl);
     return new NextResponse(null, { status: 201 });
