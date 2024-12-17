@@ -6,9 +6,8 @@ import { Logger } from '@/utils/logger/Logger';
 import type { jwtPayloadType } from '@/api/_utils/jwt/jwtPayloadType';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
-import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
-import { $Enums, blocking, profile, user, server, PrismaClient } from '@prisma/client';
-import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
+import { blocking, user, server, PrismaClient, answer } from '@prisma/client';
+import { AnswerDto, AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { FetchAllAnswersReqDto } from '@/app/_dto/answers/fetch-all-answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/answers/fetch-user-answers.dto';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
@@ -69,7 +68,7 @@ export class AnswerService {
 
     const server = answeredUser.server;
     const profile = answeredUser.profile;
-    
+
     const createdAnswer = await this.prisma.$transaction(async (tr) => {
       const a = await tr.answer.create({
         data: {
@@ -130,21 +129,17 @@ export class AnswerService {
 
     const question_numbers = await this.prisma.question.count({ where: { questioneeHandle: tokenPayload.handle } });
     const profileDto = profileToDto(answeredUser.profile, answeredUser.hostName, answeredUser.server.instanceType);
+    const answerDto = answerEntityToDto(createdAnswer);
+    const answerWithProfileDto = {
+      ...answerDto,
+      answeredPerson: profileDto,
+    };
     this.event_service.pub<QuestionDeletedPayload>('question-deleted-event', {
       deleted_id: q.id,
       handle: answeredUser.handle,
       question_numbers: question_numbers,
     });
-    this.event_service.pub<AnswerWithProfileDto>('answer-created-event', {
-      id: createdAnswer.id,
-      question: createdAnswer.question,
-      questioner: createdAnswer.questioner,
-      answer: createdAnswer.answer,
-      answeredAt: createdAnswer.answeredAt,
-      answeredPerson: profileDto,
-      answeredPersonHandle: createdAnswer.answeredPersonHandle,
-      nsfwedAnswer: createdAnswer.nsfwedAnswer,
-    });
+    this.event_service.pub<AnswerWithProfileDto>('answer-created-event', answerWithProfileDto);
 
     this.logger.log('Created new answer:', answerUrl);
     return new NextResponse(null, { status: 201 });
@@ -233,15 +228,11 @@ export class AnswerService {
           where: { instances: answer.answeredPerson.user.hostName },
         })
       ).instanceType;
+      const answerDto = answerEntityToDto(answer);
+      const profileDto = profileToDto(answer.answeredPerson, answer.answeredPerson.user.hostName, instanceType);
       const data: AnswerWithProfileDto = {
-        id: answer.id,
-        question: answer.question,
-        questioner: answer.questioner,
-        answer: answer.answer,
-        answeredAt: answer.answeredAt,
-        answeredPersonHandle: answer.answeredPersonHandle,
-        answeredPerson: this.profileToDto(answer.answeredPerson, answer.answeredPerson.user.hostName, instanceType),
-        nsfwedAnswer: answer.nsfwedAnswer,
+        ...answerDto,
+        answeredPerson: profileDto,
       };
       list.push(data);
     }
@@ -348,35 +339,15 @@ export class AnswerService {
       answer.answeredPerson.user.hostName,
       answer.answeredPerson.user.server.instanceType,
     );
+    const answerDto = answerEntityToDto(answer);
     const dto: AnswerWithProfileDto = {
-      id: answer.id,
-      question: answer.question,
-      questioner: answer.questioner,
-      answer: answer.answer,
-      answeredAt: answer.answeredAt,
+      ...answerDto,
       answeredPerson: profileDto,
-      answeredPersonHandle: answer.answeredPersonHandle,
-      nsfwedAnswer: answer.nsfwedAnswer,
     };
     return NextResponse.json(dto, {
       status: 200,
       headers: { 'Content-type': 'application/json', 'Cache-Control': 'public, max-age=60' },
     });
-  }
-
-  private profileToDto(profile: profile, hostName: string, instanceType: $Enums.InstanceType): userProfileDto {
-    const data: userProfileDto = {
-      handle: profile.handle,
-      name: profile.name,
-      stopNewQuestion: profile.stopNewQuestion,
-      stopAnonQuestion: profile.stopAnonQuestion,
-      stopNotiNewQuestion: profile.stopNotiNewQuestion,
-      avatarUrl: profile.avatarUrl,
-      questionBoxName: profile.questionBoxName,
-      hostname: hostName,
-      instanceType: instanceType,
-    };
-    return data;
   }
 
   public async filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
@@ -528,4 +499,17 @@ async function mastodonToot(
     tootLogger.warn(`Toot Create Fail!`, err);
     throw err;
   }
+}
+
+function answerEntityToDto(answer: answer): AnswerDto {
+  const dto: AnswerDto = {
+    id: answer.id,
+    question: answer.question,
+    questioner: answer.questioner,
+    answer: answer.answer,
+    answeredAt: answer.answeredAt,
+    answeredPersonHandle: answer.answeredPersonHandle,
+    nsfwedAnswer: answer.nsfwedAnswer,
+  };
+  return dto;
 }
