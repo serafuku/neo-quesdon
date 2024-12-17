@@ -14,6 +14,8 @@ import {
   WebsocketAnswerCreatedEvent,
   WebsocketAnswerDeletedEvent,
   WebsocketEvent,
+  WebsocketNotificationEvent,
+  WebsocketPayloadTypes,
   WebsocketQuestionCreatedEvent,
   WebsocketQuestionDeletedEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
@@ -59,7 +61,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     }
     websocket.current = new WebSocket('/api/websocket');
     websocket.current.onmessage = (ws_event: MessageEvent) => {
-      const ws_data = JSON.parse(ws_event.data) as WebsocketEvent<unknown>;
+      const ws_data = JSON.parse(ws_event.data) as WebsocketEvent<WebsocketPayloadTypes>;
       switch (ws_data.ev_name) {
         case 'question-created-event': {
           const data = ws_data as WebsocketQuestionCreatedEvent;
@@ -90,6 +92,10 @@ export default function MainHeader({ setUserProfile }: headerProps) {
           const data = ws_data as WebsocketAnswerDeletedEvent;
           console.debug('WS: 답변이 삭제되었어요!', data.data);
           break;
+        }
+        case 'websocket-notification-event': {
+          const data = ws_data as WebsocketNotificationEvent;
+          console.debug('WS: 내 질문에 답변이 등록되었어요!', data.data);
         }
         case 'keep-alive': {
           break;
