@@ -26,7 +26,6 @@ export function Auth(options?: { isOptional: boolean }) {
 
       // 메타데이터에서 인자 위치 추출
       const targetIndex = Reflect.getMetadata('jwt_body_target', target, methodName);
-      __logger.debug('jwtBody target param index', targetIndex);
       if (!targetIndex) {
         throw new Error('JWT Body targetIndex 찾을 수 없음');
       }

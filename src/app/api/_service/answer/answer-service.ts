@@ -69,15 +69,25 @@ export class AnswerService {
 
     const server = answeredUser.server;
     const profile = answeredUser.profile;
-    const createdAnswer = await this.prisma.answer.create({
-      data: {
-        question: q.question,
-        questioner: q.questioner,
-        answer: data.answer,
-        answeredPersonHandle: tokenPayload.handle,
-        nsfwedAnswer: data.nsfwedAnswer,
-      },
+    
+    const createdAnswer = await this.prisma.$transaction(async (tr) => {
+      const a = await tr.answer.create({
+        data: {
+          question: q.question,
+          questioner: q.isAnonymous ? null : q.questioner,
+          answer: data.answer,
+          answeredPersonHandle: tokenPayload.handle,
+          nsfwedAnswer: data.nsfwedAnswer,
+        },
+      });
+      await tr.question.delete({
+        where: {
+          id: q.id,
+        },
+      });
+      return a;
     });
+
     const answerUrl = `${process.env.WEB_URL}/main/user/${answeredUser.handle}/${createdAnswer.id}`;
 
     if (!profile.stopPostAnswer) {
@@ -85,17 +95,17 @@ export class AnswerService {
       let text;
       if (data.nsfwedAnswer === true) {
         title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo_quesdon`;
-        if (q.questioner) {
-          text = `질문자:${q.questioner}\nQ:${q.question}\nA: ${data.answer}\n#neo_quesdon ${answerUrl}`;
+        if (createdAnswer.questioner) {
+          text = `질문자:${createdAnswer.questioner}\nQ:${createdAnswer.question}\nA: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
         } else {
-          text = `Q: ${q.question}\nA: ${data.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `Q: ${createdAnswer.question}\nA: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
         }
       } else {
-        title = `Q: ${q.question} #neo_quesdon`;
-        if (q.questioner) {
-          text = `질문자:${q.questioner}\nA: ${data.answer}\n#neo_quesdon ${answerUrl}`;
+        title = `Q: ${createdAnswer.question} #neo_quesdon`;
+        if (createdAnswer.questioner) {
+          text = `질문자:${createdAnswer.questioner}\nA: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
         } else {
-          text = `A: ${data.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `A: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
         }
       }
       try {
@@ -114,18 +124,9 @@ export class AnswerService {
             break;
         }
       } catch (err) {
-        this.logger.warn('답변 작성 실패!', err);
-        /// 미스키/마스토돈에 글 올리는데 실패했으면 다시 answer 삭제
-        await this.prisma.answer.delete({ where: { id: createdAnswer.id } });
-        sendApiError(500, '답변 작성에 실패했어요!');
+        this.logger.warn('노트/툿 업로드 실패!', err);
       }
     }
-
-    await this.prisma.question.delete({
-      where: {
-        id: q.id,
-      },
-    });
 
     const question_numbers = await this.prisma.question.count({ where: { questioneeHandle: tokenPayload.handle } });
     const profileDto = profileToDto(answeredUser.profile, answeredUser.hostName, answeredUser.server.instanceType);

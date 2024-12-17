@@ -15,7 +15,7 @@ import { FaEllipsisVertical } from 'react-icons/fa6';
 
 type FormValue = {
   question: string;
-  questioner: boolean;
+  nonAnonQuestion: boolean;
 };
 
 async function fetchProfile(handle: string) {
@@ -63,11 +63,11 @@ export default function Profile() {
   } = useForm<FormValue>({
     defaultValues: {
       question: '',
-      questioner: false,
+      nonAnonQuestion: false,
     },
   });
 
-  const questioner = watch('questioner');
+  const nonAnonQuestion = watch('nonAnonQuestion');
 
   const onCtrlEnter = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -151,9 +151,9 @@ export default function Profile() {
     const detectWhiteSpaces = new RegExp(/^\s+$/);
 
     // 작성자 공개
-    if (questioner === true) {
+    if (nonAnonQuestion === true) {
       if (user_handle === null) {
-        setError('questioner', {
+        setError('nonAnonQuestion', {
           type: 'notLoggedIn',
           message: '작성자 공개를 하려면 로그인을 해주세요!',
         });
@@ -169,7 +169,7 @@ export default function Profile() {
 
       const req: CreateQuestionDto = {
         question: e.question,
-        questioner: user_handle,
+        isAnonymous: !nonAnonQuestion,
         questionee: profileHandle,
       };
       reset();
@@ -187,7 +187,7 @@ export default function Profile() {
     // 작성자 비공개
     else {
       if (userProfile?.stopAnonQuestion === true) {
-        setError('questioner', {
+        setError('nonAnonQuestion', {
           type: 'stopAnonQuestion',
           message: '익명 질문은 받지 않고 있어요...',
         });
@@ -203,7 +203,7 @@ export default function Profile() {
 
         const req: CreateQuestionDto = {
           question: e.question,
-          questioner: null,
+          isAnonymous: !nonAnonQuestion,
           questionee: profileHandle,
         };
         reset();
@@ -315,16 +315,16 @@ export default function Profile() {
             disabled={userProfile?.stopNewQuestion === true ? true : false}
             style={{ resize: 'none' }}
           />
-          {errors.questioner && errors.questioner.type === 'stopAnonQuestion' && (
+          {errors.nonAnonQuestion && errors.nonAnonQuestion.type === 'stopAnonQuestion' && (
             <div
               className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
-              data-tip={errors.questioner.message}
+              data-tip={errors.nonAnonQuestion.message}
             />
           )}
-          {errors.questioner && errors.questioner.type === 'notLoggedIn' && (
+          {errors.nonAnonQuestion && errors.nonAnonQuestion.type === 'notLoggedIn' && (
             <div
               className="tooltip tooltip-open tooltip-bottom tooltip-error transition-opacity"
-              data-tip={errors.questioner.message}
+              data-tip={errors.nonAnonQuestion.message}
             />
           )}
           {errors.question && errors.question.type === 'questionOnlyWhiteSpace' && (
@@ -338,9 +338,9 @@ export default function Profile() {
               <input
                 type="checkbox"
                 className="toggle toggle-accent"
-                onClick={() => setValue('questioner', !questioner)}
+                onClick={() => setValue('nonAnonQuestion', !nonAnonQuestion)}
               />
-              <input type="hidden" {...register('questioner')} />
+              <input type="hidden" {...register('nonAnonQuestion')} />
               <span>작성자 공개</span>
             </div>
             <button type="submit" className="btn btn-primary">

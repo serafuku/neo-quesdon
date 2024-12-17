@@ -1,5 +1,5 @@
 import { CreateQuestionDto } from '@/app/_dto/questions/create-question.dto';
-import type { PrismaClient, user } from '@prisma/client';
+import type { PrismaClient, question, user } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { validateStrict } from '@/utils/validator/strictValidator';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
@@ -12,6 +12,9 @@ import re2 from 're2';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
 import { QuestionCreatedPayload, QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { isInt } from 'class-validator';
+import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
+import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
+import { questionDto } from '@/app/_dto/questions/question.dto';
 
 export class QuestionService {
   private logger = new Logger('QuestionService');
@@ -37,7 +40,8 @@ export class QuestionService {
         where: { questioneeHandle: tokenPayload.handle },
         orderBy: { questionedAt: 'desc' },
       });
-      return NextResponse.json(questions, {
+      const questionDtos = questions.map((q) => questionEntityToDto(q));
+      return NextResponse.json(questionDtos, {
         status: 200,
         headers: { 'Cache-Control': 'private, no-store, max-age=0' },
       });
@@ -48,7 +52,7 @@ export class QuestionService {
 
   @RateLimit({ bucket_time: 100, req_limit: 10 }, 'user-or-ip')
   @Auth({ isOptional: true })
-  public async CreateQuestionApi(req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
+  public async CreateQuestionApi(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
     try {
       let data;
       try {
@@ -69,12 +73,12 @@ export class QuestionService {
         },
       });
 
-      if (questionee_profile.stopAnonQuestion && !data.questioner) {
+      if (questionee_profile.stopAnonQuestion && data.isAnonymous) {
         this.logger.debug('The user has prohibits anonymous questions.');
-        throw new Error('The user has prohibits anonymous questions.');
+        return sendApiError(403, 'The user has prohibits anonymous questions.');
       } else if (questionee_profile.stopNewQuestion) {
         this.logger.debug('User stops NewQuestion');
-        throw new Error('User stops NewQuestion');
+        return sendApiError(403, 'User stops NewQuestion');
       }
       // 블락 여부 검사
       if (tokenPayload?.handle) {
@@ -86,19 +90,9 @@ export class QuestionService {
         }
       }
 
-      // 제시된 questioner 핸들이 JWT토큰의 핸들과 일치하는지 검사
-      if (data.questioner) {
-        try {
-          if (!tokenPayload) {
-            throw new Error(`No Auth Token`);
-          }
-          if (tokenPayload.handle !== data.questioner) {
-            throw new Error(`Token and questioner not match`);
-          }
-        } catch (err) {
-          this.logger.warn(`questioner verify ERROR! ${err}`);
-          return sendApiError(403, `${err}`);
-        }
+      if (!data.isAnonymous && !tokenPayload?.handle) {
+        this.logger.warn(`You must log in to send non-anonymous questions.`);
+        return sendApiError(403, `You must log in to send non-anonymous questions.`);
       }
 
       const wordMuteList = questionee_profile.wordMuteList;
@@ -126,9 +120,9 @@ export class QuestionService {
       const newQuestion = await this.prisma.question.create({
         data: {
           question: data.question,
-          questioner: data.questioner,
+          questioner: tokenPayload?.handle ?? getIpHash(getIpFromRequest(req)),
           questioneeHandle: data.questionee,
-          isAnonymous: data.questioner ? false : true, //임시
+          isAnonymous: data.isAnonymous,
         },
       });
 
@@ -139,11 +133,7 @@ export class QuestionService {
         },
       });
       const ev_data: QuestionCreatedPayload = {
-        id: newQuestion.id,
-        question: newQuestion.question,
-        questioneeHandle: newQuestion.questioneeHandle,
-        questionedAt: newQuestion.questionedAt,
-        questioner: newQuestion.questioner,
+        ...questionEntityToDto(newQuestion),
         question_numbers: question_numbers,
       };
       this.eventService.pub<QuestionCreatedPayload>('question-created-event', ev_data);
@@ -159,7 +149,7 @@ export class QuestionService {
       } else {
         // 알림 전송
         const url = `${process.env.WEB_URL}/main/questions`;
-        this.sendNotify(questionee_user, data.questioner, newQuestion.question, url);
+        this.sendNotify(newQuestion, questionee_user, url);
       }
 
       // notify send 기다라지 않고 200반환
@@ -228,9 +218,9 @@ export class QuestionService {
     }
   }
 
-  private async sendNotify(questionee: user, questioner: string | null, question: string, url: string): Promise<void> {
+  private async sendNotify(q: question, questionee_user: user, url: string): Promise<void> {
     const notify_host = process.env.NOTI_HOST;
-    this.logger.log(`try to send notification to ${questionee.handle}`);
+    this.logger.log(`try to send notification to ${q.questioneeHandle}`);
     try {
       const res = await fetch(`https://${notify_host}/api/notes/create`, {
         method: 'POST',
@@ -239,18 +229,28 @@ export class QuestionService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          visibleUserIds: [questionee.userId],
+          visibleUserIds: [questionee_user.userId],
           visibility: 'specified',
-          text: `${questionee.handle} <네오-퀘스돈> 새로운 질문이에요!\n질문자: ${questioner ? `\`${questioner}\`` : '익명의 질문자'}\nQ. ${question}\n ${url}`,
+          text: `${questionee_user.handle} <네오-퀘스돈> 새로운 질문이에요!\n질문자: ${q.isAnonymous ? '익명의 질문자' : `\`${q.questioner}\``}\nQ. ${q.question}\n ${url}`,
         }),
       });
       if (!res.ok) {
         throw new Error(`Note create error ${await res.text()}`);
       } else {
-        this.logger.log(`Notification Sent to ${questionee.handle}`);
+        this.logger.log(`Notification Sent to ${q.questioneeHandle}`);
       }
     } catch (error) {
       this.logger.error('Post-question: fail to send notify: ', error);
     }
   }
+}
+
+function questionEntityToDto(q: question): questionDto {
+  return {
+    id: q.id,
+    question: q.question,
+    questionedAt: q.questionedAt,
+    questioneeHandle: q.questioneeHandle,
+    questioner: q.isAnonymous ? null : q.questioner,
+  };
 }
