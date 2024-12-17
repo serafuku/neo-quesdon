@@ -19,6 +19,7 @@ import { mastodonTootAnswers, MkNoteAnswers } from '@/app';
 import { createHash } from 'crypto';
 import { isString } from 'class-validator';
 import RE2 from 're2';
+import { NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
 
 export class AnswerService {
   private static instance: AnswerService;
@@ -139,8 +140,16 @@ export class AnswerService {
       handle: answeredUser.handle,
       question_numbers: question_numbers,
     });
+
     this.event_service.pub<AnswerWithProfileDto>('answer-created-event', answerWithProfileDto);
 
+    if (isHandle(q.questioner)) {
+      this.event_service.pub<NotificationPayloadTypes>('websocket-notification-event', {
+        notification_name: 'answer-on-my-question',
+        data: answerWithProfileDto,
+        target: q.questioner!,
+      });
+    }
     this.logger.log('Created new answer:', answerUrl);
     return new NextResponse(null, { status: 201 });
   }
@@ -276,8 +285,7 @@ export class AnswerService {
       //내림차순이 기본값
       const orderBy = data.sort === 'ASC' ? 'asc' : 'desc';
 
-      const re = new RE2(/^@.+@.+/);
-      if (!userHandle || !re.match(userHandle)) {
+      if (!userHandle || !isHandle(userHandle)) {
         return sendApiError(400, 'User handle validation Error!');
       }
 
@@ -512,4 +520,15 @@ function answerEntityToDto(answer: answer): AnswerDto {
     nsfwedAnswer: answer.nsfwedAnswer,
   };
   return dto;
+}
+
+function isHandle(str: string | null | undefined) {
+  if (!str) {
+    return false;
+  }
+  const re = new RE2(/^@.+@.+/);
+  if (re.exec(str)) {
+    return true;
+  }
+  return false;
 }

@@ -13,7 +13,7 @@ import { Logger } from '@/utils/logger/Logger';
 import {
   WebsocketAnswerCreatedEvent,
   WebsocketAnswerDeletedEvent,
-  WebsocketEventPayload,
+  WebsocketEvent,
   WebsocketQuestionCreatedEvent,
   WebsocketQuestionDeletedEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
@@ -59,7 +59,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     }
     websocket.current = new WebSocket('/api/websocket');
     websocket.current.onmessage = (ws_event: MessageEvent) => {
-      const ws_data = JSON.parse(ws_event.data) as WebsocketEventPayload<unknown>;
+      const ws_data = JSON.parse(ws_event.data) as WebsocketEvent<unknown>;
       switch (ws_data.ev_name) {
         case 'question-created-event': {
           const data = ws_data as WebsocketQuestionCreatedEvent;

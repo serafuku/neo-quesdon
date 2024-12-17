@@ -1,6 +1,6 @@
 import { questionDto } from '@/app/_dto/questions/question.dto';
 import { AnswerWithProfileDto } from '../answers/Answers.dto';
-import { NotificationTypes } from '@/app/_dto/notification/notification.dto';
+import { NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
 
 export const event_name_enum_arr = [
   'question-created-event',
@@ -12,7 +12,17 @@ export const event_name_enum_arr = [
 ] as const;
 
 export type websocketEventNameType = (typeof event_name_enum_arr)[number];
-export class WebsocketEventPayload<T> {
+
+export type WebsocketPayloadTypes =
+  | QuestionCreatedPayload
+  | QuestionDeletedPayload
+  | AnswerWithProfileDto
+  | AnswerDeletedEvPayload
+  | NotificationPayloadTypes
+  | AnswerWithProfileDto
+  | string;
+
+export class WebsocketEvent<T extends WebsocketPayloadTypes> {
   ev_name: websocketEventNameType;
   data: T;
 }
@@ -20,7 +30,7 @@ export class WebsocketEventPayload<T> {
 export type QuestionCreatedPayload = questionDto & {
   question_numbers: number;
 };
-export class WebsocketQuestionCreatedEvent extends WebsocketEventPayload<QuestionCreatedPayload> {
+export class WebsocketQuestionCreatedEvent extends WebsocketEvent<QuestionCreatedPayload> {
   ev_name: 'question-created-event';
 }
 
@@ -29,25 +39,25 @@ export type QuestionDeletedPayload = {
   handle: string;
   question_numbers: number;
 };
-export class WebsocketQuestionDeletedEvent extends WebsocketEventPayload<QuestionDeletedPayload> {
+export class WebsocketQuestionDeletedEvent extends WebsocketEvent<QuestionDeletedPayload> {
   ev_name: 'question-deleted-event';
 }
 
-export class WebsocketKeepAliveEvent extends WebsocketEventPayload<string> {
+export class WebsocketKeepAliveEvent extends WebsocketEvent<string> {
   ev_name: 'keep-alive';
 }
 
-export class WebsocketAnswerCreatedEvent extends WebsocketEventPayload<AnswerWithProfileDto> {
+export class WebsocketAnswerCreatedEvent extends WebsocketEvent<AnswerWithProfileDto> {
   ev_name: 'answer-created-event';
 }
 
 export type AnswerDeletedEvPayload = {
   deleted_id: string;
 };
-export class WebsocketAnswerDeletedEvent extends WebsocketEventPayload<AnswerDeletedEvPayload> {
+export class WebsocketAnswerDeletedEvent extends WebsocketEvent<AnswerDeletedEvPayload> {
   ev_name: 'answer-deleted-event';
 }
 
-export class WebsocketNotificationEvent extends WebsocketEventPayload<NotificationTypes> {
+export class WebsocketNotificationEvent extends WebsocketEvent<NotificationPayloadTypes> {
   ev_name: 'websocket-notification-event';
 }
