@@ -19,16 +19,18 @@ import { mastodonTootAnswers, MkNoteAnswers } from '@/app';
 import { createHash } from 'crypto';
 import { isString } from 'class-validator';
 import RE2 from 're2';
-import { NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
+import { NotificationService } from '@/app/api/_service/notification/notification.service';
 
 export class AnswerService {
   private static instance: AnswerService;
   private logger = new Logger('AnswerService');
   private event_service: RedisPubSubService;
+  private notificationService: NotificationService;
   private prisma: PrismaClient;
   private constructor() {
     this.prisma = GetPrismaClient.getClient();
     this.event_service = RedisPubSubService.getInstance();
+    this.notificationService = NotificationService.getInstance();
   }
   public static getInstance() {
     if (!AnswerService.instance) {
@@ -144,11 +146,7 @@ export class AnswerService {
     this.event_service.pub<AnswerWithProfileDto>('answer-created-event', answerWithProfileDto);
 
     if (isHandle(q.questioner)) {
-      this.event_service.pub<NotificationPayloadTypes>('websocket-notification-event', {
-        notification_name: 'answer-on-my-question',
-        data: answerWithProfileDto,
-        target: q.questioner!,
-      });
+      this.notificationService.sendAnswerOnMyQuestionNotification(q.questioner!, answerWithProfileDto);
     }
     this.logger.log('Created new answer:', answerUrl);
     return new NextResponse(null, { status: 201 });

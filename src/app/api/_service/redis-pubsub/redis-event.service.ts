@@ -32,7 +32,7 @@ export class RedisPubSubService {
     });
   }
 
-  public async pub<T>(channel_name: websocketEventNameType, data: T) {
+  public async pub<T extends WebsocketPayloadTypes>(channel_name: websocketEventNameType, data: T) {
     this.pub_redis.publish(channel_name, JSON.stringify(data));
   }
 }

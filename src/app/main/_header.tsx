@@ -95,7 +95,20 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         }
         case 'websocket-notification-event': {
           const data = ws_data as WebsocketNotificationEvent;
-          console.debug('WS: 내 질문에 답변이 등록되었어요!', data.data);
+          switch (data.data.notification_name) {
+            case 'answer-on-my-question': {
+              console.debug('WS: 내 질문에 답변이 등록되었어요!', data.data.data);
+              break;
+            }
+            case 'read-all-notifications': {
+              console.debug('WS: 모든 알림이 읽음처리 되었어요!', data.data);
+              break;
+            }
+            default: {
+              break;
+            }
+          }
+          break;
         }
         case 'keep-alive': {
           break;
