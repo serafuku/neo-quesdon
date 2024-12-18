@@ -1,5 +1,6 @@
 import { AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { NotificationDto, NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
+import { QueueService } from '@/app/api/_service/queue/queueService';
 import { RateLimit } from '@/app/api/_service/ratelimiter/decorator';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
@@ -7,7 +8,7 @@ import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-cli
 import { Auth, JwtPayload } from '@/app/api/_utils/jwt/decorator';
 import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { Logger } from '@/utils/logger/Logger';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
 export class NotificationService {
@@ -15,7 +16,9 @@ export class NotificationService {
   private redisPubSub: RedisPubSubService;
   private prisma: PrismaClient;
   private logger = new Logger('NotificationService');
+  private queueService: QueueService;
   private constructor() {
+    this.queueService = QueueService.get();
     this.redisPubSub = RedisPubSubService.getInstance();
     this.prisma = GetPrismaClient.getClient();
   }
@@ -26,19 +29,6 @@ export class NotificationService {
     return NotificationService.instance;
   }
 
-  private async cleanUpOldNotifications(handle: string) {
-    const notificationIds = await this.prisma.notification.findMany({
-      where: { userHandle: handle },
-      select: { id: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (notificationIds.length > 200) {
-      const deleteTargets = notificationIds.slice(200);
-      deleteTargets.forEach(async (t) => {
-        await this.prisma.notification.delete({ where: { id: t.id } });
-      });
-    }
-  }
   public async readAllNotifications(handle: string) {
     const result = await this.prisma.notification.updateMany({
       where: { userHandle: handle, read: false },
@@ -68,7 +58,6 @@ export class NotificationService {
         userHandle: target_handle,
       },
     });
-    await this.cleanUpOldNotifications(target_handle);
   }
 
   @Auth()
