@@ -149,6 +149,13 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
 
+  const menuClose = () => {
+    const el = document.activeElement as HTMLLIElement;
+    if (el) {
+      el?.blur();
+    }
+  };
+
   useEffect(() => {
     if (!loginChecked) {
       return;
@@ -262,11 +269,12 @@ export default function MainHeader({ setUserProfile }: headerProps) {
             <ul
               tabIndex={0}
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow"
+              onClick={menuClose}
             >
               <li>
                 <Link href={`/main/user/${profile?.handle}`}>마이페이지</Link>
               </li>
-              <li className="flex ">
+              <li className="flex">
                 <Link href={'/main/questions'}>
                   <span>미답변 질문</span>
                   {questionsNum && questionsNum > 0 ? (
