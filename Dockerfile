@@ -8,15 +8,15 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
+COPY --link package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
 RUN npm ci
 
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --link --from=deps /app/node_modules ./node_modules
+COPY --link . .
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
@@ -40,14 +40,14 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nextjs:nodejs /app/package.json .
-COPY --from=builder --chown=nextjs:nodejs /app/package-lock.json .
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/paths-bootstrap.js .
+COPY --link --from=builder --chown=1001:1001 /app/public ./public
+COPY --link --from=builder --chown=1001:1001 /app/node_modules ./node_modules
+COPY --link --from=builder --chown=1001:1001 /app/.next ./.next
+COPY --link --from=builder --chown=1001:1001 /app/dist ./dist
+COPY --link --from=builder --chown=1001:1001 /app/package.json .
+COPY --link --from=builder --chown=1001:1001 /app/package-lock.json .
+COPY --link --from=builder --chown=1001:1001 /app/prisma ./prisma
+COPY --link --from=builder --chown=1001:1001 /app/paths-bootstrap.js .
 
 USER nextjs
 
