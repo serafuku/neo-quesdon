@@ -20,8 +20,9 @@ import {
   WebsocketQuestionDeletedEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { FaXmark } from 'react-icons/fa6';
-import { AnswerEv, MyQuestionEv } from './_events';
+import { AnswerEv, MyQuestionEv, NotificationEv } from './_events';
 import WebSocketState from '../_components/webSocketState';
+import { NotificationContext } from './layout';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -30,13 +31,16 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const profile = useContext(MyProfileContext);
   const logoutModalRef = useRef<HTMLDialogElement>(null);
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
-  const [questionsNum, setQuestions_num] = useState<number | null>(null);
+  const [questionsNum, setQuestions_num] = useState<number>(0);
   const [questionsToastMenu, setQuestionsToastMenu] = useState<boolean>(false);
   const websocket = useRef<WebSocket | null>(null);
   const [wsState, setWsState] = useState<number | undefined>();
   const ws_retry_counter = useRef<number>(0);
   const [loginChecked, setLoginChecked] = useState<boolean>(false);
   const toastTimeout = useRef<NodeJS.Timeout>();
+  const [notiNum, setNotiNum] = useState<number>(0);
+
+  const notificationContext = useContext(NotificationContext);
 
   const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
     const user_handle = localStorage.getItem('user_handle');
@@ -98,10 +102,12 @@ export default function MainHeader({ setUserProfile }: headerProps) {
           switch (data.data.notification_name) {
             case 'answer_on_my_question': {
               console.debug('WS: 내 질문에 답변이 등록되었어요!', data.data.data);
+              NotificationEv.sendNotificationEvent(data.data);
               break;
             }
             case 'read_all_notifications': {
               console.debug('WS: 모든 알림이 읽음처리 되었어요!', data.data);
+              NotificationEv.sendNotificationEvent(data.data);
               break;
             }
             default: {
@@ -143,6 +149,13 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
 
+  const menuClose = () => {
+    const el = document.activeElement as HTMLLIElement;
+    if (el) {
+      el?.blur();
+    }
+  };
+
   useEffect(() => {
     if (!loginChecked) {
       return;
@@ -177,10 +190,15 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   }, [loginChecked]);
 
   useEffect(() => {
+    if (!notificationContext) return;
+    setNotiNum(notificationContext.unread_count);
+  }, [notificationContext]);
+
+  useEffect(() => {
     if (setUserProfile) {
       fetchMyProfile().then((r) => {
         setUserProfile(r);
-        setQuestions_num(r?.questions ?? null);
+        setQuestions_num(r?.questions ?? 0);
         setLoginChecked(true);
       });
     }
@@ -222,8 +240,10 @@ export default function MainHeader({ setUserProfile }: headerProps) {
             {profile?.avatarUrl ? (
               <>
                 <img src={profile.avatarUrl} alt="navbar avatar profile" />
-                {questionsNum && questionsNum > 0 && (
-                  <span className="badge badge-sm badge-warning absolute top-0">{questionsNum}</span>
+                {questionsNum > 0 || notiNum > 0 ? (
+                  <span className="badge badge-sm badge-warning absolute top-0">{questionsNum + notiNum}</span>
+                ) : (
+                  <></>
                 )}
               </>
             ) : (
@@ -249,17 +269,29 @@ export default function MainHeader({ setUserProfile }: headerProps) {
             <ul
               tabIndex={0}
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow"
+              onClick={menuClose}
             >
               <li>
                 <Link href={`/main/user/${profile?.handle}`}>마이페이지</Link>
               </li>
-              <li className="flex ">
+              <li className="flex">
                 <Link href={'/main/questions'}>
                   <span>미답변 질문</span>
                   {questionsNum && questionsNum > 0 ? (
                     <>
-                      <div className="w-2 h-2 rounded-full absolute left-[5.6rem] bg-green-400 animate-ping" />
-                      <div className="w-2 h-2 rounded-full absolute left-[5.6rem] bg-green-400" />
+                      <div className="badge badge-warning badge-sm">{questionsNum}</div>
+                    </>
+                  ) : (
+                    <></>
+                  )}
+                </Link>
+              </li>
+              <li>
+                <Link href={'/main/notification'} scroll={false}>
+                  <span>알림</span>
+                  {notiNum > 0 ? (
+                    <>
+                      <div className="badge badge-warning badge-sm">{notiNum}</div>
                     </>
                   ) : (
                     <></>
