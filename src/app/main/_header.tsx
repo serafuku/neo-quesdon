@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Dispatch, SetStateAction, useContext, useEffect, useRef, useState } from 'react';
+import { Dispatch, SetStateAction, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { FaInfoCircle, FaUser } from 'react-icons/fa';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalOneButton from '@/app/_components/modalOneButton';
@@ -22,6 +22,7 @@ import {
 import { FaXmark } from 'react-icons/fa6';
 import { AnswerEv, MyQuestionEv } from './_events';
 import WebSocketState from '../_components/webSocketState';
+import { NotificationDto, NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -30,8 +31,10 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const profile = useContext(MyProfileContext);
   const logoutModalRef = useRef<HTMLDialogElement>(null);
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
-  const [questionsNum, setQuestions_num] = useState<number | null>(null);
+  const [questionsNum, setQuestions_num] = useState<number>(0);
   const [questionsToastMenu, setQuestionsToastMenu] = useState<boolean>(false);
+  const [noti, setNoti] = useState<NotificationPayloadTypes[] | null>(null);
+  const [notiNum, setNotiNum] = useState<number>(0);
   const websocket = useRef<WebSocket | null>(null);
   const [wsState, setWsState] = useState<number | undefined>();
   const ws_retry_counter = useRef<number>(0);
@@ -98,10 +101,12 @@ export default function MainHeader({ setUserProfile }: headerProps) {
           switch (data.data.notification_name) {
             case 'answer_on_my_question': {
               console.debug('WS: 내 질문에 답변이 등록되었어요!', data.data.data);
+              setNotiNum((prev) => (prev ? prev + 1 : 1));
               break;
             }
             case 'read_all_notifications': {
               console.debug('WS: 모든 알림이 읽음처리 되었어요!', data.data);
+              setNotiNum(0);
               break;
             }
             default: {
@@ -143,6 +148,14 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
 
+  const fetchNoti = useCallback(async () => {
+    const res = await fetch('/api/user/notification');
+    if (!res.ok) alert(await res.text());
+    const data = (await res.json()) as NotificationDto;
+    setNotiNum(data.unread_count);
+    setNoti(data.notifications);
+  }, []);
+
   useEffect(() => {
     if (!loginChecked) {
       return;
@@ -180,7 +193,8 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     if (setUserProfile) {
       fetchMyProfile().then((r) => {
         setUserProfile(r);
-        setQuestions_num(r?.questions ?? null);
+        setQuestions_num(r?.questions ?? 0);
+        fetchNoti();
         setLoginChecked(true);
       });
     }
@@ -222,8 +236,10 @@ export default function MainHeader({ setUserProfile }: headerProps) {
             {profile?.avatarUrl ? (
               <>
                 <img src={profile.avatarUrl} alt="navbar avatar profile" />
-                {questionsNum && questionsNum > 0 && (
-                  <span className="badge badge-sm badge-warning absolute top-0">{questionsNum}</span>
+                {questionsNum > 0 || notiNum > 0 ? (
+                  <span className="badge badge-sm badge-warning absolute top-0">{questionsNum + notiNum}</span>
+                ) : (
+                  <></>
                 )}
               </>
             ) : (
@@ -258,8 +274,19 @@ export default function MainHeader({ setUserProfile }: headerProps) {
                   <span>미답변 질문</span>
                   {questionsNum && questionsNum > 0 ? (
                     <>
-                      <div className="w-2 h-2 rounded-full absolute left-[5.6rem] bg-green-400 animate-ping" />
-                      <div className="w-2 h-2 rounded-full absolute left-[5.6rem] bg-green-400" />
+                      <div className="badge badge-warning badge-sm">{questionsNum}</div>
+                    </>
+                  ) : (
+                    <></>
+                  )}
+                </Link>
+              </li>
+              <li>
+                <Link href={'/main/notification'} scroll={false}>
+                  <span>알림</span>
+                  {notiNum > 0 ? (
+                    <>
+                      <div className="badge badge-warning badge-sm">{notiNum}</div>
                     </>
                   ) : (
                     <></>

@@ -2,6 +2,7 @@ import { Logger } from '@/utils/logger/Logger';
 import { questionDto } from '../_dto/questions/question.dto';
 import { QuestionDeletedPayload } from '../_dto/websocket-event/websocket-event.dto';
 import { AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
+import { NotificationPayloadTypes } from '../_dto/notification/notification.dto';
 
 const QuestionCreateEvent = 'QuestionCreateEvent';
 const QuestionDeleteEvent = 'QuestionDeleteEvent';
@@ -76,5 +77,25 @@ export class AnswerEv {
     const ev = new CustomEvent<AnswerWithProfileDto>(WebSocketAnswerEvent, { detail: data });
     window.dispatchEvent(ev);
     AnswerEv.logger.debug('New Answer Created', data);
+  }
+}
+
+const NotificationEvent = 'NotificationEvent';
+export class NotificationEv {
+  private static logger = new Logger('NotificationEv', { noColor: true });
+  static addNotificationEventListener(onEvent: (ev: CustomEvent<NotificationPayloadTypes>) => void) {
+    NotificationEv.logger.debug('Notification Event Listener Added');
+    window.addEventListener(NotificationEvent, onEvent as EventListener);
+  }
+
+  static removeNotificationEventListener(onEvent: (ev: CustomEvent<NotificationPayloadTypes>) => void) {
+    NotificationEv.logger.debug('Notification Event Listener Deleted');
+    window.removeEventListener(NotificationEvent, onEvent as EventListener);
+  }
+
+  static sendNotificationEvent(data: NotificationPayloadTypes) {
+    const ev = new CustomEvent<NotificationPayloadTypes>(NotificationEvent, { detail: data });
+    window.dispatchEvent(ev);
+    NotificationEv.logger.debug('Notification Event Sent', data);
   }
 }

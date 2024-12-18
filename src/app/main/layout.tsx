@@ -15,7 +15,7 @@ type MainPageContextType = {
 };
 export const AnswersContext = createContext<MainPageContextType | undefined>(undefined);
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default function MainLayout({ modal, children }: { children: React.ReactNode; modal: React.ReactNode }) {
   const [userProfileData, setUserProfileData] = useState<userProfileMeDto | undefined>();
   const [answers, setAnswers] = useState<AnswerWithProfileDto[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -60,6 +60,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <div>
       <MyProfileContext.Provider value={userProfileData}>
         <AnswersContext.Provider value={{ answers, loading, untilId }}>
+          {modal}
           <header className="w-full h-full flex justify-center">
             <MainHeader setUserProfile={setUserProfileData} />
           </header>
