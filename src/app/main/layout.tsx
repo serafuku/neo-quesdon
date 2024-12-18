@@ -25,6 +25,10 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
   const [noti, setNoti] = useState<NotificationDto>();
 
   const fetchNoti = useCallback(async () => {
+    const handle = localStorage.getItem('user_handle');
+    if (!handle) {
+      return;
+    }
     const res = await fetch('/api/user/notification');
     if (!res.ok) alert(await res.text());
     const data = (await res.json()) as NotificationDto;
