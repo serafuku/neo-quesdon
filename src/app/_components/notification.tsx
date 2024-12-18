@@ -49,7 +49,7 @@ export default function Notification() {
     const timestamp = Date.now();
 
     return () => {
-      if (Date.now() - timestamp > 1000 * 3) {
+      if (Date.now() - timestamp > 1000 * 0.5) {
         fetch('/api/user/notification/read-all', {
           method: 'POST',
         });
