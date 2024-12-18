@@ -1,5 +1,6 @@
 import { AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { NotificationDto, NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
+import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { QueueService } from '@/app/api/_service/queue/queueService';
 import { RateLimit } from '@/app/api/_service/ratelimiter/decorator';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
@@ -21,6 +22,10 @@ export class NotificationService {
     this.queueService = QueueService.get();
     this.redisPubSub = RedisPubSubService.getInstance();
     this.prisma = GetPrismaClient.getClient();
+    this.DeleteAnswerNotification = this.DeleteAnswerNotification.bind(this);
+    this.redisPubSub.sub<AnswerDeletedEvPayload>('answer-deleted-event', (data) => {
+      this.DeleteAnswerNotification(data);
+    });
   }
   public static getInstance() {
     if (!NotificationService.instance) {
@@ -56,8 +61,17 @@ export class NotificationService {
         notiType: 'answer_on_my_question',
         data: JSON.stringify(data),
         userHandle: target_handle,
+        notiKey: `answer:${data.id}`,
       },
     });
+  }
+
+  public async DeleteAnswerNotification(data: AnswerDeletedEvPayload) {
+    const key = `answer:${data.deleted_id}`;
+    try {
+      await this.prisma.notification.delete({ where: { notiKey: key } });
+      this.logger.debug(`Delete notification ${key}`);
+    } catch {}
   }
 
   @Auth()
