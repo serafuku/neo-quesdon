@@ -6,9 +6,8 @@ import { Logger } from '@/utils/logger/Logger';
 import type { jwtPayloadType } from '@/api/_utils/jwt/jwtPayloadType';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
-import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
-import { $Enums, blocking, profile, user, server, PrismaClient } from '@prisma/client';
-import { AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
+import { blocking, user, server, PrismaClient, answer } from '@prisma/client';
+import { AnswerDto, AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { FetchAllAnswersReqDto } from '@/app/_dto/answers/fetch-all-answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/answers/fetch-user-answers.dto';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
@@ -20,15 +19,18 @@ import { mastodonTootAnswers, MkNoteAnswers } from '@/app';
 import { createHash } from 'crypto';
 import { isString } from 'class-validator';
 import RE2 from 're2';
+import { NotificationService } from '@/app/api/_service/notification/notification.service';
 
 export class AnswerService {
   private static instance: AnswerService;
   private logger = new Logger('AnswerService');
   private event_service: RedisPubSubService;
+  private notificationService: NotificationService;
   private prisma: PrismaClient;
   private constructor() {
     this.prisma = GetPrismaClient.getClient();
     this.event_service = RedisPubSubService.getInstance();
+    this.notificationService = NotificationService.getInstance();
   }
   public static getInstance() {
     if (!AnswerService.instance) {
@@ -69,15 +71,25 @@ export class AnswerService {
 
     const server = answeredUser.server;
     const profile = answeredUser.profile;
-    const createdAnswer = await this.prisma.answer.create({
-      data: {
-        question: q.question,
-        questioner: q.questioner,
-        answer: data.answer,
-        answeredPersonHandle: tokenPayload.handle,
-        nsfwedAnswer: data.nsfwedAnswer,
-      },
+
+    const createdAnswer = await this.prisma.$transaction(async (tr) => {
+      const a = await tr.answer.create({
+        data: {
+          question: q.question,
+          questioner: q.isAnonymous ? null : q.questioner,
+          answer: data.answer,
+          answeredPersonHandle: tokenPayload.handle,
+          nsfwedAnswer: data.nsfwedAnswer,
+        },
+      });
+      await tr.question.delete({
+        where: {
+          id: q.id,
+        },
+      });
+      return a;
     });
+
     const answerUrl = `${process.env.WEB_URL}/main/user/${answeredUser.handle}/${createdAnswer.id}`;
 
     if (!profile.stopPostAnswer) {
@@ -85,17 +97,17 @@ export class AnswerService {
       let text;
       if (data.nsfwedAnswer === true) {
         title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo_quesdon`;
-        if (q.questioner) {
-          text = `질문자:${q.questioner}\nQ:${q.question}\nA: ${data.answer}\n#neo_quesdon ${answerUrl}`;
+        if (createdAnswer.questioner) {
+          text = `질문자:${createdAnswer.questioner}\nQ:${createdAnswer.question}\nA: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
         } else {
-          text = `Q: ${q.question}\nA: ${data.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `Q: ${createdAnswer.question}\nA: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
         }
       } else {
-        title = `Q: ${q.question} #neo_quesdon`;
-        if (q.questioner) {
-          text = `질문자:${q.questioner}\nA: ${data.answer}\n#neo_quesdon ${answerUrl}`;
+        title = `Q: ${createdAnswer.question} #neo_quesdon`;
+        if (createdAnswer.questioner) {
+          text = `질문자:${createdAnswer.questioner}\nA: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
         } else {
-          text = `A: ${data.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `A: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
         }
       }
       try {
@@ -114,37 +126,28 @@ export class AnswerService {
             break;
         }
       } catch (err) {
-        this.logger.warn('답변 작성 실패!', err);
-        /// 미스키/마스토돈에 글 올리는데 실패했으면 다시 answer 삭제
-        await this.prisma.answer.delete({ where: { id: createdAnswer.id } });
-        sendApiError(500, '답변 작성에 실패했어요!');
+        this.logger.warn('노트/툿 업로드 실패!', err);
       }
     }
 
-    await this.prisma.question.delete({
-      where: {
-        id: q.id,
-      },
-    });
-
     const question_numbers = await this.prisma.question.count({ where: { questioneeHandle: tokenPayload.handle } });
     const profileDto = profileToDto(answeredUser.profile, answeredUser.hostName, answeredUser.server.instanceType);
+    const answerDto = answerEntityToDto(createdAnswer);
+    const answerWithProfileDto = {
+      ...answerDto,
+      answeredPerson: profileDto,
+    };
     this.event_service.pub<QuestionDeletedPayload>('question-deleted-event', {
       deleted_id: q.id,
       handle: answeredUser.handle,
       question_numbers: question_numbers,
     });
-    this.event_service.pub<AnswerWithProfileDto>('answer-created-event', {
-      id: createdAnswer.id,
-      question: createdAnswer.question,
-      questioner: createdAnswer.questioner,
-      answer: createdAnswer.answer,
-      answeredAt: createdAnswer.answeredAt,
-      answeredPerson: profileDto,
-      answeredPersonHandle: createdAnswer.answeredPersonHandle,
-      nsfwedAnswer: createdAnswer.nsfwedAnswer,
-    });
 
+    this.event_service.pub<AnswerWithProfileDto>('answer-created-event', answerWithProfileDto);
+
+    if (isHandle(q.questioner)) {
+      this.notificationService.AnswerOnMyQuestionNotification(q.questioner!, answerWithProfileDto);
+    }
     this.logger.log('Created new answer:', answerUrl);
     return new NextResponse(null, { status: 201 });
   }
@@ -232,15 +235,11 @@ export class AnswerService {
           where: { instances: answer.answeredPerson.user.hostName },
         })
       ).instanceType;
+      const answerDto = answerEntityToDto(answer);
+      const profileDto = profileToDto(answer.answeredPerson, answer.answeredPerson.user.hostName, instanceType);
       const data: AnswerWithProfileDto = {
-        id: answer.id,
-        question: answer.question,
-        questioner: answer.questioner,
-        answer: answer.answer,
-        answeredAt: answer.answeredAt,
-        answeredPersonHandle: answer.answeredPersonHandle,
-        answeredPerson: this.profileToDto(answer.answeredPerson, answer.answeredPerson.user.hostName, instanceType),
-        nsfwedAnswer: answer.nsfwedAnswer,
+        ...answerDto,
+        answeredPerson: profileDto,
       };
       list.push(data);
     }
@@ -284,8 +283,7 @@ export class AnswerService {
       //내림차순이 기본값
       const orderBy = data.sort === 'ASC' ? 'asc' : 'desc';
 
-      const re = new RE2(/^@.+@.+/);
-      if (!userHandle || !re.match(userHandle)) {
+      if (!userHandle || !isHandle(userHandle)) {
         return sendApiError(400, 'User handle validation Error!');
       }
 
@@ -347,35 +345,15 @@ export class AnswerService {
       answer.answeredPerson.user.hostName,
       answer.answeredPerson.user.server.instanceType,
     );
+    const answerDto = answerEntityToDto(answer);
     const dto: AnswerWithProfileDto = {
-      id: answer.id,
-      question: answer.question,
-      questioner: answer.questioner,
-      answer: answer.answer,
-      answeredAt: answer.answeredAt,
+      ...answerDto,
       answeredPerson: profileDto,
-      answeredPersonHandle: answer.answeredPersonHandle,
-      nsfwedAnswer: answer.nsfwedAnswer,
     };
     return NextResponse.json(dto, {
       status: 200,
       headers: { 'Content-type': 'application/json', 'Cache-Control': 'public, max-age=60' },
     });
-  }
-
-  private profileToDto(profile: profile, hostName: string, instanceType: $Enums.InstanceType): userProfileDto {
-    const data: userProfileDto = {
-      handle: profile.handle,
-      name: profile.name,
-      stopNewQuestion: profile.stopNewQuestion,
-      stopAnonQuestion: profile.stopAnonQuestion,
-      stopNotiNewQuestion: profile.stopNotiNewQuestion,
-      avatarUrl: profile.avatarUrl,
-      questionBoxName: profile.questionBoxName,
-      hostname: hostName,
-      instanceType: instanceType,
-    };
-    return data;
   }
 
   public async filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
@@ -527,4 +505,28 @@ async function mastodonToot(
     tootLogger.warn(`Toot Create Fail!`, err);
     throw err;
   }
+}
+
+function answerEntityToDto(answer: answer): AnswerDto {
+  const dto: AnswerDto = {
+    id: answer.id,
+    question: answer.question,
+    questioner: answer.questioner,
+    answer: answer.answer,
+    answeredAt: answer.answeredAt,
+    answeredPersonHandle: answer.answeredPersonHandle,
+    nsfwedAnswer: answer.nsfwedAnswer,
+  };
+  return dto;
+}
+
+function isHandle(str: string | null | undefined) {
+  if (!str) {
+    return false;
+  }
+  const re = new RE2(/^@.+@.+/);
+  if (re.exec(str)) {
+    return true;
+  }
+  return false;
 }

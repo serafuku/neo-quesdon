@@ -6,14 +6,14 @@ import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client'
 import { AccountCleanJob } from './workers/AccountClean';
 import { ImportBlockQueueService } from '@/app/api/_service/queue/workers/ImportBlock';
 import { RedisService } from '@/app/api/_service/redisService/redis-service';
+import { ScheduleJobs } from '@/app/api/_service/queue/workers/ScheduleJobs';
 
-
-let instance: QueueService;
 export class QueueService {
   private testLogProcess: TestLogQueueWorkerService;
   private followWorker: RefreshFollowWorkerService;
   private accountClean: AccountCleanJob;
   private importBlockService: ImportBlockQueueService;
+  private static instance: QueueService;
   private logger = new Logger('QueueService');
 
   private constructor() {
@@ -24,14 +24,15 @@ export class QueueService {
     this.followWorker = new RefreshFollowWorkerService(connection);
     this.accountClean = new AccountCleanJob(connection);
     this.importBlockService = new ImportBlockQueueService(connection);
+    new ScheduleJobs(connection);
 
     this.logger.log('Queue Service Started ', `redis: ${host}:${port}`);
   }
   public static get() {
-    if (!instance) {
-      instance = new QueueService();
+    if (!QueueService.instance) {
+      QueueService.instance = new QueueService();
     }
-    return instance;
+    return QueueService.instance;
   }
 
   public async addTestLogJob(data: string) {

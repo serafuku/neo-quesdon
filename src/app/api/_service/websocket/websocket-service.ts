@@ -11,8 +11,9 @@ import {
   QuestionCreatedPayload,
   QuestionDeletedPayload,
   WebsocketAnswerCreatedEvent,
-  WebsocketEventPayload,
+  WebsocketEvent,
   WebsocketKeepAliveEvent,
+  WebsocketPayloadTypes,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
@@ -20,6 +21,7 @@ import { RedisKvCacheService } from '../kvCache/redisKvCacheService';
 import { blocking, PrismaClient } from '@prisma/client';
 import { getIpFromIncomingMessage } from '@/app/api/_utils/getIp/get-ip-from-Request';
 import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
+import { NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
 
 type WsClientType = {
   id: UUID;
@@ -73,6 +75,13 @@ export class WebsocketService {
         data: {
           deleted_id: data.deleted_id,
         },
+      });
+    });
+    this.eventService.sub<NotificationPayloadTypes>('websocket-notification-event', (data) => {
+      this.logger.debug(`Got Event websocket-notification-event`);
+      this.sendToUser<NotificationPayloadTypes>(data.target, {
+        ev_name: 'websocket-notification-event',
+        data: data,
       });
     });
   }
@@ -199,7 +208,7 @@ export class WebsocketService {
     this.logger.debug(`Current Total Websocket connections: `, allWsList.length);
   }
 
-  public sendToUser<T>(handle: string, data: WebsocketEventPayload<T>) {
+  public sendToUser<T extends WebsocketPayloadTypes>(handle: string, data: WebsocketEvent<T>) {
     const exist = this.clientKvMap.get(handle);
     const stringData = JSON.stringify(data);
     if (!exist) {
@@ -212,14 +221,14 @@ export class WebsocketService {
     });
   }
 
-  public sendToAll<T>(data: WebsocketEventPayload<T>) {
+  public sendToAll<T extends WebsocketPayloadTypes>(data: WebsocketEvent<T>) {
     const all_lists = Array.from(this.clientKvMap.values(), (v) => v);
     all_lists.forEach((client_list) => {
       this.sendToList(client_list, data);
     });
   }
 
-  private sendToList<T>(list: WsClientListType, data: WebsocketEventPayload<T>) {
+  private sendToList<T extends WebsocketPayloadTypes>(list: WsClientListType, data: WebsocketEvent<T>) {
     const stringData = JSON.stringify(data);
     list.forEach((c) => {
       c.ws.send(stringData);

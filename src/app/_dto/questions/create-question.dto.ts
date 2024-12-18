@@ -1,13 +1,12 @@
-import { IsString, MaxLength, ValidateIf } from 'class-validator';
+import { IsBoolean, IsString, MaxLength } from 'class-validator';
 
 export class CreateQuestionDto {
   @IsString()
   @MaxLength(1000)
   question: string;
 
-  @ValidateIf((o, v) => v)
-  @IsString()
-  questioner: string | null;
+  @IsBoolean()
+  isAnonymous: boolean;
 
   @IsString()
   questionee: string;
