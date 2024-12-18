@@ -4,6 +4,7 @@ import { NotificationPayloadTypes } from '@/app/_dto/notification/notification.d
 import { useContext, useEffect } from 'react';
 import { NotificationContext } from '../main/layout';
 import Link from 'next/link';
+import { FaReply } from 'react-icons/fa';
 
 export default function Notification() {
   const notificationContext = useContext(NotificationContext);
@@ -18,11 +19,17 @@ export default function Notification() {
               <div
                 className={`flex items-center gap-2 my-2 p-2 relative desktop:p-4 w-full rounded-box shadow ${isRead ? 'bg-gray-100 dark:bg-gray-700' : 'bg-base-100 dark:bg-slate-500'}`}
               >
-                <img
-                  src={noti.data?.answeredPerson?.avatarUrl}
-                  alt="answered persen avatar"
-                  className={`w-16 h-16 rounded-full ${isRead && 'opacity-70'}`}
-                />
+                <div className="relative">
+                  <FaReply
+                    className={`w-6 h-6 p-1 absolute z-[1] bottom-0 right-0 border-2 border-white rounded-full ${isRead ? 'bg-green-300' : 'bg-green-400'}`}
+                    fill="white"
+                  />
+                  <img
+                    src={noti.data?.answeredPerson?.avatarUrl}
+                    alt="answered persen avatar"
+                    className={`w-16 h-16 rounded-full ${isRead && 'opacity-70'}`}
+                  />
+                </div>
                 <div className={`flex flex-col ${isRead && 'text-slate-500 dark:text-slate-400'}`}>
                   <span className="font-thin italic">&quot;{noti.data?.question}&quot;</span>
                   <p>{noti.data?.answer}</p>
