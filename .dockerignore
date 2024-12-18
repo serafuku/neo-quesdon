@@ -1,6 +1,7 @@
 
 .git
 .gitignore
+.github
 Dockerfile
 local_db_data
 local_redis_data

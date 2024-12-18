@@ -2,13 +2,12 @@ name: Build and push docker image
 
 on:
   workflow_dispatch:
-  push: 
+  push:
     branches:
       - 'main'
       - 'develop'
     tags:
       - 'v**'
-
   release:
     types: [published, released, edited]
   pull_request:
@@ -24,14 +23,15 @@ jobs:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{env.REGISTRY}}/${{env.REGISTRY}}
-  
+          images: ${{env.REGISTRY}}/${{env.IMAGE_NAME}}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -41,8 +41,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
+          push: true
+          platforms: linux/amd64
           cache-from: type=registry,ref=${{env.REGISTRY}}/${{env.IMAGE_NAME}}:build-cache
           cache-to: type=registry,ref=${{env.REGISTRY}}/${{env.IMAGE_NAME}}:build-cache,mode=max,image-manifest=true,oci-mediatypes=true
           tags: ${{ steps.meta.outputs.tags }}

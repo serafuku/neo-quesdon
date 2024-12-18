@@ -8,7 +8,6 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
 RUN npm ci
 
@@ -22,7 +21,7 @@ COPY . .
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npx prisma generate
 RUN npm run build
@@ -45,10 +44,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
-COPY --chown=nextjs:nodejs package.json .
-COPY --chown=nextjs:nodejs package-lock.json .
-COPY --chown=nextjs:nodejs prisma ./prisma
-COPY --chown=nextjs:nodejs paths-bootstrap.js .
+COPY --from=builder --chown=nextjs:nodejs /app/package.json .
+COPY --from=builder --chown=nextjs:nodejs /app/package-lock.json .
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/paths-bootstrap.js .
 
 USER nextjs
 
