@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Dispatch, SetStateAction, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Dispatch, SetStateAction, useContext, useEffect, useRef, useState } from 'react';
 import { FaInfoCircle, FaUser } from 'react-icons/fa';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import DialogModalOneButton from '@/app/_components/modalOneButton';
@@ -20,9 +20,9 @@ import {
   WebsocketQuestionDeletedEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { FaXmark } from 'react-icons/fa6';
-import { AnswerEv, MyQuestionEv } from './_events';
+import { AnswerEv, MyQuestionEv, NotificationEv } from './_events';
 import WebSocketState from '../_components/webSocketState';
-import { NotificationDto, NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
+import { NotificationContext } from './layout';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -33,13 +33,14 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
   const [questionsNum, setQuestions_num] = useState<number>(0);
   const [questionsToastMenu, setQuestionsToastMenu] = useState<boolean>(false);
-  const [noti, setNoti] = useState<NotificationPayloadTypes[] | null>(null);
-  const [notiNum, setNotiNum] = useState<number>(0);
   const websocket = useRef<WebSocket | null>(null);
   const [wsState, setWsState] = useState<number | undefined>();
   const ws_retry_counter = useRef<number>(0);
   const [loginChecked, setLoginChecked] = useState<boolean>(false);
   const toastTimeout = useRef<NodeJS.Timeout>();
+  const [notiNum, setNotiNum] = useState<number>(0);
+
+  const notificationContext = useContext(NotificationContext);
 
   const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
     const user_handle = localStorage.getItem('user_handle');
@@ -101,12 +102,12 @@ export default function MainHeader({ setUserProfile }: headerProps) {
           switch (data.data.notification_name) {
             case 'answer_on_my_question': {
               console.debug('WS: 내 질문에 답변이 등록되었어요!', data.data.data);
-              setNotiNum((prev) => (prev ? prev + 1 : 1));
+              NotificationEv.sendNotificationEvent(data.data);
               break;
             }
             case 'read_all_notifications': {
               console.debug('WS: 모든 알림이 읽음처리 되었어요!', data.data);
-              setNotiNum(0);
+              NotificationEv.sendNotificationEvent(data.data);
               break;
             }
             default: {
@@ -148,14 +149,6 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     setQuestions_num((prev) => ev.detail.questions ?? prev);
   };
 
-  const fetchNoti = useCallback(async () => {
-    const res = await fetch('/api/user/notification');
-    if (!res.ok) alert(await res.text());
-    const data = (await res.json()) as NotificationDto;
-    setNotiNum(data.unread_count);
-    setNoti(data.notifications);
-  }, []);
-
   useEffect(() => {
     if (!loginChecked) {
       return;
@@ -190,11 +183,15 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   }, [loginChecked]);
 
   useEffect(() => {
+    if (!notificationContext) return;
+    setNotiNum(notificationContext.unread_count);
+  }, [notificationContext]);
+
+  useEffect(() => {
     if (setUserProfile) {
       fetchMyProfile().then((r) => {
         setUserProfile(r);
         setQuestions_num(r?.questions ?? 0);
-        fetchNoti();
         setLoginChecked(true);
       });
     }

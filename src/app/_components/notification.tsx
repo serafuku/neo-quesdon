@@ -1,18 +1,11 @@
 'use client';
 
-import { NotificationDto, NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
-import { useCallback, useEffect, useState } from 'react';
-import { NotificationEv } from '../main/_events';
+import { NotificationPayloadTypes } from '@/app/_dto/notification/notification.dto';
+import { useContext, useEffect } from 'react';
+import { NotificationContext } from '../main/layout';
 
 export default function Notification() {
-  const [noti, setNoti] = useState<NotificationDto | null>(null);
-
-  const fetchNoti = useCallback(async () => {
-    const res = await fetch('/api/user/notification');
-    if (!res.ok) alert(await res.text());
-    const data = (await res.json()) as NotificationDto;
-    setNoti(data);
-  }, []);
+  const notificationContext = useContext(NotificationContext);
 
   const parseNoti = (noti: NotificationPayloadTypes) => {
     switch (noti.notification_name) {
@@ -39,26 +32,25 @@ export default function Notification() {
     }
   };
 
-  const onNotiEv = (ev: CustomEvent<NotificationPayloadTypes>) => {
-    console.log(ev.detail);
-  };
-
   useEffect(() => {
-    NotificationEv.addNotificationEventListener(onNotiEv);
+    //3초 이상 알림을 읽고 있으면 자동으로 읽음 처리
+    const timestamp = Date.now();
 
     return () => {
-      NotificationEv.removeNotificationEventListener(onNotiEv);
+      if (Date.now() - timestamp > 1000 * 3) {
+        fetch('/api/user/notification/read-all', {
+          method: 'POST',
+        });
+      }
     };
   }, []);
 
-  useEffect(() => {
-    fetchNoti();
-  }, [fetchNoti]);
-
   return (
     <div className="overflow-y-scroll">
-      <h2 className="text-3xl desktop:text-4xl font-semibold">{noti && noti.unread_count}개의 새로운 알림</h2>
-      {noti && noti.notifications.map((el) => parseNoti(el))}
+      <h2 className="text-3xl desktop:text-4xl font-semibold">
+        {notificationContext && notificationContext.unread_count}개의 새로운 알림
+      </h2>
+      {notificationContext?.notifications && notificationContext.notifications.map((el) => parseNoti(el))}
     </div>
   );
 }
