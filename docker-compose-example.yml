@@ -1,8 +1,9 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/serafuku/neo-quesdon:${NEO_QUESDON_VERSION:-latest}
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     depends_on:
       - db
       - redis
