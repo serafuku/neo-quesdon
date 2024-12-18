@@ -32,11 +32,15 @@ cp config/docker.env.example config/docker.env
 # copy example compose file
 cp docker-compose-example.yml docker-compose.yml
 
+# docker image version config
+# Set it to latest, or specific version like v1.3.4
+echo 'NEO_QUESDON_VERSION=v1.3.4' > .env
+
 # Edit config file
 vim config/docker.env
 
-# Compose build
-docker compose build
+# Compose pull
+docker compose pull
 
 # Deploy
 docker compose up -d
