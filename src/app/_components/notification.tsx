@@ -30,8 +30,8 @@ export default function Notification() {
                     className={`w-16 h-16 rounded-full ${isRead && 'opacity-70'}`}
                   />
                 </div>
-                <div className={`flex flex-col ${isRead && 'text-slate-500 dark:text-slate-400'}`}>
-                  <span className="font-thin italic">&quot;{noti.data?.question}&quot;</span>
+                <div className={`w-[calc(100%-80px)] flex-col ${isRead && 'text-slate-500 dark:text-slate-400'}`}>
+                  <span className="font-thin italic ">&quot;{noti.data?.question}&quot;</span>
                   <p>{noti.data?.answer}</p>
                 </div>
               </div>
