@@ -134,6 +134,7 @@ model Notification {
   notiType   NotiType
   data       String
   user       user     @relation("Notification", fields: [userHandle], references: [handle], onDelete: Cascade)
+  notiKey    String   @unique @default(uuid())
 
   @@index([createdAt])
   @@index([read])
