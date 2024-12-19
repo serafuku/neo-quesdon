@@ -88,12 +88,13 @@ export default function MainHeader({ setUserProfile }: headerProps) {
         }
         case 'answer-created-event': {
           const data = ws_data as WebsocketAnswerCreatedEvent;
-          AnswerEv.sendCreatedAnswerEvent(data.data);
+          AnswerEv.sendAnswerCreatedEvent(data.data);
           console.debug('WS: 새로운 답변이 생겼어요!', data.data);
           break;
         }
         case 'answer-deleted-event': {
           const data = ws_data as WebsocketAnswerDeletedEvent;
+          AnswerEv.sendAnswerDeletedEvent(data.data);
           console.debug('WS: 답변이 삭제되었어요!', data.data);
           break;
         }
@@ -107,6 +108,11 @@ export default function MainHeader({ setUserProfile }: headerProps) {
             }
             case 'read_all_notifications': {
               console.debug('WS: 모든 알림이 읽음처리 되었어요!', data.data);
+              NotificationEv.sendNotificationEvent(data.data);
+              break;
+            }
+            case 'delete_all_notifications': {
+              console.debug('WS: 모든 알림이 삭제되었어요!', data.data);
               NotificationEv.sendNotificationEvent(data.data);
               break;
             }

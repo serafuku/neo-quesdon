@@ -8,6 +8,7 @@ import { FetchAllAnswersReqDto } from '../_dto/answers/fetch-all-answers.dto';
 import { AnswerListWithProfileDto, AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
 import { AnswerEv, NotificationEv } from './_events';
 import { NotificationDto, NotificationPayloadTypes } from '../_dto/notification/notification.dto';
+import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 
 type MainPageContextType = {
   answers: AnswerWithProfileDto[] | null;
@@ -54,7 +55,14 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
             unread_count: 0,
           };
         });
+        break;
       }
+      case 'delete_all_notifications': {
+        setNoti({ notifications: [], unread_count: 0 });
+        break;
+      }
+      default:
+        break;
     }
   };
 
@@ -82,16 +90,28 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
       });
     };
 
-    const onWebSocketEv = (ev: CustomEvent<AnswerWithProfileDto>) => {
+    const onAnswerCreated = (ev: CustomEvent<AnswerWithProfileDto>) => {
       setAnswers((prevAnswer) => (prevAnswer ? [ev.detail, ...prevAnswer] : []));
+    };
+    const onAnswerDeleted = (ev: CustomEvent<AnswerDeletedEvPayload>) => {
+      setAnswers((prev) => {
+        if (prev) {
+          console.log('Answer삭제!', ev.detail, prev);
+          return prev.filter((v) => v.id !== ev.detail.deleted_id);
+        } else {
+          return prev;
+        }
+      });
     };
 
     AnswerEv.addFetchMoreRequestEventListener(onEv);
-    AnswerEv.addCreatedAnswerEventListener(onWebSocketEv);
+    AnswerEv.addAnswerCreatedEventListener(onAnswerCreated);
+    AnswerEv.addAnswerDeletedEventListener(onAnswerDeleted);
     NotificationEv.addNotificationEventListener(onNotiEv);
     return () => {
       AnswerEv.removeFetchMoreRequestEventListener(onEv);
-      AnswerEv.removeCreatedAnswerEventListener(onWebSocketEv);
+      AnswerEv.removeAnswerCreatedEventListener(onAnswerCreated);
+      AnswerEv.removeAnswerDeletedEventListener(onAnswerDeleted);
       NotificationEv.removeNotificationEventListener(onNotiEv);
     };
   }, []);
