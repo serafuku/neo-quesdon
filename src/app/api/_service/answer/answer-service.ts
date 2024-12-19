@@ -126,8 +126,17 @@ export class AnswerService {
             );
             break;
           case 'mastodon':
-            text = clampText(text, 500, textEnd, more);
-            title = clampText(title, 500, textEnd, more);
+            const titleTotalLen = title.length + titleEnd.length;
+            const textTotalLen = text.length + textEnd.length;
+            const needTrim = titleTotalLen + textTotalLen > 500;
+            let titleMax = 500;
+            let textMax = 500;
+            if (needTrim) {
+              titleMax = Math.min(titleTotalLen, 200);
+              textMax -= titleMax;
+            }
+            title = clampText(title, titleMax, titleEnd, more);
+            text = clampText(text, textMax, textEnd, more);
             await mastodonToot({ user: answeredUser }, { title: title, text: text, visibility: data.visibility });
             break;
           default:

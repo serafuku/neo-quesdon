@@ -9,11 +9,9 @@ export function clampText(text: string, max_len: number, mandatoryTailString?: s
     }
     const newText =
       text.substring(0, max_len - (mandatoryLen + moreStringLen)) + (moreString ?? '') + (mandatoryTailString ?? '');
-    console.debug('trim string ', newText.length, newText);
     return newText;
   } else {
     const newText = text + mandatoryTailString;
-    console.debug('return string ', newText.length, newText);
     return newText;
   }
 }
