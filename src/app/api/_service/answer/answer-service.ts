@@ -6,7 +6,7 @@ import { Logger } from '@/utils/logger/Logger';
 import type { jwtPayloadType } from '@/api/_utils/jwt/jwtPayloadType';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
-import { blocking, user, server, PrismaClient, answer } from '@prisma/client';
+import { blocking, PrismaClient, answer } from '@prisma/client';
 import { AnswerDto, AnswerListWithProfileDto, AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { FetchAllAnswersReqDto } from '@/app/_dto/answers/fetch-all-answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/answers/fetch-user-answers.dto';
@@ -15,11 +15,12 @@ import { RedisPubSubService } from '@/_service/redis-pubsub/redis-event.service'
 import { AnswerDeletedEvPayload, QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { CreateAnswerDto } from '@/app/_dto/answers/create-answer.dto';
 import { profileToDto } from '@/api/_utils/profileToDto';
-import { mastodonTootAnswers, MkNoteAnswers } from '@/app';
-import { createHash } from 'crypto';
 import { isString } from 'class-validator';
 import RE2 from 're2';
 import { NotificationService } from '@/app/api/_service/notification/notification.service';
+import { mkMisskeyNote } from '@/app/api/_utils/uploadNote/misskeyNote';
+import { mastodonToot } from '@/app/api/_utils/uploadNote/mastodonToot';
+import { clampText } from '@/app/api/_utils/uploadNote/clampText';
 
 export class AnswerService {
   private static instance: AnswerService;
@@ -96,30 +97,46 @@ export class AnswerService {
       let title;
       let text;
       if (data.nsfwedAnswer === true) {
-        title = `⚠️ 이 질문은 NSFW한 질문이에요! #neo_quesdon`;
+        title = `⚠️ 이 질문은 NSFW한 질문이에요! `;
         if (createdAnswer.questioner) {
-          text = `질문자:${createdAnswer.questioner}\nQ:${createdAnswer.question}\nA: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `질문자:${createdAnswer.questioner}\nQ:${createdAnswer.question}\nA: ${createdAnswer.answer}\n`;
         } else {
-          text = `Q: ${createdAnswer.question}\nA: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `Q: ${createdAnswer.question}\nA: ${createdAnswer.answer}\n`;
         }
       } else {
-        title = `Q: ${createdAnswer.question} #neo_quesdon`;
+        title = `Q: ${createdAnswer.question} `;
         if (createdAnswer.questioner) {
-          text = `질문자:${createdAnswer.questioner}\nA: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `질문자:${createdAnswer.questioner}\nA: ${createdAnswer.answer}\n `;
         } else {
-          text = `A: ${createdAnswer.answer}\n#neo_quesdon ${answerUrl}`;
+          text = `A: ${createdAnswer.answer}\n`;
         }
       }
       try {
+        const textEnd = ` ${answerUrl}\n#neo_quesdon`;
+        const titleEnd = ' #neo_quesdon';
+        const more = '...';
         switch (server.instanceType) {
           case 'misskey':
           case 'cherrypick':
+            text = clampText(text, 3000, textEnd, more);
+            title = clampText(title, 100, titleEnd, more);
             await mkMisskeyNote(
               { user: answeredUser, server: server },
               { title: title, text: text, visibility: data.visibility },
             );
             break;
           case 'mastodon':
+            const titleTotalLen = title.length + titleEnd.length;
+            const textTotalLen = text.length + textEnd.length;
+            const needTrim = titleTotalLen + textTotalLen > 500;
+            let titleMax = 500;
+            let textMax = 500;
+            if (needTrim) {
+              titleMax = Math.min(titleTotalLen, 200);
+              textMax -= titleMax;
+            }
+            title = clampText(title, titleMax, titleEnd, more);
+            text = clampText(text, textMax, textEnd, more);
             await mastodonToot({ user: answeredUser }, { title: title, text: text, visibility: data.visibility });
             break;
           default:
@@ -385,125 +402,6 @@ export class AnswerService {
     });
 
     return filteredAnswers;
-  }
-}
-
-async function mkMisskeyNote(
-  {
-    user,
-    server,
-  }: {
-    user: user;
-    server: server;
-  },
-  {
-    title,
-    text,
-    visibility,
-  }: {
-    title: string;
-    text: string;
-    visibility: MkNoteAnswers['visibility'];
-  },
-) {
-  const NoteLogger = new Logger('mkMisskeyNote');
-  // 미스키 CW길이제한 처리
-  if (title.length > 100) {
-    title = title.substring(0, 90) + '.....';
-  }
-  const i = createHash('sha256')
-    .update(user.token + server.appSecret, 'utf-8')
-    .digest('hex');
-  const newAnswerNote: MkNoteAnswers = {
-    i: i,
-    cw: title,
-    text: text,
-    visibility: visibility,
-  };
-  try {
-    const res = await fetch(`https://${user.hostName}/api/notes/create`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${i}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newAnswerNote),
-    });
-    if (res.status === 401 || res.status === 403) {
-      NoteLogger.warn('User Revoked Access token. JWT를 Revoke합니다... Detail:', await res.text());
-      const prisma = GetPrismaClient.getClient();
-      await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: user.jwtIndex + 1 } });
-      throw new Error('Note Create Fail! (Token Revoked)');
-    } else if (!res.ok) {
-      throw new Error(`Note Create Fail! ${await res.text()}`);
-    } else {
-      NoteLogger.log(`Note Created! ${res.statusText}`);
-    }
-  } catch (err) {
-    NoteLogger.warn(err);
-    throw err;
-  }
-}
-
-async function mastodonToot(
-  {
-    user,
-  }: {
-    user: user;
-  },
-  {
-    title,
-    text,
-    visibility,
-  }: {
-    title: string;
-    text: string;
-    visibility: MkNoteAnswers['visibility'];
-  },
-) {
-  const tootLogger = new Logger('mastodonToot');
-  let newVisibility: 'public' | 'unlisted' | 'private';
-  switch (visibility) {
-    case 'public':
-      newVisibility = 'public';
-      break;
-    case 'home':
-      newVisibility = 'unlisted';
-      break;
-    case 'followers':
-      newVisibility = 'private';
-      break;
-    default:
-      newVisibility = 'public';
-      break;
-  }
-  const newAnswerToot: mastodonTootAnswers = {
-    spoiler_text: title,
-    status: text,
-    visibility: newVisibility,
-  };
-  try {
-    const res = await fetch(`https://${user.hostName}/api/v1/statuses`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newAnswerToot),
-    });
-    if (res.status === 401 || res.status === 403) {
-      tootLogger.warn('User Revoked Access token. JWT를 Revoke합니다.. Detail:', await res.text());
-      const prisma = GetPrismaClient.getClient();
-      await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: user.jwtIndex + 1 } });
-      throw new Error('Toot Create Fail! (Token Revoked)');
-    } else if (!res.ok) {
-      throw new Error(`HTTP Error! status:${await res.text()}`);
-    } else {
-      tootLogger.log(`Toot Created! ${res.statusText}`);
-    }
-  } catch (err) {
-    tootLogger.warn(`Toot Create Fail!`, err);
-    throw err;
   }
 }
 
