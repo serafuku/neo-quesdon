@@ -96,10 +96,19 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
     const onAnswerDeleted = (ev: CustomEvent<AnswerDeletedEvPayload>) => {
       setAnswers((prev) => {
         if (prev) {
-          console.log('Answer삭제!', ev.detail, prev);
           return prev.filter((v) => v.id !== ev.detail.deleted_id);
         } else {
           return prev;
+        }
+      });
+      setNoti((prev) => {
+        if (prev) {
+          return {
+            notifications: prev.notifications.filter((v) => {
+              return v.notification_name !== 'answer_on_my_question' || v.data.id !== ev.detail.deleted_id;
+            }),
+            unread_count: prev.unread_count - 1,
+          };
         }
       });
     };
