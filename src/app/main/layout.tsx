@@ -38,7 +38,7 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
 
   const onNotiEv = (ev: CustomEvent<NotificationPayloadTypes>) => {
     const notiData = ev.detail;
-    switch (ev.detail.notification_name) {
+    switch (notiData.notification_name) {
       case 'answer_on_my_question': {
         setNoti((prev) => {
           return {
@@ -78,7 +78,7 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
     });
     fetchNoti();
 
-    const onEv = (ev: CustomEvent<string | undefined>) => {
+    const onFetchMoreEv = (ev: CustomEvent<string | undefined>) => {
       const id = ev.detail;
       fetchAllAnswers({ sort: 'DESC', limit: 25, untilId: id }).then((r) => {
         if (r.length === 0) {
@@ -113,12 +113,12 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
       });
     };
 
-    AnswerEv.addFetchMoreRequestEventListener(onEv);
+    AnswerEv.addFetchMoreRequestEventListener(onFetchMoreEv);
     AnswerEv.addAnswerCreatedEventListener(onAnswerCreated);
     AnswerEv.addAnswerDeletedEventListener(onAnswerDeleted);
     NotificationEv.addNotificationEventListener(onNotiEv);
     return () => {
-      AnswerEv.removeFetchMoreRequestEventListener(onEv);
+      AnswerEv.removeFetchMoreRequestEventListener(onFetchMoreEv);
       AnswerEv.removeAnswerCreatedEventListener(onAnswerCreated);
       AnswerEv.removeAnswerDeletedEventListener(onAnswerDeleted);
       NotificationEv.removeNotificationEventListener(onNotiEv);

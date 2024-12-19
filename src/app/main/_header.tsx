@@ -14,6 +14,7 @@ import { FaXmark } from 'react-icons/fa6';
 import WebSocketState from '../_components/webSocketState';
 import { NotificationContext } from './layout';
 import { webSocketManager } from '@/app/main/_websocketManager';
+import { fetchMyProfile } from '@/utils/profile/fetchMyProfile';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -32,24 +33,6 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const [notiNum, setNotiNum] = useState<number>(0);
 
   const notificationContext = useContext(NotificationContext);
-
-  const fetchMyProfile = async (): Promise<userProfileMeDto | undefined> => {
-    const user_handle = localStorage.getItem('user_handle');
-
-    if (user_handle) {
-      const res = await fetch('/api/db/fetch-my-profile', {
-        method: 'GET',
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          forcedLogoutModalRef.current?.showModal();
-        }
-        return;
-      }
-      const data = await res.json();
-      return data;
-    }
-  };
 
   const onProfileUpdateEvent = (ev: CustomEvent<Partial<userProfileMeDto>>) => {
     const logger = new Logger('onProfileUpdateEvent', { noColor: true });
@@ -116,8 +99,11 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   }, [notificationContext]);
 
   useEffect(() => {
+    const onResNotOk = () => {
+      forcedLogoutModalRef.current?.showModal();
+    };
     if (setUserProfile) {
-      fetchMyProfile().then((r) => {
+      fetchMyProfile(onResNotOk).then((r) => {
         setUserProfile(r);
         setQuestions_num(r?.questions ?? 0);
         setLoginChecked(true);
