@@ -112,9 +112,9 @@ export class AnswerService {
         }
       }
       try {
-        const textEnd = `${answerUrl} #neo_quesdon`;
+        const textEnd = ` ${answerUrl}\n#neo_quesdon`;
         const titleEnd = ' #neo_quesdon';
-        const more = ' ...(더보기)';
+        const more = '...';
         switch (server.instanceType) {
           case 'misskey':
           case 'cherrypick':
