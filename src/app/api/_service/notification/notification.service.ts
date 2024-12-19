@@ -143,14 +143,12 @@ export class NotificationService {
       return sendApiError(401, 'Unauthorized');
     }
     try {
-      const notifications = await this.prisma.notification.findMany({
-        where: { userHandle: handle },
-        select: { id: true },
-      });
       const deleted = await this.prisma.notification.deleteMany({ where: { userHandle: handle } });
-      for (const n of notifications) {
-        this.redisPubSub.pub<AnswerDeletedEvPayload>('answer-deleted-event', { deleted_id: n.id });
-      }
+      this.redisPubSub.pub<NotificationPayloadTypes>('websocket-notification-event', {
+        notification_name: 'delete_all_notifications',
+        data: null,
+        target: handle,
+      });
       return NextResponse.json({ message: `OK! ${deleted.count} notifications Deleted` });
     } catch (err) {
       return sendApiError(500, JSON.stringify(err));
