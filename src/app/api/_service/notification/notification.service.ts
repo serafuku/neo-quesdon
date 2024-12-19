@@ -22,9 +22,9 @@ export class NotificationService {
     this.queueService = QueueService.get();
     this.redisPubSub = RedisPubSubService.getInstance();
     this.prisma = GetPrismaClient.getClient();
-    this.DeleteAnswerNotification = this.DeleteAnswerNotification.bind(this);
+    this.onDeleteAnswerNotification = this.onDeleteAnswerNotification.bind(this);
     this.redisPubSub.sub<AnswerDeletedEvPayload>('answer-deleted-event', (data) => {
-      this.DeleteAnswerNotification(data);
+      this.onDeleteAnswerNotification(data);
     });
   }
   public static getInstance() {
@@ -66,7 +66,7 @@ export class NotificationService {
     });
   }
 
-  public async DeleteAnswerNotification(data: AnswerDeletedEvPayload) {
+  private async onDeleteAnswerNotification(data: AnswerDeletedEvPayload) {
     const key = `answer:${data.deleted_id}`;
     try {
       await this.prisma.notification.delete({ where: { notiKey: key } });
