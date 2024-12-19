@@ -131,4 +131,29 @@ export class NotificationService {
       return sendApiError(500, 'readAllNotificationsApi FAIL!');
     }
   }
+
+  @Auth()
+  @RateLimit({ bucket_time: 60, req_limit: 10 }, 'user')
+  public async deleteAllNotificationApi(
+    _req: NextRequest,
+    @JwtPayload tokenPayload?: jwtPayloadType,
+  ): Promise<NextResponse> {
+    const handle = tokenPayload?.handle;
+    if (!handle) {
+      return sendApiError(401, 'Unauthorized');
+    }
+    try {
+      const notifications = await this.prisma.notification.findMany({
+        where: { userHandle: handle },
+        select: { id: true },
+      });
+      const deleted = await this.prisma.notification.deleteMany({ where: { userHandle: handle } });
+      for (const n of notifications) {
+        this.redisPubSub.pub<AnswerDeletedEvPayload>('answer-deleted-event', { deleted_id: n.id });
+      }
+      return NextResponse.json({ message: `OK! ${deleted.count} notifications Deleted` });
+    } catch (err) {
+      return sendApiError(500, JSON.stringify(err));
+    }
+  }
 }
