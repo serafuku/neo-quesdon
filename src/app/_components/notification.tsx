@@ -14,28 +14,34 @@ export default function Notification() {
     switch (noti.notification_name) {
       case 'answer_on_my_question': {
         return (
-          <div key={noti.data?.id}>
-            <Link href={`/main/user/${noti.data.answeredPersonHandle}/${noti.data.id}`} replace>
-              <div
-                className={`flex items-center gap-2 my-2 p-2 relative desktop:p-4 w-full rounded-box shadow ${isRead ? 'bg-gray-100 dark:bg-gray-700' : 'bg-base-100 dark:bg-slate-500'}`}
-              >
-                <div className="relative">
+          <div key={noti.data.id}>
+            <div
+              className={`flex items-center gap-2 my-2 p-2 relative desktop:p-4 w-full rounded-box shadow ${isRead ? 'bg-gray-100 dark:bg-gray-700' : 'bg-base-100 dark:bg-slate-500'}`}
+            >
+              <div className="relative">
+                <Link href={`/main/user/${noti.data.answeredPersonHandle}`}>
                   <FaReply
                     className={`w-6 h-6 p-1 absolute z-[1] bottom-0 right-0 border-2 border-white rounded-full ${isRead ? 'bg-green-300' : 'bg-green-400'}`}
                     fill="white"
                   />
                   <img
-                    src={noti.data?.answeredPerson?.avatarUrl}
+                    src={noti.data.answeredPerson?.avatarUrl}
                     alt="answered persen avatar"
                     className={`w-16 h-16 rounded-full ${isRead && 'opacity-70'}`}
                   />
-                </div>
-                <div className={`w-[calc(100%-80px)] flex-col ${isRead && 'text-slate-500 dark:text-slate-400'}`}>
+                </Link>
+              </div>
+              <Link
+                href={`/main/user/${noti.data.answeredPersonHandle}/${noti.data.id}`}
+                className="w-[calc(100%-80px)]"
+                replace
+              >
+                <div className={`flex flex-col ${isRead && 'text-slate-500 dark:text-slate-400'}`}>
                   <span className="font-thin italic ">&quot;{noti.data?.question}&quot;</span>
                   <p>{noti.data?.answer}</p>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           </div>
         );
       }
