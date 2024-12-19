@@ -5,3 +5,8 @@ export async function GET(req: NextRequest) {
   const notificationService = NotificationService.getInstance();
   return await notificationService.getMyNotificationsApi(req);
 }
+
+export async function DELETE(req: NextRequest) {
+  const notificationService = NotificationService.getInstance();
+  return await notificationService.deleteAllNotificationApi(req);
+}

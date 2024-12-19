@@ -1,8 +1,9 @@
 import { Logger } from '@/utils/logger/Logger';
 import { questionDto } from '../_dto/questions/question.dto';
-import { QuestionDeletedPayload } from '../_dto/websocket-event/websocket-event.dto';
+import { AnswerDeletedEvPayload, QuestionDeletedPayload } from '../_dto/websocket-event/websocket-event.dto';
 import { AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
 import { NotificationPayloadTypes } from '../_dto/notification/notification.dto';
+import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 
 const QuestionCreateEvent = 'QuestionCreateEvent';
 const QuestionDeleteEvent = 'QuestionDeleteEvent';
@@ -46,7 +47,8 @@ export class MyQuestionEv {
 }
 
 const FetchMoreAnswerRequestEvent = 'FetchMoreAnswerRequestEvent';
-const WebSocketAnswerEvent = 'WebSocketAnswerEvent';
+const WebSocketAnswerCreatedEvent = 'WebSocketAnswerCreatedEvent';
+const WebSocketAnswerDeletedEvent = 'WebSocketAnswerDeletedEvent';
 export class AnswerEv {
   private static logger = new Logger('AnswerEv', { noColor: true });
   static addFetchMoreRequestEventListener(onEvent: (ev: CustomEvent<string | undefined>) => void) {
@@ -63,20 +65,34 @@ export class AnswerEv {
     window.dispatchEvent(ev);
   }
 
-  static addCreatedAnswerEventListener(onEvent: (ev: CustomEvent<AnswerWithProfileDto>) => void) {
-    AnswerEv.logger.debug('Added WebSocket Answer EventListener');
-    window.addEventListener(WebSocketAnswerEvent, onEvent as EventListener);
+  static addAnswerCreatedEventListener(onEvent: (ev: CustomEvent<AnswerWithProfileDto>) => void) {
+    AnswerEv.logger.debug('Added WebSocket AnswerCreated EventListener');
+    window.addEventListener(WebSocketAnswerCreatedEvent, onEvent as EventListener);
   }
 
-  static removeCreatedAnswerEventListener(onEvent: (ev: CustomEvent<AnswerWithProfileDto>) => void) {
-    AnswerEv.logger.debug('Removed WebSocket Answer EventListener');
-    window.removeEventListener(WebSocketAnswerEvent, onEvent as EventListener);
+  static removeAnswerCreatedEventListener(onEvent: (ev: CustomEvent<AnswerWithProfileDto>) => void) {
+    AnswerEv.logger.debug('Removed WebSocket AnswerCreated EventListener');
+    window.removeEventListener(WebSocketAnswerCreatedEvent, onEvent as EventListener);
   }
 
-  static sendCreatedAnswerEvent(data: AnswerWithProfileDto) {
-    const ev = new CustomEvent<AnswerWithProfileDto>(WebSocketAnswerEvent, { detail: data });
+  static sendAnswerCreatedEvent(data: AnswerWithProfileDto) {
+    const ev = new CustomEvent<AnswerWithProfileDto>(WebSocketAnswerCreatedEvent, { detail: data });
     window.dispatchEvent(ev);
     AnswerEv.logger.debug('New Answer Created', data);
+  }
+
+  static addAnswerDeletedEventListener(onEvent: (ev: CustomEvent<AnswerDeletedEvPayload>) => void) {
+    AnswerEv.logger.debug('Added WebSocket AnswerDeleted EventListener');
+    window.addEventListener(WebSocketAnswerDeletedEvent, onEvent as EventListener);
+  }
+  static removeAnswerDeletedEventListener(onEvent: (ev: CustomEvent<AnswerDeletedEvPayload>) => void) {
+    AnswerEv.logger.debug('Removed WebSocket AnswerDeleted EventListener');
+    window.removeEventListener(WebSocketAnswerDeletedEvent, onEvent as EventListener);
+  }
+  static sendAnswerDeletedEvent(data: AnswerDeletedEvPayload) {
+    const ev = new CustomEvent<AnswerDeletedEvPayload>(WebSocketAnswerDeletedEvent, { detail: data });
+    AnswerEv.logger.debug('Answer Deleted', data);
+    window.dispatchEvent(ev);
   }
 }
 
@@ -99,3 +115,30 @@ export class NotificationEv {
     NotificationEv.logger.debug('Notification Event Sent', data);
   }
 }
+
+const ProfileUpdateReqEvent = 'ProfileUpdateReqEvent';
+type ProfileUpdateReqEvent = typeof ProfileUpdateReqEvent;
+type ProfileUpdateReqData = Partial<userProfileMeDto>;
+/**
+ * MyProfileContext 의 Update요청 Event들
+ */
+export class MyProfileEv {
+  private constructor() {}
+  private static logger = new Logger('UpdateMyProfileContext', { noColor: true });
+  static async SendUpdateReq(data: Partial<userProfileMeDto>) {
+    const ev = new CustomEvent<ProfileUpdateReqData>(ProfileUpdateReqEvent, { bubbles: true, detail: data });
+    window.dispatchEvent(ev);
+    MyProfileEv.logger.debug('Send My Profile Update Request Event...');
+  }
+
+  static addEventListener(onEvent: (ev: CustomEvent<ProfileUpdateReqData>) => void) {
+    MyProfileEv.logger.debug('add Profile Update EventListener');
+    window.addEventListener(ProfileUpdateReqEvent, onEvent as EventListener);
+  }
+
+  static removeEventListener(onEvent: (ev: CustomEvent<ProfileUpdateReqData>) => void) {
+    MyProfileEv.logger.debug('Remove Profile Update Req EventListener');
+    window.removeEventListener(ProfileUpdateReqEvent, onEvent as EventListener);
+  }
+}
+

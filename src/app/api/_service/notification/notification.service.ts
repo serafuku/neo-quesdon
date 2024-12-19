@@ -22,9 +22,9 @@ export class NotificationService {
     this.queueService = QueueService.get();
     this.redisPubSub = RedisPubSubService.getInstance();
     this.prisma = GetPrismaClient.getClient();
-    this.DeleteAnswerNotification = this.DeleteAnswerNotification.bind(this);
+    this.onDeleteAnswerNotification = this.onDeleteAnswerNotification.bind(this);
     this.redisPubSub.sub<AnswerDeletedEvPayload>('answer-deleted-event', (data) => {
-      this.DeleteAnswerNotification(data);
+      this.onDeleteAnswerNotification(data);
     });
   }
   public static getInstance() {
@@ -66,7 +66,7 @@ export class NotificationService {
     });
   }
 
-  public async DeleteAnswerNotification(data: AnswerDeletedEvPayload) {
+  private async onDeleteAnswerNotification(data: AnswerDeletedEvPayload) {
     const key = `answer:${data.deleted_id}`;
     try {
       await this.prisma.notification.delete({ where: { notiKey: key } });
@@ -129,6 +129,29 @@ export class NotificationService {
     } catch (err) {
       this.logger.warn('readAllNotificationsApi FAIL!', err);
       return sendApiError(500, 'readAllNotificationsApi FAIL!');
+    }
+  }
+
+  @Auth()
+  @RateLimit({ bucket_time: 60, req_limit: 10 }, 'user')
+  public async deleteAllNotificationApi(
+    _req: NextRequest,
+    @JwtPayload tokenPayload?: jwtPayloadType,
+  ): Promise<NextResponse> {
+    const handle = tokenPayload?.handle;
+    if (!handle) {
+      return sendApiError(401, 'Unauthorized');
+    }
+    try {
+      const deleted = await this.prisma.notification.deleteMany({ where: { userHandle: handle } });
+      this.redisPubSub.pub<NotificationPayloadTypes>('websocket-notification-event', {
+        notification_name: 'delete_all_notifications',
+        data: null,
+        target: handle,
+      });
+      return NextResponse.json({ message: `OK! ${deleted.count} notifications Deleted` });
+    } catch (err) {
+      return sendApiError(500, JSON.stringify(err));
     }
   }
 }

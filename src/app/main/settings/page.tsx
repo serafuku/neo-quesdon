@@ -6,13 +6,14 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { $Enums } from '@prisma/client';
-import { MyProfileEv, MyProfileContext } from '@/app/main/_profileContext';
 import BlockList from '@/app/main/settings/_table';
 import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { AccountCleanReqDto } from '@/app/_dto/account-clean/account-clean.dto';
 import { FaLock, FaUserLargeSlash } from 'react-icons/fa6';
 import { MdDeleteSweep, MdOutlineCleaningServices } from 'react-icons/md';
+import { MyProfileContext } from '@/app/main/layout';
+import { MyProfileEv } from '@/app/main/_events';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -67,6 +68,7 @@ export default function Settings() {
   const accountCleanModalRef = useRef<HTMLDialogElement>(null);
   const importBlockModalRef = useRef<HTMLDialogElement>(null);
   const deleteAllQuestionsModalRef = useRef<HTMLDialogElement>(null);
+  const deleteAllNotificationsModalRef = useRef<HTMLDialogElement>(null);
 
   const {
     register,
@@ -178,6 +180,17 @@ export default function Settings() {
     setButtonClicked(false);
     if (!res.ok) {
       throw new Error('질문을 모두 삭제하는데 실패했어요!');
+    }
+  };
+
+  const onDeleteAllNotifications = async () => {
+    setButtonClicked(true);
+    const res = await fetch('/api/user/notification', {
+      method: 'DELETE',
+    });
+    setButtonClicked(false);
+    if (!res.ok) {
+      throw new Error('알림을 삭제하는데 실패했어요!');
     }
   };
 
@@ -306,8 +319,25 @@ export default function Settings() {
                         </div>
                       </CollapseMenu>
                       <CollapseMenu id={'dangerSetting'} text="위험한 설정">
-                        <Divider />
                         <div className="w-full flex flex-col items-center">
+                          <Divider />
+                          <div className="font-normal text-xl py-3 flex items-center gap-2">
+                            <MdDeleteSweep size={24} />
+                            알림함 비우기
+                          </div>
+                          <div className="font-thin px-4 py-2 break-keep">
+                            알림함의 모든 알림을 지워요. 지워진 알림은 되돌릴 수 없으니 주의하세요.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              deleteAllNotificationsModalRef.current?.showModal();
+                            }}
+                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-warning'}`}
+                          >
+                            {buttonClicked ? '잠깐만요...' : '알림함 비우기'}
+                          </button>
+                          <Divider />
                           <div className="font-normal text-xl py-3 flex items-center gap-2">
                             <FaUserLargeSlash />
                             차단 목록 가져오기
@@ -375,6 +405,14 @@ export default function Settings() {
             cancelButtonText={'아니오'}
             ref={logoutAllModalRef}
             onClick={onLogoutAll}
+          />
+          <DialogModalTwoButton
+            title={'주의'}
+            body={'알림함을 비울까요?'}
+            confirmButtonText={'네'}
+            cancelButtonText={'아니오'}
+            ref={deleteAllNotificationsModalRef}
+            onClick={onDeleteAllNotifications}
           />
           <DialogModalTwoButton
             title={'경고'}

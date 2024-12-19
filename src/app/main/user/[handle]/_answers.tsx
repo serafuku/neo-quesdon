@@ -4,9 +4,11 @@ import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import Answer from '@/app/_components/answer';
 import { userProfileDto } from '@/app/_dto/fetch-profile/Profile.dto';
-import { AnswerDto } from '@/app/_dto/answers/Answers.dto';
+import { AnswerDto, AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { FetchUserAnswersDto } from '@/app/_dto/answers/fetch-user-answers.dto';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
+import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { AnswerEv } from '@/app/main/_events';
 
 type ResponseType = {
   answers: AnswerDto[];
@@ -73,7 +75,6 @@ export default function UserPage() {
     if (answers && count) {
       const filteredAnswer = answers.filter((el) => el.id !== id);
       setAnswers(filteredAnswer);
-      setCount((prevCount) => (prevCount ? prevCount - 1 : null));
     }
   };
 
@@ -128,6 +129,36 @@ export default function UserPage() {
       if (mounted) observer.unobserve(mounted);
     };
   }, [mounted, untilId]);
+
+  useEffect(() => {
+    const onAnswerCreated = (ev: CustomEvent<AnswerWithProfileDto>) => {
+      setAnswers((prev) => {
+        if (prev && ev.detail.answeredPersonHandle === profileHandle) {
+          return [ev.detail, ...prev];
+        } else {
+          return prev;
+        }
+      });
+      setCount((prev) => (prev ? prev + 1 : null));
+    };
+    const onAnswerDeleted = (ev: CustomEvent<AnswerDeletedEvPayload>) => {
+      setAnswers((prev) => {
+        if (prev) {
+          return prev.filter((v) => v.id !== ev.detail.deleted_id);
+        } else {
+          return prev;
+        }
+      });
+      setCount((prev) => (prev ? prev - 1 : null));
+    };
+
+    AnswerEv.addAnswerCreatedEventListener(onAnswerCreated);
+    AnswerEv.addAnswerDeletedEventListener(onAnswerDeleted);
+    return () => {
+      AnswerEv.removeAnswerCreatedEventListener(onAnswerCreated);
+      AnswerEv.removeAnswerDeletedEventListener(onAnswerDeleted);
+    };
+  }, []);
 
   return (
     <div className="w-full flex flex-col desktop:flex-row">

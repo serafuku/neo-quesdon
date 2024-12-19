@@ -1,3 +1,5 @@
+import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { Job, Queue, Worker } from 'bullmq';
@@ -11,12 +13,14 @@ const logger = new Logger('AccountCleanWork');
 export class AccountCleanJob {
   private cleanQueue;
   private cleanWorker;
+  private redisPubsub: RedisPubSubService;
 
   constructor(connection: Redis) {
+    this.redisPubsub = RedisPubSubService.getInstance();
     this.cleanQueue = new Queue(accountClean, {
       connection,
     });
-    this.cleanWorker = new Worker(accountClean, this.process, {
+    this.cleanWorker = new Worker(accountClean, this.process.bind(this), {
       connection,
       concurrency: 10,
       removeOnComplete: {
@@ -56,6 +60,9 @@ export class AccountCleanJob {
         }
         for (const a of parts) {
           await prisma.answer.delete({ where: { id: a.id } });
+          await this.redisPubsub.pub<AnswerDeletedEvPayload>('answer-deleted-event', {
+            deleted_id: a.id,
+          });
         }
         counter += parts.length;
         logger.debug(`답변 ${counter} 개 삭제됨`);
