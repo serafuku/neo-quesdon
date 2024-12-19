@@ -10,19 +10,10 @@ import { logout } from '@/utils/logout/logout';
 import { MyProfileContext, MyProfileEv } from '@/app/main/_profileContext';
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import { Logger } from '@/utils/logger/Logger';
-import {
-  WebsocketAnswerCreatedEvent,
-  WebsocketAnswerDeletedEvent,
-  WebsocketEvent,
-  WebsocketNotificationEvent,
-  WebsocketPayloadTypes,
-  WebsocketQuestionCreatedEvent,
-  WebsocketQuestionDeletedEvent,
-} from '@/app/_dto/websocket-event/websocket-event.dto';
 import { FaXmark } from 'react-icons/fa6';
-import { AnswerEv, MyQuestionEv, NotificationEv } from './_events';
 import WebSocketState from '../_components/webSocketState';
 import { NotificationContext } from './layout';
+import { webSocketManager } from '@/app/main/_websocketManager';
 
 type headerProps = {
   setUserProfile: Dispatch<SetStateAction<userProfileMeDto | undefined>>;
@@ -33,7 +24,7 @@ export default function MainHeader({ setUserProfile }: headerProps) {
   const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
   const [questionsNum, setQuestions_num] = useState<number>(0);
   const [questionsToastMenu, setQuestionsToastMenu] = useState<boolean>(false);
-  const websocket = useRef<WebSocket | null>(null);
+  const websocketRef = useRef<WebSocket | null>(null);
   const [wsState, setWsState] = useState<number | undefined>();
   const ws_retry_counter = useRef<number>(0);
   const [loginChecked, setLoginChecked] = useState<boolean>(false);
@@ -58,89 +49,6 @@ export default function MainHeader({ setUserProfile }: headerProps) {
       const data = await res.json();
       return data;
     }
-  };
-  const webSocketManager = () => {
-    if (websocket.current) {
-      websocket.current.close();
-    }
-    websocket.current = new WebSocket('/api/websocket');
-    websocket.current.onmessage = (ws_event: MessageEvent) => {
-      const ws_data = JSON.parse(ws_event.data) as WebsocketEvent<WebsocketPayloadTypes>;
-      switch (ws_data.ev_name) {
-        case 'question-created-event': {
-          const data = ws_data as WebsocketQuestionCreatedEvent;
-          console.debug('WS: 새로운 질문이 생겼어요!,', data.data);
-          MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
-          MyQuestionEv.SendUpdateReq(data.data);
-          toastTimeout.current = setTimeout(() => {
-            setQuestionsToastMenu(false);
-          }, 8000);
-          setQuestionsToastMenu(true);
-          break;
-        }
-        case 'question-deleted-event': {
-          const data = ws_data as WebsocketQuestionDeletedEvent;
-          console.debug('WS: 질문이 삭제되었어요!', data.data);
-          MyProfileEv.SendUpdateReq({ questions: data.data.question_numbers });
-          MyQuestionEv.SendDeleteReq(data.data);
-          setQuestionsToastMenu(false);
-          break;
-        }
-        case 'answer-created-event': {
-          const data = ws_data as WebsocketAnswerCreatedEvent;
-          AnswerEv.sendAnswerCreatedEvent(data.data);
-          console.debug('WS: 새로운 답변이 생겼어요!', data.data);
-          break;
-        }
-        case 'answer-deleted-event': {
-          const data = ws_data as WebsocketAnswerDeletedEvent;
-          AnswerEv.sendAnswerDeletedEvent(data.data);
-          console.debug('WS: 답변이 삭제되었어요!', data.data);
-          break;
-        }
-        case 'websocket-notification-event': {
-          const data = ws_data as WebsocketNotificationEvent;
-          switch (data.data.notification_name) {
-            case 'answer_on_my_question': {
-              console.debug('WS: 내 질문에 답변이 등록되었어요!', data.data.data);
-              NotificationEv.sendNotificationEvent(data.data);
-              break;
-            }
-            case 'read_all_notifications': {
-              console.debug('WS: 모든 알림이 읽음처리 되었어요!', data.data);
-              NotificationEv.sendNotificationEvent(data.data);
-              break;
-            }
-            case 'delete_all_notifications': {
-              console.debug('WS: 모든 알림이 삭제되었어요!', data.data);
-              NotificationEv.sendNotificationEvent(data.data);
-              break;
-            }
-            default: {
-              break;
-            }
-          }
-          break;
-        }
-        case 'keep-alive': {
-          break;
-        }
-      }
-    };
-
-    websocket.current.onopen = () => {
-      console.debug('웹소켓이 열렸어요!');
-      ws_retry_counter.current = 0;
-      setWsState(websocket.current?.readyState);
-    };
-    websocket.current.onclose = (ev: CloseEvent) => {
-      console.debug('웹소켓이 닫혔어요!', ev);
-      setWsState(websocket.current?.readyState);
-    };
-    websocket.current.onerror = (ev: Event) => {
-      console.log(`웹소켓 에러`, ev);
-      setWsState(websocket.current?.readyState);
-    };
   };
 
   const onProfileUpdateEvent = (ev: CustomEvent<Partial<userProfileMeDto>>) => {
@@ -168,32 +76,39 @@ export default function MainHeader({ setUserProfile }: headerProps) {
     }
     const webSocketRetryInterval = setInterval(
       () => {
-        if (websocket.current === null || websocket.current?.readyState === 3) {
+        if (websocketRef.current === null || websocketRef.current?.readyState === 3) {
           if (ws_retry_counter.current < 5) {
             ws_retry_counter.current += 1;
             console.log('웹소켓 연결 재시도...', ws_retry_counter.current);
-            webSocketManager();
+            webSocketManager({ websocketRef, toastTimeout, setWsState, setQuestionsToastMenu });
           } else {
             console.log('웹소켓 연결 최대 재시도 횟수를 초과했어요!');
             clearInterval(webSocketRetryInterval);
             return;
           }
         } else {
-          websocket.current.send(`mua: ${Date.now()}`);
+          websocketRef.current.send(`mua: ${Date.now()}`);
         }
       },
       5000 + ws_retry_counter.current * 2000,
     );
 
-    webSocketManager();
+    webSocketManager({ websocketRef, toastTimeout, setWsState, setQuestionsToastMenu });
     return () => {
       clearTimeout(toastTimeout.current);
       clearInterval(webSocketRetryInterval);
-      if (websocket.current?.readyState === 1) {
-        websocket.current.close();
+      if (websocketRef.current?.readyState === 1) {
+        websocketRef.current.close();
       }
     };
   }, [loginChecked]);
+
+  useEffect(() => {
+    if (websocketRef.current && websocketRef.current.readyState === 1) {
+      console.debug('Websocket 연결 재시도 카운터 초기화!');
+      ws_retry_counter.current = 0;
+    }
+  }, [websocketRef.current?.readyState]);
 
   useEffect(() => {
     if (!notificationContext) return;
