@@ -2,13 +2,18 @@
 
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import MainHeader from '@/app/main/_header';
-import { createContext, useCallback, useEffect, useState } from 'react';
-import { MyProfileContext } from '@/app/main/_profileContext';
-import { FetchAllAnswersReqDto } from '../_dto/answers/fetch-all-answers.dto';
-import { AnswerListWithProfileDto, AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
+import { createContext, useEffect, useRef, useState } from 'react';
+import { MyProfileContext, MyProfileEv } from '@/app/main/_profileContext';
+import { AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
 import { AnswerEv, NotificationEv } from './_events';
 import { NotificationDto, NotificationPayloadTypes } from '../_dto/notification/notification.dto';
 import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { Logger } from '@/utils/logger/Logger';
+import { fetchMyProfile } from '@/utils/profile/fetchMyProfile';
+import DialogModalOneButton from '@/app/_components/modalOneButton';
+import { logout } from '@/utils/logout/logout';
+import { fetchAllAnswers } from '@/utils/answers/fetchAllAnswers';
+import { fetchNoti } from '@/utils/notification/fetchNoti';
 
 type MainPageContextType = {
   answers: AnswerWithProfileDto[] | null;
@@ -24,18 +29,55 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
   const [loading, setLoading] = useState<boolean>(true);
   const [untilId, setUntilId] = useState<string | undefined>(undefined);
   const [noti, setNoti] = useState<NotificationDto>();
+  const [questionsNum, setQuestions_num] = useState<number>(0);
+  const [loginChecked, setLoginChecked] = useState<boolean>(false);
+  const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
 
-  const fetchNoti = useCallback(async () => {
-    const handle = localStorage.getItem('user_handle');
-    if (!handle) {
-      return;
+  const onResNotOk = async (code: number, res: Response) => {
+    if (code === 401) {
+      forcedLogoutModalRef.current?.showModal();
+    } else {
+      alert(await res.text());
     }
-    const res = await fetch('/api/user/notification');
-    if (!res.ok) alert(await res.text());
-    const data = (await res.json()) as NotificationDto;
-    setNoti(data);
+  };
+  // ------------ Initial Fetch -----------------------------
+  useEffect(() => {
+    fetchMyProfile(onResNotOk).then((r) => {
+      setUserProfileData(r);
+      setQuestions_num(r?.questions ?? 0);
+      setLoginChecked(true);
+    });
+    fetchAllAnswers({ sort: 'DESC', limit: 25 }, onResNotOk).then((r) => {
+      if (r.length === 0) {
+        setLoading(false);
+        setAnswers([]);
+        return;
+      }
+      setAnswers(r);
+      setUntilId(r[r.length - 1].id);
+    });
+    fetchNoti(onResNotOk).then((v) => {
+      setNoti(v);
+    });
   }, []);
 
+  // ------------- add Event callbacks --------------------
+  useEffect(() => {
+    MyProfileEv.addEventListener(onProfileUpdateEvent);
+    AnswerEv.addFetchMoreRequestEventListener(onFetchMoreEv);
+    AnswerEv.addAnswerCreatedEventListener(onAnswerCreated);
+    AnswerEv.addAnswerDeletedEventListener(onAnswerDeleted);
+    NotificationEv.addNotificationEventListener(onNotiEv);
+    return () => {
+      MyProfileEv.removeEventListener(onProfileUpdateEvent);
+      AnswerEv.removeFetchMoreRequestEventListener(onFetchMoreEv);
+      AnswerEv.removeAnswerCreatedEventListener(onAnswerCreated);
+      AnswerEv.removeAnswerDeletedEventListener(onAnswerDeleted);
+      NotificationEv.removeNotificationEventListener(onNotiEv);
+    };
+  }, []);
+
+  // ---------------- event callback functions -------------------
   const onNotiEv = (ev: CustomEvent<NotificationPayloadTypes>) => {
     const notiData = ev.detail;
     switch (notiData.notification_name) {
@@ -66,64 +108,53 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
     }
   };
 
-  useEffect(() => {
-    fetchAllAnswers({ sort: 'DESC', limit: 25 }).then((r) => {
+  const onProfileUpdateEvent = (ev: CustomEvent<Partial<userProfileMeDto>>) => {
+    const logger = new Logger('onProfileUpdateEvent', { noColor: true });
+    setUserProfileData((prev) => {
+      if (prev) {
+        const newData = { ...prev, ...ev.detail };
+        logger.log('My Profile Context Update With: ', ev.detail);
+        return newData;
+      }
+    });
+    setQuestions_num((prev) => ev.detail.questions ?? prev);
+  };
+
+  const onFetchMoreEv = (ev: CustomEvent<string | undefined>) => {
+    const id = ev.detail;
+    fetchAllAnswers({ sort: 'DESC', limit: 25, untilId: id }).then((r) => {
       if (r.length === 0) {
         setLoading(false);
-        setAnswers([]);
         return;
       }
-      setAnswers(r);
+      setAnswers((prev_answers) => (prev_answers ? [...prev_answers, ...r] : null));
       setUntilId(r[r.length - 1].id);
     });
-    fetchNoti();
+  };
 
-    const onFetchMoreEv = (ev: CustomEvent<string | undefined>) => {
-      const id = ev.detail;
-      fetchAllAnswers({ sort: 'DESC', limit: 25, untilId: id }).then((r) => {
-        if (r.length === 0) {
-          setLoading(false);
-          return;
-        }
-        setAnswers((prev_answers) => (prev_answers ? [...prev_answers, ...r] : null));
-        setUntilId(r[r.length - 1].id);
-      });
-    };
+  const onAnswerCreated = (ev: CustomEvent<AnswerWithProfileDto>) => {
+    setAnswers((prevAnswer) => (prevAnswer ? [ev.detail, ...prevAnswer] : []));
+  };
 
-    const onAnswerCreated = (ev: CustomEvent<AnswerWithProfileDto>) => {
-      setAnswers((prevAnswer) => (prevAnswer ? [ev.detail, ...prevAnswer] : []));
-    };
-    const onAnswerDeleted = (ev: CustomEvent<AnswerDeletedEvPayload>) => {
-      setAnswers((prev) => {
-        if (prev) {
-          return prev.filter((v) => v.id !== ev.detail.deleted_id);
-        } else {
-          return prev;
-        }
-      });
-      setNoti((prev) => {
-        if (prev) {
-          return {
-            notifications: prev.notifications.filter((v) => {
-              return v.notification_name !== 'answer_on_my_question' || v.data.id !== ev.detail.deleted_id;
-            }),
-            unread_count: prev.unread_count - 1,
-          };
-        }
-      });
-    };
-
-    AnswerEv.addFetchMoreRequestEventListener(onFetchMoreEv);
-    AnswerEv.addAnswerCreatedEventListener(onAnswerCreated);
-    AnswerEv.addAnswerDeletedEventListener(onAnswerDeleted);
-    NotificationEv.addNotificationEventListener(onNotiEv);
-    return () => {
-      AnswerEv.removeFetchMoreRequestEventListener(onFetchMoreEv);
-      AnswerEv.removeAnswerCreatedEventListener(onAnswerCreated);
-      AnswerEv.removeAnswerDeletedEventListener(onAnswerDeleted);
-      NotificationEv.removeNotificationEventListener(onNotiEv);
-    };
-  }, []);
+  const onAnswerDeleted = (ev: CustomEvent<AnswerDeletedEvPayload>) => {
+    setAnswers((prev) => {
+      if (prev) {
+        return prev.filter((v) => v.id !== ev.detail.deleted_id);
+      } else {
+        return prev;
+      }
+    });
+    setNoti((prev) => {
+      if (prev) {
+        return {
+          notifications: prev.notifications.filter((v) => {
+            return v.notification_name !== 'answer_on_my_question' || v.data.id !== ev.detail.deleted_id;
+          }),
+          unread_count: prev.unread_count - 1,
+        };
+      }
+    });
+  };
 
   return (
     <div>
@@ -132,35 +163,20 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
           <NotificationContext.Provider value={noti}>
             {modal}
             <header className="w-full h-full flex justify-center">
-              <MainHeader setUserProfile={setUserProfileData} />
+              <MainHeader questionsNum={questionsNum} loginChecked={loginChecked} />
             </header>
             <main className="flex justify-center">{children}</main>
           </NotificationContext.Provider>
         </AnswersContext.Provider>
       </MyProfileContext.Provider>
+      <DialogModalOneButton
+        title={'자동 로그아웃'}
+        body={'로그인 유효시간이 만료되어서 로그아웃 되었어요!'}
+        buttonText={'확인'}
+        ref={forcedLogoutModalRef}
+        onClick={logout}
+      />
     </div>
   );
 }
 
-async function fetchAllAnswers(req: FetchAllAnswersReqDto) {
-  const query: string[] = [];
-  for (const [key, value] of Object.entries(req)) {
-    query.push(`${key}=${value}`);
-  }
-  const url = `/api/db/answers?${query.join('&')}`;
-  const res = await fetch(url, {
-    method: 'GET',
-    cache: 'no-cache',
-  });
-  try {
-    if (res.ok) {
-      const answers = ((await res.json()) as AnswerListWithProfileDto).answersList;
-      return answers;
-    } else {
-      throw new Error(`답변을 불러오는데 실패했어요!: ${await res.text()}`);
-    }
-  } catch (err) {
-    alert(err);
-    throw err;
-  }
-}

@@ -1,6 +1,8 @@
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 
-export async function fetchMyProfile(onResNotOk?: (code: number) => void): Promise<userProfileMeDto | undefined> {
+export async function fetchMyProfile(
+  onResNotOk?: (code: number, res: Response) => void,
+): Promise<userProfileMeDto | undefined> {
   const user_handle = localStorage.getItem('user_handle');
 
   if (user_handle) {
@@ -9,7 +11,7 @@ export async function fetchMyProfile(onResNotOk?: (code: number) => void): Promi
     });
     if (!res.ok) {
       if (onResNotOk) {
-        onResNotOk(res.status);
+        onResNotOk(res.status, res);
       }
       return;
     }
