@@ -6,10 +6,9 @@ import { FaInfoCircle, FaUser } from 'react-icons/fa';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
 import { logout } from '@/utils/logout/logout';
-import { MyProfileContext } from '@/app/main/_profileContext';
 import { FaXmark } from 'react-icons/fa6';
 import WebSocketState from '../_components/webSocketState';
-import { NotificationContext } from './layout';
+import { MyProfileContext, NotificationContext } from './layout';
 import { webSocketManager } from '@/app/main/_websocketManager';
 
 type headerProps = {

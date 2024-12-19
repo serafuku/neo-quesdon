@@ -3,9 +3,8 @@
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import MainHeader from '@/app/main/_header';
 import { createContext, useEffect, useRef, useState } from 'react';
-import { MyProfileContext, MyProfileEv } from '@/app/main/_profileContext';
 import { AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
-import { AnswerEv, NotificationEv } from './_events';
+import { AnswerEv, MyProfileEv, NotificationEv } from './_events';
 import { NotificationDto, NotificationPayloadTypes } from '../_dto/notification/notification.dto';
 import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { Logger } from '@/utils/logger/Logger';
@@ -22,6 +21,7 @@ type MainPageContextType = {
 };
 export const AnswersContext = createContext<MainPageContextType | undefined>(undefined);
 export const NotificationContext = createContext<NotificationDto | undefined>(undefined);
+export const MyProfileContext = createContext<userProfileMeDto | undefined>(undefined);
 
 export default function MainLayout({ modal, children }: { children: React.ReactNode; modal: React.ReactNode }) {
   const [userProfileData, setUserProfileData] = useState<userProfileMeDto | undefined>();

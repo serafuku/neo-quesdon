@@ -6,13 +6,14 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { $Enums } from '@prisma/client';
-import { MyProfileEv, MyProfileContext } from '@/app/main/_profileContext';
 import BlockList from '@/app/main/settings/_table';
 import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { AccountCleanReqDto } from '@/app/_dto/account-clean/account-clean.dto';
 import { FaLock, FaUserLargeSlash } from 'react-icons/fa6';
 import { MdDeleteSweep, MdOutlineCleaningServices } from 'react-icons/md';
+import { MyProfileContext } from '@/app/main/layout';
+import { MyProfileEv } from '@/app/main/_events';
 
 export type FormValue = {
   stopAnonQuestion: boolean;

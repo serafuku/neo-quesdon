@@ -2,8 +2,8 @@
 
 import UsernameAndProfile from '@/app/_components/userProfile';
 import { FollowingListResDto } from '@/app/_dto/following/following.dto';
+import { MyProfileContext } from '@/app/main/layout';
 import { useContext, useEffect, useState } from 'react';
-import { MyProfileContext } from '../_profileContext';
 
 export default function Social() {
   const [following, setFollowing] = useState<FollowingListResDto | null | undefined>();

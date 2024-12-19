@@ -7,8 +7,7 @@ import {
   WebsocketQuestionCreatedEvent,
   WebsocketQuestionDeletedEvent,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
-import { MyQuestionEv, AnswerEv, NotificationEv } from '@/app/main/_events';
-import { MyProfileEv } from '@/app/main/_profileContext';
+import { MyQuestionEv, AnswerEv, NotificationEv, MyProfileEv } from '@/app/main/_events';
 import { Dispatch, MutableRefObject, SetStateAction } from 'react';
 
 type managerPropsType = {
