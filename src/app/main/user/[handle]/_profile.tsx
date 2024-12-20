@@ -12,6 +12,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaEllipsisVertical } from 'react-icons/fa6';
+import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 
 type FormValue = {
   question: string;
@@ -271,7 +272,7 @@ export default function Profile() {
             <div className="flex w-full h-24 mb-2">
               <Link href={`https://${userProfile.hostname}/${userProfile.handle.match(/^@([^@ ]){1,100}/g)?.[0]}`}>
                 <img
-                  src={userProfile.avatarUrl}
+                  src={getProxyUrl(userProfile.avatarUrl)}
                   alt="User Avatar"
                   className={`w-24 h-24 object-cover absolute left-[calc(50%-3rem)] rounded-full`}
                 />

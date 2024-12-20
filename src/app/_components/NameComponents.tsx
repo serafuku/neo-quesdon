@@ -1,5 +1,7 @@
 'use client';
 
+import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
+
 type username = {
   username: string[] | undefined;
   width: number;
@@ -18,7 +20,7 @@ export default function NameComponents({ username, height }: username) {
                   className={`mx-1 object-contain`}
                   style={{ height: height }}
                   alt="Custom Emoji In Username"
-                  src={el}
+                  src={getProxyUrl(el)}
                   key={key}
                 />
               ) : (
