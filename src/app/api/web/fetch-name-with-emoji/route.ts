@@ -50,17 +50,13 @@ export async function POST(req: NextRequest) {
       try {
         if (emojiInUsername) {
           for (let i = 0; i < emojiInUsername.length; i++) {
-            const emojiAddress = await fetch(`https://${baseUrl}/api/emoji`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                name: emojiInUsername[i],
-              }),
-            }).then((r) => r.json());
-
-            usernameEmojiAddress.push(emojiAddress.url);
+            try {
+              const emojiAddress = await fetch(`https://${baseUrl}/emojis/${emojiInUsername[i]}`).then((r) => r.json());
+  
+              usernameEmojiAddress.push(emojiAddress.icon.url);
+            } catch {
+              console.error(`emoji ${emojiInUsername[i]} not found in instance ${baseUrl}`);
+            }
           }
 
           for (const el in nameArray) {
