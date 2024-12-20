@@ -10,6 +10,7 @@ import { FaXmark } from 'react-icons/fa6';
 import WebSocketState from '../_components/webSocketState';
 import { MyProfileContext, NotificationContext } from './layout';
 import { webSocketManager } from '@/app/main/_websocketManager';
+import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 
 type headerProps = {
   questionsNum: number;
@@ -106,7 +107,7 @@ export default function MainHeader({ questionsNum, loginChecked }: headerProps) 
           <div className="w-10 rounded-full">
             {profile?.avatarUrl ? (
               <>
-                <img src={profile.avatarUrl} alt="navbar avatar profile" />
+                <img src={getProxyUrl(profile.avatarUrl)} alt="navbar avatar profile" />
                 {questionsNum > 0 || notiNum > 0 ? (
                   <span className="badge badge-sm badge-warning absolute top-0">{questionsNum + notiNum}</span>
                 ) : (

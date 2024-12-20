@@ -14,6 +14,7 @@ import { FaLock, FaUserLargeSlash } from 'react-icons/fa6';
 import { MdDeleteSweep, MdOutlineCleaningServices } from 'react-icons/md';
 import { MyProfileContext } from '@/app/main/layout';
 import { MyProfileEv } from '@/app/main/_events';
+import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -212,7 +213,7 @@ export default function Settings() {
                 <div className="avatar">
                   <div className="ring-primary ring-offset-base-100 w-24 h-24 rounded-full ring ring-offset-2">
                     {userInfo?.avatarUrl !== undefined && (
-                      <img src={userInfo?.avatarUrl} alt="User Avatar" className="rounded-full" />
+                      <img src={getProxyUrl(userInfo.avatarUrl)} alt="User Avatar" className="rounded-full" />
                     )}
                   </div>
                 </div>

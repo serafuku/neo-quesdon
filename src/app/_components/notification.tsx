@@ -5,6 +5,7 @@ import { useContext, useEffect } from 'react';
 import { NotificationContext } from '../main/layout';
 import Link from 'next/link';
 import { FaReply } from 'react-icons/fa';
+import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 
 export default function Notification() {
   const notificationContext = useContext(NotificationContext);
@@ -25,7 +26,7 @@ export default function Notification() {
                     fill="white"
                   />
                   <img
-                    src={noti.data.answeredPerson?.avatarUrl}
+                    src={noti.data.answeredPerson?.avatarUrl && getProxyUrl(noti.data.answeredPerson.avatarUrl)}
                     alt="answered persen avatar"
                     className={`w-16 h-16 rounded-full ${isRead && 'opacity-70'}`}
                   />

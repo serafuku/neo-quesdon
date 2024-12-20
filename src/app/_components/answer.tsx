@@ -6,6 +6,7 @@ import NameComponents from './NameComponents';
 import { AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
 import { userProfileDto } from '../_dto/fetch-profile/Profile.dto';
 import { useParams } from 'next/navigation';
+import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 
 interface askProps {
   value: AnswerWithProfileDto;
@@ -88,7 +89,7 @@ export default function Answer({ value, idState, ref }: askProps) {
           <div className="chat-image avatar">
             <div className="w-12 rounded-full">
               <Link href={`/main/user/${value.answeredPersonHandle}`}>
-                <img src={userInfo?.avatarUrl} alt="answered person avatar" />
+                <img src={userInfo?.avatarUrl && getProxyUrl(userInfo.avatarUrl)} alt="answered person avatar" />
               </Link>
             </div>
           </div>
