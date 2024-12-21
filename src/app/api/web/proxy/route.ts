@@ -72,16 +72,15 @@ class RemoteImageProxy {
           return sendApiError(400, `Proxy Fail! Remote server Sent ${remote_res.status}`);
         }
         const content_length = remote_res.headers['content-length'];
-        const content_type = remote_res.headers['content-type'];
+        let content_type = remote_res.headers['content-type'];
         if (isNumberString(content_length)) {
           if (parseInt(content_length) > REMOTE_MEDIA_SIZE_LIMIT) {
             abortController.abort();
             return sendApiError(413, `Remote Content Too Large`);
           }
         }
-        if (!content_type || !content_type.startsWith('image/')) {
-          abortController.abort();
-          return sendApiError(400, 'Content is not image');
+        if (typeof content_type !== 'string' || !content_type.startsWith('image/')) {
+          content_type = 'application/octet-stream';
         }
         const remote_filename = new RE2(/filename="([^";]+)"/).exec(
           remote_res.headers['content-disposition'] ?? '',
@@ -92,7 +91,7 @@ class RemoteImageProxy {
 
         const resHeader = {
           ...(content_length ? { 'content-length': content_length } : {}),
-          'Content-Type': content_type ?? 'application/octet-stream',
+          'Content-Type': content_type,
           'Content-Disposition': content_disposition,
           'Cache-Control': 'public, max-age=31536000',
           ...(last_modified ? { 'last-modified': last_modified } : {}),
