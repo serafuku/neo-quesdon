@@ -12,7 +12,11 @@ import { FetchAllAnswersReqDto } from '@/app/_dto/answers/fetch-all-answers.dto'
 import { FetchUserAnswersDto } from '@/app/_dto/answers/fetch-user-answers.dto';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
 import { RedisPubSubService } from '@/_service/redis-pubsub/redis-event.service';
-import { AnswerDeletedEvPayload, QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import {
+  AnswerCreatedPayload,
+  AnswerDeletedEvPayload,
+  QuestionDeletedPayload,
+} from '@/app/_dto/websocket-event/websocket-event.dto';
 import { CreateAnswerDto } from '@/app/_dto/answers/create-answer.dto';
 import { profileToDto } from '@/api/_utils/profileToDto';
 import { isString } from 'class-validator';
@@ -151,9 +155,10 @@ export class AnswerService {
     const question_numbers = await this.prisma.question.count({ where: { questioneeHandle: tokenPayload.handle } });
     const profileDto = profileToDto(answeredUser.profile, answeredUser.hostName, answeredUser.server.instanceType);
     const answerDto = answerEntityToDto(createdAnswer);
-    const answerWithProfileDto = {
+    const answerCreated = {
       ...answerDto,
       answeredPerson: profileDto,
+      hideFromMain: createdAnswer.hideFromMain,
     };
     this.event_service.pub<QuestionDeletedPayload>('question-deleted-event', {
       deleted_id: q.id,
@@ -161,10 +166,10 @@ export class AnswerService {
       question_numbers: question_numbers,
     });
 
-    this.event_service.pub<AnswerWithProfileDto>('answer-created-event', answerWithProfileDto);
+    this.event_service.pub<AnswerCreatedPayload>('answer-created-event', answerCreated);
 
     if (isHandle(q.questioner)) {
-      this.notificationService.AnswerOnMyQuestionNotification(q.questioner!, answerWithProfileDto);
+      this.notificationService.AnswerOnMyQuestionNotification(q.questioner!, answerCreated);
     }
     this.logger.log('Created new answer:', answerUrl);
     return new NextResponse(null, { status: 201 });

@@ -7,6 +7,7 @@ import RE2 from 're2';
 import { verifyToken } from '../../_utils/jwt/verify-jwt';
 import { RedisPubSubService } from '@/app/api/_service/redis-pubsub/redis-event.service';
 import {
+  AnswerCreatedPayload,
   AnswerDeletedEvPayload,
   QuestionCreatedPayload,
   QuestionDeletedPayload,
@@ -15,7 +16,6 @@ import {
   WebsocketKeepAliveEvent,
   WebsocketPayloadTypes,
 } from '@/app/_dto/websocket-event/websocket-event.dto';
-import { AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { GetPrismaClient } from '../../_utils/getPrismaClient/get-prisma-client';
 import { RedisKvCacheService } from '../kvCache/redisKvCacheService';
 import { blocking, PrismaClient } from '@prisma/client';
@@ -59,14 +59,14 @@ export class WebsocketService {
         data: data,
       });
     });
-    this.eventService.sub<AnswerWithProfileDto>('answer-created-event', async (data) => {
+    this.eventService.sub<AnswerCreatedPayload>('answer-created-event', async (data) => {
       this.logger.debug(`Got Event answer-created-event`);
       const ev_data: WebsocketAnswerCreatedEvent = {
         ev_name: 'answer-created-event',
         data: data,
       };
       const filteredClients = await this.filterBlock(data.answeredPersonHandle);
-      this.sendToList<AnswerWithProfileDto>(filteredClients, ev_data);
+      this.sendToList<AnswerCreatedPayload>(filteredClients, ev_data);
     });
     this.eventService.sub<AnswerDeletedEvPayload>('answer-deleted-event', (data) => {
       this.logger.debug(`Got Event answer-deleted-event`);
