@@ -38,8 +38,8 @@ export default function Notification() {
                 replace
               >
                 <div className={`flex flex-col ${isRead && 'text-slate-500 dark:text-slate-400'}`}>
-                  <span className="font-thin italic ">&quot;{noti.data?.question}&quot;</span>
-                  <p>{noti.data?.answer}</p>
+                  <span className="font-thin italic break-all">&quot;{noti.data?.question}&quot;</span>
+                  <p className="break-all">{noti.data?.answer}</p>
                 </div>
               </Link>
             </div>
