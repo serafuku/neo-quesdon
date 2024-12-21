@@ -14,4 +14,7 @@ export class CreateAnswerDto {
 
   @IsEnum($Enums.PostVisibility)
   visibility: $Enums.PostVisibility;
+
+  @IsBoolean()
+  hideFromMain: boolean;
 }

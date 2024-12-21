@@ -81,6 +81,7 @@ export class AnswerService {
           answer: data.answer,
           answeredPersonHandle: tokenPayload.handle,
           nsfwedAnswer: data.nsfwedAnswer,
+          hideFromMain: data.hideFromMain,
         },
       });
       await tr.question.delete({
@@ -227,6 +228,7 @@ export class AnswerService {
 
     const answersWithProfile = await prisma.answer.findMany({
       where: {
+        hideFromMain: false,
         id: {
           ...(typeof sinceId === 'string' ? { gt: sinceId } : {}),
           ...(typeof untilId === 'string' ? { lt: untilId } : {}),

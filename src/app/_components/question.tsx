@@ -94,7 +94,7 @@ export default function Question({
         questionId: questionId,
         answer: e.answer,
         nsfwedAnswer: e.nsfw,
-        // TODO: 여기에 hideFromMain 추가
+        hideFromMain: e.hideFromMain,
         visibility: e.visibility,
       };
       await postAnswer(req);
@@ -145,7 +145,7 @@ export default function Question({
   };
 
   useEffect(() => {
-    reset({ visibility: defaultVisibility, nsfw: false });
+    reset({ visibility: defaultVisibility, nsfw: false, hideFromMain: false });
   }, [defaultVisibility]);
 
   return (
