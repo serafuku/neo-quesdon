@@ -66,8 +66,10 @@ model answer {
   answeredPersonHandle String
   answeredPerson       profile  @relation(fields: [answeredPersonHandle], references: [handle], onDelete: Cascade)
   nsfwedAnswer         Boolean
+  hideFromMain         Boolean  @default(false)
 
   @@index([answeredPersonHandle])
+  @@index([hideFromMain])
 }
 
 model question {
