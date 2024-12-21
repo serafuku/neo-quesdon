@@ -22,7 +22,7 @@ export default function GithubRepoLink() {
             />
           </svg>
         </div>
-        <div className="text-xs underline">Github</div>
+        <div className="text-xs underline">GitHub</div>
       </Link>
       <div className="flex flex-col text-xs font-thin opacity-70">
         <span>AGPL-3.0 License</span>
