@@ -9,6 +9,7 @@ import { questionDto } from '@/app/_dto/questions/question.dto';
 interface formValue {
   answer: string;
   nsfw: boolean;
+  hideFromMain: boolean;
   visibility: 'public' | 'home' | 'followers';
 }
 
@@ -46,6 +47,7 @@ export default function Question({
   } = useForm<formValue>({
     defaultValues: {
       nsfw: false,
+      hideFromMain: false,
       visibility: defaultVisibility,
       answer: '',
     },
@@ -68,6 +70,7 @@ export default function Question({
   };
 
   const nsfwedAnswer = watch('nsfw');
+  const hideFromMain = watch('hideFromMain');
 
   const onSubmit: SubmitHandler<formValue> = async (e) => {
     const detectWhiteSpaces = new RegExp(/^\s+$/);
@@ -91,6 +94,7 @@ export default function Question({
         questionId: questionId,
         answer: e.answer,
         nsfwedAnswer: e.nsfw,
+        // TODO: 여기에 hideFromMain 추가
         visibility: e.visibility,
       };
       await postAnswer(req);
@@ -187,24 +191,37 @@ export default function Question({
             />
 
             <div className="w-full flex flex-col gap-3 desktop:flex-row justify-between items-center">
-              <div className="flex gap-6">
-                <div className="flex gap-2 items-center text-xl">
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-accent"
-                    onClick={() => setValue('nsfw', !nsfwedAnswer)}
-                  />
-                  <input type="hidden" {...register('nsfw')} />
-                  <span className="w-full text-sm desktop:text-xl">NSFW로 체크</span>
+              <div className="flex gap-4">
+                <div className="flex flex-col desktop:flex-row gap-2 text-xl">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="toggle toggle-accent toggle-sm"
+                      onClick={() => setValue('nsfw', !nsfwedAnswer)}
+                    />
+                    <input type="hidden" {...register('nsfw')} />
+                    <span className="w-full text-sm desktop:text-md">NSFW로 체크</span>
+                  </div>
+                  <div className="flex items-center gap-2 tooltip" data-tip="'최근 올라온 답변'에서 답변이 숨겨져요.">
+                    <input
+                      type="checkbox"
+                      className="toggle toggle-accent toggle-sm"
+                      onClick={() => setValue('hideFromMain', !hideFromMain)}
+                    />
+                    <input type="hidden" {...register('hideFromMain')} />
+                    <span className="w-full text-sm desktop:text-md break-keep">메인에서 숨기기</span>
+                  </div>
                 </div>
-                <select {...register('visibility')} className="select select-ghost select-sm dark:shadow">
-                  <option className={'hidden'} value={undefined}>
-                    ...
-                  </option>
-                  <option value="public">공개</option>
-                  <option value="home">홈</option>
-                  <option value="followers">팔로워</option>
-                </select>
+                <div className="tooltip" data-tip="답변 노트를 올릴 범위">
+                  <select {...register('visibility')} className="select select-ghost select-sm dark:shadow tooltip">
+                    <option className={'hidden'} value={undefined}>
+                      ...
+                    </option>
+                    <option value="public">공개</option>
+                    <option value="home">홈</option>
+                    <option value="followers">팔로워</option>
+                  </select>
+                </div>
               </div>
               <div className="w-full desktop:w-fit flex justify-center">
                 <button type={'submit'} className="btn btn-outline dark:border-white dark:text-slate-200 h-10 btn-md ">
