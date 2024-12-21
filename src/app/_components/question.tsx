@@ -207,10 +207,7 @@ export default function Question({
                 </select>
               </div>
               <div className="w-full desktop:w-fit flex justify-center">
-                <button
-                  type={'submit'}
-                  className="btn btn-outline dark:border-white dark:text-slate-200 btn-block h-10 desktop:btn-md "
-                >
+                <button type={'submit'} className="btn btn-outline dark:border-white dark:text-slate-200 h-10 btn-md ">
                   답변
                 </button>
               </div>
