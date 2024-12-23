@@ -1,6 +1,6 @@
 import { userProfileDto } from '../fetch-profile/Profile.dto';
 
-export interface AnswerDto {
+export class AnswerDto {
   id: string;
   question: string;
   questioner: string | null;
@@ -10,7 +10,7 @@ export interface AnswerDto {
   nsfwedAnswer: boolean;
 }
 
-export interface AnswerWithProfileDto extends AnswerDto {
+export class AnswerWithProfileDto extends AnswerDto {
   answeredPerson?: userProfileDto;
 }
 

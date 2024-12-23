@@ -6,7 +6,7 @@ import { createContext, useEffect, useRef, useState } from 'react';
 import { AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
 import { AnswerEv, MyProfileEv, NotificationEv } from './_events';
 import { NotificationDto, NotificationPayloadTypes } from '../_dto/notification/notification.dto';
-import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { AnswerCreatedPayload, AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { Logger } from '@/utils/logger/Logger';
 import { fetchMyProfile } from '@/utils/profile/fetchMyProfile';
 import DialogModalOneButton from '@/app/_components/modalOneButton';
@@ -132,7 +132,10 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
     });
   };
 
-  const onAnswerCreated = (ev: CustomEvent<AnswerWithProfileDto>) => {
+  const onAnswerCreated = (ev: CustomEvent<AnswerCreatedPayload>) => {
+    if (ev.detail.hideFromMain) {
+      return;
+    }
     setAnswers((prevAnswer) => (prevAnswer ? [ev.detail, ...prevAnswer] : []));
   };
 
@@ -179,4 +182,3 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
     </div>
   );
 }
-

@@ -16,10 +16,9 @@ export type websocketEventNameType = (typeof event_name_enum_arr)[number];
 export type WebsocketPayloadTypes =
   | QuestionCreatedPayload
   | QuestionDeletedPayload
-  | AnswerWithProfileDto
+  | AnswerCreatedPayload
   | AnswerDeletedEvPayload
   | NotificationPayloadTypes
-  | AnswerWithProfileDto
   | string;
 
 export class WebsocketEvent<T extends WebsocketPayloadTypes> {
@@ -47,7 +46,10 @@ export class WebsocketKeepAliveEvent extends WebsocketEvent<string> {
   ev_name: 'keep-alive';
 }
 
-export class WebsocketAnswerCreatedEvent extends WebsocketEvent<AnswerWithProfileDto> {
+export class AnswerCreatedPayload extends AnswerWithProfileDto {
+  hideFromMain: boolean;
+}
+export class WebsocketAnswerCreatedEvent extends WebsocketEvent<AnswerCreatedPayload> {
   ev_name: 'answer-created-event';
 }
 
