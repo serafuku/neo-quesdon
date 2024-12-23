@@ -34,29 +34,30 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
 
 export default async function ProfilePage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
-  const profileHandle = decodeURIComponent(handle);
+  const userHandle = decodeURIComponent(handle);
   const prisma = GetPrismaClient.getClient();
-  const userProfile = await prisma.profile.findUnique({
+  const user = await prisma.user.findUnique({
     where: {
-      handle: profileHandle,
+      handle: userHandle,
     },
   });
 
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] grid grid-cols-1 desktop:grid-cols-2 gap-4">
-      {userProfile === null ? (
+      {user === null ? (
         <div className="w-full col-span-2 flex flex-col justify-center items-center glass text-4xl rounded-box shadow p-2">
           😶‍🌫️
           <span>그런 사용자는 없어요!</span>
         </div>
       ) : (
         <>
-          {userProfile === undefined ? (
+          {user === undefined ? (
             <div className="w-full col-span-2 flex justify-center">
               <span className="loading loading-spinner loading-lg" />
             </div>
           ) : (
             <>
+              <a href={`https://${user.hostName}/@${user.account}`} className="hidden" rel={'me'}></a>
               <Profile />
               <UserPage />
             </>
