@@ -16,7 +16,9 @@ export default function SingleAnswer() {
     const res = await fetch(`/api/db/answers/${userHandle}/${id}`, {
       method: 'GET',
     });
-    if (!res.ok) {
+    if (res.status === 404) {
+      return null;
+    } else if (!res.ok) {
       throw new Error(`Fail to fetch answer! ${await res.text()}`);
     }
     return await res.json();
