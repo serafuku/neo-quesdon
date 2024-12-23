@@ -7,7 +7,7 @@ import { AnswerDto } from '@/app/_dto/answers/Answers.dto';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 
 export default function SingleAnswer() {
-  const [answerBody, setAnswerBody] = useState<AnswerDto>();
+  const [answerBody, setAnswerBody] = useState<AnswerDto | null>();
   const singleQuestionDeleteModalRef = useRef<HTMLDialogElement>(null);
   const { answer } = useParams() as { answer: string };
   const { userHandle } = useParams() as { userHandle: string };
@@ -43,39 +43,47 @@ export default function SingleAnswer() {
 
   return (
     <div className="flex w-[90%] window:w-[80%] desktop:w-[70%]">
-      {answerBody ? (
+      {answerBody !== undefined ? (
         <>
-          <Answer value={answerBody} id={answerBody.id} ref={singleQuestionDeleteModalRef} />
-          <DialogModalTwoButton
-            title={'답변 지우기'}
-            body={'답변을 지울까요...?'}
-            confirmButtonText={'확인'}
-            cancelButtonText={'취소'}
-            ref={singleQuestionDeleteModalRef}
-            onClick={() => handleDeleteAnswer(answerBody.id)}
-          />
-          <input type="checkbox" id={`answer_delete_modal_${answerBody.id}`} className="modal-toggle" />
-          <div className="modal" role="dialog">
-            <div className="modal-box">
-              <h3 className="py-4 text-2xl">답변을 지울까요...?</h3>
-              <div className="modal-action">
-                <label
-                  htmlFor={`answer_delete_modal_${answerBody.id}`}
-                  className="btn btn-error"
-                  onClick={() => handleDeleteAnswer(answerBody.id)}
-                >
-                  확인
-                </label>
-                <label htmlFor={`answer_delete_modal_${answerBody.id}`} className="btn">
-                  취소
-                </label>
+          {answerBody !== null ? (
+            <>
+              <Answer value={answerBody} id={answerBody.id} ref={singleQuestionDeleteModalRef} />
+              <DialogModalTwoButton
+                title={'답변 지우기'}
+                body={'답변을 지울까요...?'}
+                confirmButtonText={'확인'}
+                cancelButtonText={'취소'}
+                ref={singleQuestionDeleteModalRef}
+                onClick={() => handleDeleteAnswer(answerBody.id)}
+              />
+              <input type="checkbox" id={`answer_delete_modal_${answerBody.id}`} className="modal-toggle" />
+              <div className="modal" role="dialog">
+                <div className="modal-box">
+                  <h3 className="py-4 text-2xl">답변을 지울까요...?</h3>
+                  <div className="modal-action">
+                    <label
+                      htmlFor={`answer_delete_modal_${answerBody.id}`}
+                      className="btn btn-error"
+                      onClick={() => handleDeleteAnswer(answerBody.id)}
+                    >
+                      확인
+                    </label>
+                    <label htmlFor={`answer_delete_modal_${answerBody.id}`} className="btn">
+                      취소
+                    </label>
+                  </div>
+                </div>
               </div>
+            </>
+          ) : (
+            <div className="w-full text-2xl flex gap-2 justify-center items-center border shadow rounded-box p-4 glass">
+              <span>찾으시는 답변이 없어요!</span>
             </div>
-          </div>
+          )}
         </>
       ) : (
-        <div className="w-full text-2xl flex gap-2 justify-center items-center border shadow rounded-box p-4 glass">
-          <span>찾으시는 답변이 없어요!</span>
+        <div className="w-full text-center">
+          <span className="loading loading-spinner loading-lg" />
         </div>
       )}
     </div>
