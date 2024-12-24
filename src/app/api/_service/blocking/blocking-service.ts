@@ -95,7 +95,7 @@ export class BlockingService {
     const return_data = blockList.map((v) => {
       const d: Block = {
         id: v.id,
-        targetHandle: v.blockeeHandle,
+        targetHandle: v.blockeeTarget,
         blockedAt: v.createdAt,
       };
       return d;
@@ -125,7 +125,7 @@ export class BlockingService {
     const r = await this.prisma.blocking.findMany({
       where: {
         blockerHandle: tokenBody.handle,
-        blockeeHandle: data.targetHandle,
+        blockeeTarget: data.targetHandle,
         hidden: false,
       },
     });
@@ -148,7 +148,7 @@ export class BlockingService {
     try {
       const r = await this.prisma.blocking.deleteMany({
         where: {
-          blockeeHandle: data.targetHandle,
+          blockeeTarget: data.targetHandle,
           blockerHandle: user.handle,
           hidden: false,
         },
@@ -181,14 +181,14 @@ export class BlockingService {
 
   /**
    * 블락을 생성하고, 미답변 질문중 블락대상의 것은 삭제
-   * @param blockeeHandle 블락될 대상의 핸들
+   * @param blockeeTarget 블락될 대상의 핸들이나 ipHash
    * @param myHandle  내 핸들
    * @param imported ImportBlock에 의해서 가져온 Block인 경우 true
    * @param isHidden 익명질문의 유저를 차단하는 경우 true (구현 예정)
    */
-  public async createBlock(blockeeHandle: string, myHandle: string, imported?: boolean, isHidden?: boolean) {
+  public async createBlock(blockeeTarget: string, myHandle: string, imported?: boolean, isHidden?: boolean) {
     const dbData = {
-      blockeeHandle: blockeeHandle,
+      blockeeTarget: blockeeTarget,
       blockerHandle: myHandle,
       hidden: isHidden ? true : false,
       imported: imported ? true : false,
@@ -196,8 +196,8 @@ export class BlockingService {
     };
     await this.prisma.blocking.upsert({
       where: {
-        blockeeHandle_blockerHandle_hidden_imported: {
-          blockeeHandle: dbData.blockeeHandle,
+        blockeeTarget_blockerHandle_hidden_imported: {
+          blockeeTarget: dbData.blockeeTarget,
           blockerHandle: dbData.blockerHandle,
           hidden: dbData.hidden,
           imported: dbData.imported,
@@ -209,7 +209,7 @@ export class BlockingService {
 
     //기존 질문의 필터링
     const question_list = await this.prisma.question.findMany({ where: { questioneeHandle: myHandle } });
-    const remove_list = question_list.filter((q) => q.questioner === blockeeHandle);
+    const remove_list = question_list.filter((q) => q.questioner === blockeeTarget);
     remove_list.forEach(async (r) => {
       await this.prisma.question.delete({ where: { id: r.id } });
       const ev_data: QuestionDeletedPayload = {
