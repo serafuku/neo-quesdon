@@ -93,7 +93,7 @@ class RemoteImageProxy {
           ...(content_length ? { 'content-length': content_length } : {}),
           'Content-Type': content_type,
           'Content-Disposition': content_disposition,
-          'Cache-Control': 'public, max-age=31536000',
+          'Cache-Control': 'public, max-age=31536000, immutable',
           ...(last_modified ? { 'last-modified': last_modified } : {}),
           ...(etag ? { etag: etag } : {}),
         };
