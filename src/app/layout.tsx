@@ -48,7 +48,7 @@ export default function RootLayout({
         {children}
         <div className="fixed top-0 left-0 bg-transparent w-[100vw] h-[100vh] -z-10">
           <Image
-            src={`/${randomNumber}.gif`}
+            src={`/static/${randomNumber}.gif`}
             alt="App Background"
             fill={true}
             unoptimized

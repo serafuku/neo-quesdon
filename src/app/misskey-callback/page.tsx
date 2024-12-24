@@ -69,7 +69,7 @@ export default function CallbackPage() {
   return (
     <>
       <div className="w-full h-[100vh] flex flex-col gap-2 justify-center items-center text-3xl">
-        <Image src={`/loading/${id}.gif`} width={64} height={64} alt="Login Loading" unoptimized />
+        <Image src={`/static/loading/${id}.gif`} width={64} height={64} alt="Login Loading" unoptimized />
         <span>로그인하고 있어요...</span>
       </div>
       <DialogModalOneButton
