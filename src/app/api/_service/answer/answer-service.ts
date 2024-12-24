@@ -388,7 +388,7 @@ export class AnswerService {
       const existList = [];
       for (const block of all_blockList) {
         const exist = await prisma.user.findUnique({
-          where: { handle: block.blockeeHandle },
+          where: { handle: block.blockeeTarget },
         });
         if (exist) {
           existList.push(block);
@@ -397,9 +397,9 @@ export class AnswerService {
       return existList;
     };
     const blockList = await kv.get(getBlockListOnlyExist, { key: `block-${myHandle}`, ttl: 600 });
-    const blockedList = await prisma.blocking.findMany({ where: { blockeeHandle: myHandle, hidden: false } });
+    const blockedList = await prisma.blocking.findMany({ where: { blockeeTarget: myHandle, hidden: false } });
     const filteredAnswers = answers.filter((ans) => {
-      if (blockList.find((b) => b.blockeeHandle === ans.answeredPersonHandle || b.blockeeHandle === ans.questioner)) {
+      if (blockList.find((b) => b.blockeeTarget === ans.answeredPersonHandle || b.blockeeTarget === ans.questioner)) {
         return false;
       }
       if (blockedList.find((b) => b.blockerHandle === ans.answeredPersonHandle || b.blockerHandle === ans.questioner)) {

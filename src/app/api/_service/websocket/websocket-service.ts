@@ -275,7 +275,7 @@ export class WebsocketService {
       const existList = [];
       for (const block of all_blockList) {
         const exist = await this.prisma.user.findUnique({
-          where: { handle: block.blockeeHandle },
+          where: { handle: block.blockeeTarget },
         });
         if (exist) {
           existList.push(block);
@@ -287,9 +287,9 @@ export class WebsocketService {
       key: `block-${target_handle}`,
       ttl: 600,
     });
-    const blockedList = await this.prisma.blocking.findMany({ where: { blockeeHandle: target_handle, hidden: false } });
+    const blockedList = await this.prisma.blocking.findMany({ where: { blockeeTarget: target_handle, hidden: false } });
     const filteredClients = client_list.filter((c) => {
-      if (blockList.find((b) => b.blockeeHandle === c.user_handle)) {
+      if (blockList.find((b) => b.blockeeTarget === c.user_handle)) {
         return false;
       }
       if (blockedList.find((b) => b.blockerHandle === c.user_handle)) {

@@ -83,7 +83,7 @@ export class QuestionService {
       // 블락 여부 검사
       if (tokenPayload?.handle) {
         const blocked = await this.prisma.blocking.findFirst({
-          where: { blockeeHandle: tokenPayload.handle, blockerHandle: questionee_user.handle },
+          where: { blockeeTarget: tokenPayload.handle, blockerHandle: questionee_user.handle },
         });
         if (blocked) {
           return sendApiError(403, '이 사용자에게 질문을 보낼 수 없습니다!');
