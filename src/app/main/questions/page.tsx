@@ -9,6 +9,7 @@ import { MyQuestionEv } from '../_events';
 import { Logger } from '@/utils/logger/Logger';
 import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { MyProfileContext } from '@/app/main/layout';
+import { createBlockByQuestionDto } from '@/app/_dto/blocking/blocking.dto';
 
 const fetchQuestions = async (): Promise<questionDto[] | null> => {
   const res = await fetch('/api/db/questions');
@@ -36,6 +37,19 @@ async function deleteQuestion(id: number) {
     throw new Error(`질문을 삭제하는데 실패했어요! ${await res.text()}`);
   }
 }
+async function createBlock(id: number) {
+  const body: createBlockByQuestionDto = {
+    questionId: id,
+  };
+  const res = await fetch(`/api/user/blocking/create-by-question`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`차단에 실패했어요! ${await res.text()}`);
+  }
+}
 
 export default function Questions() {
   const [questions, setQuestions] = useState<questionDto[] | null>();
@@ -43,6 +57,7 @@ export default function Questions() {
   const [id, setId] = useState<number>(0);
   const deleteQuestionModalRef = useRef<HTMLDialogElement>(null);
   const answeredQuestionModalRef = useRef<HTMLDialogElement>(null);
+  const createBlockModalRef = useRef<HTMLDialogElement>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const onNewQuestionEvent = (ev: CustomEvent<questionDto>) => {
@@ -92,6 +107,7 @@ export default function Questions() {
                         setQuestions={setQuestions}
                         answerRef={answeredQuestionModalRef}
                         deleteRef={deleteQuestionModalRef}
+                        blockingRef={createBlockModalRef}
                         setIsLoading={setIsLoading}
                         defaultVisibility={profile?.defaultPostVisibility}
                       />
@@ -130,6 +146,16 @@ export default function Questions() {
         onClick={() => {
           deleteQuestion(id);
           setQuestions((prevQuestions) => (prevQuestions ? [...prevQuestions.filter((prev) => prev.id !== id)] : null));
+        }}
+      />
+      <DialogModalTwoButton
+        title={'질문자 차단'}
+        body={'정말 질문자를 차단할까요? 차단된 질문자는 더 이상 나에게 질문을 할 수 없어요!'}
+        confirmButtonText={'확인'}
+        cancelButtonText={'취소'}
+        ref={createBlockModalRef}
+        onClick={() => {
+          createBlock(id);
         }}
       />
     </div>

@@ -99,16 +99,16 @@ model server {
 
 model blocking {
   id            String   @id @default(cuid())
-  blockeeHandle String   @db.VarChar(500)
+  blockeeTarget String   @db.VarChar(500) @map("blockeeHandle") /// Handle or ipHash
   blockerHandle String   @db.VarChar(500)
   blocker       user     @relation("blocks", fields: [blockerHandle], references: [handle], onDelete: Cascade)
   createdAt     DateTime @default(now())
   hidden        Boolean  @default(false)
   imported      Boolean  @default(false)
 
-  @@unique([blockeeHandle, blockerHandle, hidden, imported])
+  @@unique([blockeeTarget, blockerHandle, hidden, imported])
   @@index([blockerHandle, hidden])
-  @@index([blockeeHandle, hidden])
+  @@index([blockeeTarget, hidden])
   @@index([imported])
 }
 

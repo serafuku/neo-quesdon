@@ -7,7 +7,9 @@ import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client'
 import { validateStrict } from '@/utils/validator/strictValidator';
 import {
   Block,
+  createBlockByQuestionDto,
   CreateBlockDto,
+  DeleteBlockByIdDto,
   DeleteBlockDto,
   GetBlockListReqDto,
   SearchBlockListReqDto,
@@ -56,12 +58,45 @@ export class BlockingService {
       return sendApiError(400, 'Bad Request. User not found');
     }
     try {
-      await this.createBlock(targetUser.handle, user.handle, false);
+      const b = await this.createBlock(targetUser.handle, user.handle, false);
+      this.logger.debug(`New Block created, hidden: ${b.hidden}, target: ${b.blockeeTarget}`);
     } catch (err) {
       return sendApiError(500, JSON.stringify(err));
     }
 
     return NextResponse.json({}, { status: 200 });
+  }
+
+  @Auth()
+  @RateLimit({ bucket_time: 300, req_limit: 60 }, 'user')
+  public async createBlockByQuestionApi(
+    req: NextRequest,
+    @JwtPayload tokenBody?: jwtPayloadType,
+  ): Promise<NextResponse> {
+    let data;
+    try {
+      data = await validateStrict(createBlockByQuestionDto, await req.json());
+    } catch (err) {
+      return sendApiError(400, `Bad request ${String(err)}`);
+    }
+    try {
+      const q = await this.prisma.question.findUnique({ where: { id: data.questionId } });
+      if (!q) {
+        return sendApiError(400, 'questionId not found!');
+      }
+      if (q.questioneeHandle !== tokenBody?.handle) {
+        return sendApiError(403, 'Not your question!');
+      }
+      if (q.questioner) {
+        const b = await this.createBlock(q.questioner, tokenBody.handle, false, q.isAnonymous);
+        this.logger.debug(`New Block created by Question ${q.id}, hidden: ${b.hidden}, target: ${b.blockeeTarget}`);
+        return NextResponse.json(`OK. block created!`, { status: 201 });
+      } else {
+        return NextResponse.json(`Block not created! (questioner is null)`, { status: 200 });
+      }
+    } catch (err) {
+      return sendApiError(500, 'ERROR!' + String(err));
+    }
   }
 
   @Auth()
@@ -86,7 +121,6 @@ export class BlockingService {
           ...(data.sinceId ? { gt: data.sinceId } : {}),
           ...(data.untilId ? { lt: data.untilId } : {}),
         },
-        hidden: false,
       },
       orderBy: { id: orderBy },
       take: data.limit ?? 10,
@@ -95,7 +129,7 @@ export class BlockingService {
     const return_data = blockList.map((v) => {
       const d: Block = {
         id: v.id,
-        targetHandle: v.blockeeHandle,
+        targetHandle: v.hidden ? `익명의 질문자 ${v.id}` : v.blockeeTarget,
         blockedAt: v.createdAt,
       };
       return d;
@@ -125,7 +159,7 @@ export class BlockingService {
     const r = await this.prisma.blocking.findMany({
       where: {
         blockerHandle: tokenBody.handle,
-        blockeeHandle: data.targetHandle,
+        blockeeTarget: data.targetHandle,
         hidden: false,
       },
     });
@@ -139,23 +173,44 @@ export class BlockingService {
   public async deleteBlock(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
     let data;
     try {
-      data = await validateStrict(DeleteBlockDto, await req.json());
-    } catch {
-      return sendApiError(400, 'Bad Request');
+      const reqJson = await req.json();
+      if (reqJson.targetId) {
+        data = await validateStrict(DeleteBlockByIdDto, reqJson);
+      } else {
+        data = await validateStrict(DeleteBlockDto, reqJson);
+      }
+    } catch (err) {
+      return sendApiError(400, `Bad Request ${String(err)}`);
     }
+
     const user = await this.prisma.user.findUniqueOrThrow({ where: { handle: tokenBody!.handle } });
 
     try {
-      const r = await this.prisma.blocking.deleteMany({
-        where: {
-          blockeeHandle: data.targetHandle,
-          blockerHandle: user.handle,
-          hidden: false,
-        },
-      });
-      this.logger.debug(`${r.count} block deleted`);
+      const deleteById = (data as DeleteBlockByIdDto).targetId ? (data as DeleteBlockByIdDto) : null;
+      const deleteByHandle = (data as DeleteBlockDto).targetHandle ? (data as DeleteBlockDto) : null;
+      if (deleteById) {
+        const r = await this.prisma.blocking.deleteMany({
+          where: {
+            id: deleteById.targetId,
+            blockerHandle: user.handle,
+          },
+        });
+        this.logger.debug(`${r.count} block deleted (by id ${deleteById.targetId})`);
+        return NextResponse.json({ message: `${r.count} block deleted (by id ${deleteById.targetId})` });
+      }
+      if (deleteByHandle) {
+        const r = await this.prisma.blocking.deleteMany({
+          where: {
+            blockeeTarget: deleteByHandle.targetHandle,
+            blockerHandle: user.handle,
+            hidden: false,
+          },
+        });
+        this.logger.debug(`${r.count} block deleted`);
+        return NextResponse.json({ message: `${r.count} block deleted` });
+      }
     } catch {
-      return sendApiError(400, '이미 차단 해제된 사용자입니다!');
+      return sendApiError(500, '차단 해제 오류');
     }
 
     await this.redisKvService.drop(`block-${user.handle}`);
@@ -181,23 +236,23 @@ export class BlockingService {
 
   /**
    * 블락을 생성하고, 미답변 질문중 블락대상의 것은 삭제
-   * @param blockeeHandle 블락될 대상의 핸들
+   * @param blockeeTarget 블락될 대상의 핸들이나 ipHash
    * @param myHandle  내 핸들
    * @param imported ImportBlock에 의해서 가져온 Block인 경우 true
-   * @param isHidden 익명질문의 유저를 차단하는 경우 true (구현 예정)
+   * @param isHidden 익명질문의 유저를 차단하는 경우 true
    */
-  public async createBlock(blockeeHandle: string, myHandle: string, imported?: boolean, isHidden?: boolean) {
+  public async createBlock(blockeeTarget: string, myHandle: string, imported?: boolean, isHidden?: boolean) {
     const dbData = {
-      blockeeHandle: blockeeHandle,
+      blockeeTarget: blockeeTarget,
       blockerHandle: myHandle,
       hidden: isHidden ? true : false,
       imported: imported ? true : false,
       createdAt: new Date(Date.now()),
     };
-    await this.prisma.blocking.upsert({
+    const b = await this.prisma.blocking.upsert({
       where: {
-        blockeeHandle_blockerHandle_hidden_imported: {
-          blockeeHandle: dbData.blockeeHandle,
+        blockeeTarget_blockerHandle_hidden_imported: {
+          blockeeTarget: dbData.blockeeTarget,
           blockerHandle: dbData.blockerHandle,
           hidden: dbData.hidden,
           imported: dbData.imported,
@@ -209,7 +264,7 @@ export class BlockingService {
 
     //기존 질문의 필터링
     const question_list = await this.prisma.question.findMany({ where: { questioneeHandle: myHandle } });
-    const remove_list = question_list.filter((q) => q.questioner === blockeeHandle);
+    const remove_list = question_list.filter((q) => q.questioner === blockeeTarget);
     remove_list.forEach(async (r) => {
       await this.prisma.question.delete({ where: { id: r.id } });
       const ev_data: QuestionDeletedPayload = {
@@ -220,5 +275,7 @@ export class BlockingService {
       await this.redisPubsubService.pub<QuestionDeletedPayload>('question-deleted-event', ev_data);
     });
     await this.redisKvService.drop(`block-${myHandle}`);
+
+    return b;
   }
 }

@@ -3,13 +3,13 @@
 import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
-import { Block, GetBlockListReqDto, GetBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
+import { Block, DeleteBlockByIdDto, GetBlockListReqDto, GetBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
 import { useEffect, useRef, useState } from 'react';
 
 export default function BlockList() {
   const [untilId, setUntilId] = useState<string | null>(null);
   const [blockList, setBlockList] = useState<Block[]>([]);
-  const [unblockHandle, setUnblockHandle] = useState<string | null>(null);
+  const [unblockId, setUnblockId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [mounted, setMounted] = useState<HTMLTableRowElement | null>(null);
   const [loadingDoneModalText, setLoadingDoneModalText] = useState<{ title: string; body: string }>({
@@ -19,12 +19,13 @@ export default function BlockList() {
   const unblockConfirmModalRef = useRef<HTMLDialogElement>(null);
   const unblockSuccessModalRef = useRef<HTMLDialogElement>(null);
 
-  const handleUnBlock = async (handle: string) => {
+  const doUnBlock = async (id: string) => {
     setIsLoading(true);
     unblockSuccessModalRef.current?.showModal();
+    const data: DeleteBlockByIdDto = { targetId: id };
     const res = await fetch('/api/user/blocking/delete', {
       method: 'POST',
-      body: JSON.stringify({ targetHandle: handle }),
+      body: JSON.stringify(data),
     });
     if (!res.ok) {
       setIsLoading(false);
@@ -34,7 +35,7 @@ export default function BlockList() {
       });
       return;
     }
-    setBlockList((prevList) => (prevList ? [...prevList.filter((prev) => prev.targetHandle !== handle)] : []));
+    setBlockList((prevList) => (prevList ? [...prevList.filter((prev) => prev.id !== id)] : []));
     setIsLoading(false);
   };
 
@@ -95,7 +96,7 @@ export default function BlockList() {
                   <button
                     className="btn btn-warning btn-sm w-full break-keep"
                     onClick={() => {
-                      setUnblockHandle(el.targetHandle);
+                      setUnblockId(el.id);
                       unblockConfirmModalRef.current?.showModal();
                     }}
                   >
@@ -134,7 +135,7 @@ export default function BlockList() {
         title={'차단 해제'}
         body={'차단 해제하시겠어요?'}
         confirmButtonText={'확인'}
-        onClick={() => handleUnBlock(unblockHandle!)}
+        onClick={() => doUnBlock(unblockId!)}
         cancelButtonText={'취소'}
         ref={unblockConfirmModalRef}
       />
