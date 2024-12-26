@@ -20,6 +20,7 @@ interface askProps {
   setId: React.Dispatch<React.SetStateAction<number>>;
   deleteRef: RefObject<HTMLDialogElement>;
   answerRef: RefObject<HTMLDialogElement>;
+  blockingRef: RefObject<HTMLDialogElement>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   defaultVisibility: 'public' | 'home' | 'followers' | undefined;
 }
@@ -31,6 +32,7 @@ export default function Question({
   setId,
   deleteRef,
   answerRef,
+  blockingRef,
   setIsLoading,
   defaultVisibility,
 }: askProps) {
@@ -171,6 +173,15 @@ export default function Question({
             }}
           >
             삭제
+          </span>
+          <span
+            className="text-red-800 font-bold ml-2 cursor-pointer"
+            onClick={() => {
+              setId(singleQuestion.id);
+              blockingRef.current?.showModal();
+            }}
+          >
+            질문자 차단
           </span>
         </div>
       </div>
