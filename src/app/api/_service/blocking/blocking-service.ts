@@ -58,7 +58,8 @@ export class BlockingService {
       return sendApiError(400, 'Bad Request. User not found');
     }
     try {
-      await this.createBlock(targetUser.handle, user.handle, false);
+      const b = await this.createBlock(targetUser.handle, user.handle, false);
+      this.logger.debug(`New Block created, hidden: ${b.hidden}, target: ${b.blockeeTarget}`);
     } catch (err) {
       return sendApiError(500, JSON.stringify(err));
     }
@@ -87,7 +88,8 @@ export class BlockingService {
         return sendApiError(403, 'Not your question!');
       }
       if (q.questioner) {
-        await this.createBlock(q.questioner, tokenBody.handle, false, q.isAnonymous);
+        const b = await this.createBlock(q.questioner, tokenBody.handle, false, q.isAnonymous);
+        this.logger.debug(`New Block created by Question ${q.id}, hidden: ${b.hidden}, target: ${b.blockeeTarget}`);
         return NextResponse.json(`OK. block created!`, { status: 201 });
       } else {
         return NextResponse.json(`Block not created! (questioner is null)`, { status: 200 });
@@ -247,7 +249,7 @@ export class BlockingService {
       imported: imported ? true : false,
       createdAt: new Date(Date.now()),
     };
-    await this.prisma.blocking.upsert({
+    const b = await this.prisma.blocking.upsert({
       where: {
         blockeeTarget_blockerHandle_hidden_imported: {
           blockeeTarget: dbData.blockeeTarget,
@@ -273,5 +275,7 @@ export class BlockingService {
       await this.redisPubsubService.pub<QuestionDeletedPayload>('question-deleted-event', ev_data);
     });
     await this.redisKvService.drop(`block-${myHandle}`);
+
+    return b;
   }
 }
