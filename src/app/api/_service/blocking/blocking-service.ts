@@ -90,10 +90,10 @@ export class BlockingService {
       if (q.questioneeHandle !== tokenBody?.handle) {
         return sendApiError(403, 'Not your question!');
       }
-      if (q.questioneeHandle === tokenBody.handle) {
-        return sendApiError(400, '자기 자신을 블락할 수 없어요!');
-      }
       if (q.questioner) {
+        if (q.questioner === tokenBody.handle) {
+          return sendApiError(400, '자기 자신을 블락할 수 없어요!');
+        }
         const b = await this.createBlock(q.questioner, tokenBody.handle, false, q.isAnonymous);
         this.logger.debug(`New Block created by Question ${q.id}, hidden: ${b.hidden}, target: ${b.blockeeTarget}`);
         return NextResponse.json(`OK. block created!`, { status: 201 });
