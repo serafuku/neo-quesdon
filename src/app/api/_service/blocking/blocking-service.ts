@@ -58,6 +58,9 @@ export class BlockingService {
       return sendApiError(400, 'Bad Request. User not found');
     }
     try {
+      if (data.targetHandle === tokenBody?.handle) {
+        return sendApiError(400, '자기 자신을 블락할 수 없어요!');
+      }
       const b = await this.createBlock(targetUser.handle, user.handle, false);
       this.logger.debug(`New Block created, hidden: ${b.hidden}, target: ${b.blockeeTarget}`);
     } catch (err) {
@@ -86,6 +89,9 @@ export class BlockingService {
       }
       if (q.questioneeHandle !== tokenBody?.handle) {
         return sendApiError(403, 'Not your question!');
+      }
+      if (q.questioneeHandle === tokenBody.handle) {
+        return sendApiError(400, '자기 자신을 블락할 수 없어요!');
       }
       if (q.questioner) {
         const b = await this.createBlock(q.questioner, tokenBody.handle, false, q.isAnonymous);
