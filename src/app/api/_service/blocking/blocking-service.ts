@@ -7,6 +7,7 @@ import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client'
 import { validateStrict } from '@/utils/validator/strictValidator';
 import {
   Block,
+  createBlockByQuestionDto,
   CreateBlockDto,
   DeleteBlockDto,
   GetBlockListReqDto,
@@ -62,6 +63,37 @@ export class BlockingService {
     }
 
     return NextResponse.json({}, { status: 200 });
+  }
+
+  @Auth()
+  @RateLimit({ bucket_time: 300, req_limit: 60 }, 'user')
+  public async createBlockByQuestionApi(
+    req: NextRequest,
+    @JwtPayload tokenBody?: jwtPayloadType,
+  ): Promise<NextResponse> {
+    let data;
+    try {
+      data = await validateStrict(createBlockByQuestionDto, await req.json());
+    } catch {
+      return sendApiError(400, 'Bad request');
+    }
+    try {
+      const q = await this.prisma.question.findUnique({ where: { id: data.questionId } });
+      if (!q) {
+        return sendApiError(400, 'questionId not found!');
+      }
+      if (q.questioneeHandle !== tokenBody?.handle) {
+        return sendApiError(403, 'Not your question!');
+      }
+      if (q.questioner) {
+        await this.createBlock(q.questioner, tokenBody.handle, false, q.isAnonymous);
+        return NextResponse.json(`OK. block created!`, { status: 201 });
+      } else {
+        return NextResponse.json(`Block not created! (questioner is null)`, { status: 200 });
+      }
+    } catch (err) {
+      return sendApiError(500, 'ERROR!' + String(err));
+    }
   }
 
   @Auth()
@@ -184,7 +216,7 @@ export class BlockingService {
    * @param blockeeTarget 블락될 대상의 핸들이나 ipHash
    * @param myHandle  내 핸들
    * @param imported ImportBlock에 의해서 가져온 Block인 경우 true
-   * @param isHidden 익명질문의 유저를 차단하는 경우 true (구현 예정)
+   * @param isHidden 익명질문의 유저를 차단하는 경우 true
    */
   public async createBlock(blockeeTarget: string, myHandle: string, imported?: boolean, isHidden?: boolean) {
     const dbData = {
