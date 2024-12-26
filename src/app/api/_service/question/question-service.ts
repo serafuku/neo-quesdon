@@ -81,13 +81,13 @@ export class QuestionService {
         return sendApiError(403, 'User stops NewQuestion');
       }
       // 블락 여부 검사
-      if (tokenPayload?.handle) {
-        const blocked = await this.prisma.blocking.findFirst({
-          where: { blockeeTarget: tokenPayload.handle, blockerHandle: questionee_user.handle },
-        });
-        if (blocked) {
-          return sendApiError(403, '이 사용자에게 질문을 보낼 수 없습니다!');
-        }
+
+      const blockeeTarget = tokenPayload?.handle ?? getIpHash(getIpFromRequest(req));
+      const blocked = await this.prisma.blocking.findFirst({
+        where: { blockeeTarget: blockeeTarget, blockerHandle: questionee_user.handle },
+      });
+      if (blocked) {
+        return sendApiError(403, '이 사용자에게 질문을 보낼 수 없습니다!');
       }
 
       if (!data.isAnonymous && !tokenPayload?.handle) {
