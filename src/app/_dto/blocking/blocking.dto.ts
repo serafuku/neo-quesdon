@@ -1,4 +1,4 @@
-import { question } from '@prisma/client';
+import { blocking, question } from '@prisma/client';
 import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateBlockDto {
@@ -56,4 +56,10 @@ export class DeleteBlockDto {
   @IsString()
   @MaxLength(500)
   targetHandle: string;
+}
+
+export class DeleteBlockByIdDto {
+  @IsString()
+  @MaxLength(200)
+  targetId: blocking['id'];
 }

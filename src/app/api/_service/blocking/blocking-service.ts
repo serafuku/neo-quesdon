@@ -9,6 +9,7 @@ import {
   Block,
   createBlockByQuestionDto,
   CreateBlockDto,
+  DeleteBlockByIdDto,
   DeleteBlockDto,
   GetBlockListReqDto,
   SearchBlockListReqDto,
@@ -74,8 +75,8 @@ export class BlockingService {
     let data;
     try {
       data = await validateStrict(createBlockByQuestionDto, await req.json());
-    } catch {
-      return sendApiError(400, 'Bad request');
+    } catch (err) {
+      return sendApiError(400, `Bad request ${String(err)}`);
     }
     try {
       const q = await this.prisma.question.findUnique({ where: { id: data.questionId } });
@@ -118,7 +119,6 @@ export class BlockingService {
           ...(data.sinceId ? { gt: data.sinceId } : {}),
           ...(data.untilId ? { lt: data.untilId } : {}),
         },
-        hidden: false,
       },
       orderBy: { id: orderBy },
       take: data.limit ?? 10,
@@ -127,7 +127,7 @@ export class BlockingService {
     const return_data = blockList.map((v) => {
       const d: Block = {
         id: v.id,
-        targetHandle: v.blockeeTarget,
+        targetHandle: v.hidden ? `익명의 질문자 ${v.id}` : v.blockeeTarget,
         blockedAt: v.createdAt,
       };
       return d;
@@ -171,23 +171,44 @@ export class BlockingService {
   public async deleteBlock(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
     let data;
     try {
-      data = await validateStrict(DeleteBlockDto, await req.json());
-    } catch {
-      return sendApiError(400, 'Bad Request');
+      const reqJson = await req.json();
+      if (reqJson.targetId) {
+        data = await validateStrict(DeleteBlockByIdDto, reqJson);
+      } else {
+        data = await validateStrict(DeleteBlockDto, reqJson);
+      }
+    } catch (err) {
+      return sendApiError(400, `Bad Request ${String(err)}`);
     }
+
     const user = await this.prisma.user.findUniqueOrThrow({ where: { handle: tokenBody!.handle } });
 
     try {
-      const r = await this.prisma.blocking.deleteMany({
-        where: {
-          blockeeTarget: data.targetHandle,
-          blockerHandle: user.handle,
-          hidden: false,
-        },
-      });
-      this.logger.debug(`${r.count} block deleted`);
+      const deleteById = (data as DeleteBlockByIdDto).targetId ? (data as DeleteBlockByIdDto) : null;
+      const deleteByHandle = (data as DeleteBlockDto).targetHandle ? (data as DeleteBlockDto) : null;
+      if (deleteById) {
+        const r = await this.prisma.blocking.deleteMany({
+          where: {
+            id: deleteById.targetId,
+            blockerHandle: user.handle,
+          },
+        });
+        this.logger.debug(`${r.count} block deleted (by id ${deleteById.targetId})`);
+        return NextResponse.json({ message: `${r.count} block deleted (by id ${deleteById.targetId})` });
+      }
+      if (deleteByHandle) {
+        const r = await this.prisma.blocking.deleteMany({
+          where: {
+            blockeeTarget: deleteByHandle.targetHandle,
+            blockerHandle: user.handle,
+            hidden: false,
+          },
+        });
+        this.logger.debug(`${r.count} block deleted`);
+        return NextResponse.json({ message: `${r.count} block deleted` });
+      }
     } catch {
-      return sendApiError(400, '이미 차단 해제된 사용자입니다!');
+      return sendApiError(500, '차단 해제 오류');
     }
 
     await this.redisKvService.drop(`block-${user.handle}`);
