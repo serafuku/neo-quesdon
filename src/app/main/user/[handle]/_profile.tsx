@@ -213,6 +213,10 @@ export default function Profile() {
         const res = await mkQuestionCreateApi(req);
         if (res.ok) {
           setIsLoading(false);
+          setQuestionSendingDoneMessage({
+            title: '성공',
+            body: '질문했어요!',
+          });
         } else {
           setIsLoading(false);
           setQuestionSendingDoneMessage({ title: '에러', body: `질문을 보내는데 실패했어요! ${await res.text()}` });
