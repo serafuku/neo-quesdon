@@ -11,7 +11,6 @@ export async function validateStrict<T extends object>(cls: ClassConstructor<T>,
   const instance = plainToInstance(cls, data);
   const errors = await validate(instance, { whitelist: true, forbidNonWhitelisted: true });
   if (errors.length > 0) {
-    logger.error(errors);
     throw errors;
   }
   return instance;
