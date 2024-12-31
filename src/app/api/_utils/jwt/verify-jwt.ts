@@ -18,10 +18,10 @@ export async function verifyToken(token: string | null | undefined) {
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const prisma = GetPrismaClient.getClient();
 
+  if (typeof token !== 'string') {
+    throw new Error('token is not string');
+  }
   try {
-    if (typeof token !== 'string') {
-      throw new Error('token is not string');
-    }
     const { payload } = await jwtVerify(token, secret);
     const data = plainToInstance(jwtPayloadType, payload, { excludeExtraneousValues: true });
     const errors = await validate(data, { whitelist: true, forbidNonWhitelisted: true } as ValidatorOptions);
