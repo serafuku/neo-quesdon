@@ -66,13 +66,17 @@ class RemoteImageProxy {
             }
           },
           responseType: 'stream',
+          validateStatus: () => {
+            // ignore response code because we handle manually
+            return true;
+          },
         });
 
         if (remote_res.status === 404) {
           return sendApiError(remote_res.status, `Proxy Fail! Remote Server Send NOT_FOUND`, 'NOT_FOUND');
         } else if (!(remote_res.status === 200)) {
           return sendApiError(
-            remote_res.status,
+            500,
             `Proxy Fail! Remote server Sent ${remote_res.status}`,
             'REMOTE_SERVER_UNKNOWN_ERROR',
           );
