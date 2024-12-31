@@ -4,6 +4,8 @@ import { jwtVerify } from 'jose';
 import { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
+import { validate, ValidatorOptions } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 const logger = new Logger('verifyToken');
 /**
@@ -21,21 +23,10 @@ export async function verifyToken(token: string | null | undefined) {
       throw new Error('token is not string');
     }
     const { payload } = await jwtVerify(token, secret);
-    const data: jwtPayloadType = {
-      handle: '',
-      server: '',
-      jwtIndex: 0,
-    };
-    if (
-      typeof payload.handle === 'string' &&
-      typeof payload.server === 'string' &&
-      typeof payload.jwtIndex === 'number'
-    ) {
-      data.handle = payload.handle;
-      data.server = payload.server;
-      data.jwtIndex = payload.jwtIndex;
-    } else {
-      logger.debug('JWT payload error');
+    const data = plainToInstance(jwtPayloadType, payload, { excludeExtraneousValues: true });
+    const errors = await validate(data, { whitelist: true, forbidNonWhitelisted: true } as ValidatorOptions);
+    if (errors.length > 0) {
+      logger.debug('JWT payload error', errors);
       throw new Error('JWT payload error');
     }
     const user = await prisma.user.findUniqueOrThrow({ where: { handle: data.handle } });
