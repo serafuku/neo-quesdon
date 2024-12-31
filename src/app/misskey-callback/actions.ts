@@ -83,10 +83,7 @@ export async function login(loginReqestData: misskeyCallbackTokenClaimPayload): 
     cookieStore.set('jwtToken', jwtToken, {
       expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
       httpOnly: true,
-    });
-    cookieStore.set('server', loginReq.misskeyHost, {
-      expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
-      httpOnly: true,
+      sameSite: 'strict',
     });
   } catch (err) {
     logger.error(`Make JWT or Set cookie failed!`, err);
