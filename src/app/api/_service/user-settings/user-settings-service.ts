@@ -41,7 +41,7 @@ export class UserSettingsService {
       };
       return NextResponse.json(res_body);
     } catch {
-      return sendApiError(400, 'Bad Request');
+      return sendApiError(400, 'Bad Request', 'BAD_REQUEST');
     }
   }
 

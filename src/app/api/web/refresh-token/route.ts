@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   try {
     data = await validateStrict(RefreshTokenReqDto, await req.json());
   } catch (err) {
-    return sendApiError(400, `Bad Request! ${err}`);
+    return sendApiError(400, `Bad Request! ${err}`, 'BAD_REQUEST');
   }
   const limiter = RateLimiterService.getLimiter();
   const ipHash = getIpHash(getIpFromRequest(req));
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     req_limit: 20,
   });
   if (limited) {
-    return sendApiError(429, '요청 제한에 도달했습니다!');
+    return sendApiError(429, 'Rate Limited!', 'RATE_LIMITED');
   }
   const cookieStore = await cookies();
   let tokenPayload;
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       throw new Error('Handle not match with JWT');
     }
   } catch (err) {
-    return sendApiError(401, `Auth Error! ${err}`);
+    return sendApiError(401, `Auth Error! ${err}`, 'UNAUTHORIZED');
   }
   const prisma = GetPrismaClient.getClient();
   const user = await prisma.user.findUniqueOrThrow({ where: { handle: tokenPayload.handle } });
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     logger.warn('User Revoked Access token. JWT를 Revoke합니다... Detail:', err);
     await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: user.jwtIndex + 1 } });
-    return sendApiError(401, `Refresh user failed!! ${err}`);
+    return sendApiError(401, `Refresh user failed!! ${err}`, 'REMOTE_ACCESS_TOKEN_REVOKED');
   }
 
   return NextResponse.json({ message: '야호 JWT 갱신에 성공했어요!' }, { status: 200 });

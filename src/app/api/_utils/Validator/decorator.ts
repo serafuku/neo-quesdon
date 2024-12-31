@@ -24,14 +24,14 @@ export function ValidateBody(cls: ClassConstructor<any>) {
       try {
         body = await req.json();
       } catch (err) {
-        return sendApiError(400, String(err));
+        return sendApiError(400, String(err), 'BAD_REQUEST');
       }
 
       let validatedBody;
       try {
         validatedBody = await validateStrict(cls, body);
       } catch (err) {
-        return sendApiError(400, String(err));
+        return sendApiError(400, String(err), 'BAD_REQUEST');
       }
       args[targetIndex] = validatedBody;
 

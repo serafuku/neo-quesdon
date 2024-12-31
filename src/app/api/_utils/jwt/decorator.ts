@@ -18,10 +18,10 @@ export function Auth(options?: { isOptional: boolean }) {
         try {
           jwtBody = await verifyToken(jwt);
         } catch {
-          return sendApiError(401, 'Auth Error: JWT check fail!');
+          return sendApiError(401, 'Auth Error: JWT check fail!', 'UNAUTHORIZED');
         }
       } else if (options?.isOptional !== true) {
-        return sendApiError(401, 'Auth Error: No Auth Token');
+        return sendApiError(401, 'Auth Error: No Auth Token', 'UNAUTHORIZED');
       }
 
       // 메타데이터에서 인자 위치 추출

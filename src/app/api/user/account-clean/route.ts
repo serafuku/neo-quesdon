@@ -20,7 +20,7 @@ class cleanService {
   public static async clean(_req: NextRequest, @JwtPayload tokenBody: jwtPayloadType, @Body data: AccountCleanReqDto) {
     try {
       if (tokenBody?.handle !== data.handle) {
-        return sendApiError(401, 'Auth Fail: this is not your handle!');
+        return sendApiError(403, 'Auth Fail: this is not your handle!', 'FORBIDDEN');
       }
       const prisma = GetPrismaClient.getClient();
       const queue = QueueService.get();
@@ -28,7 +28,7 @@ class cleanService {
       await queue.addAccountCleanJob(user);
       return NextResponse.json({ message: 'OK. queued.' }, { status: 202 });
     } catch {
-      return sendApiError(500, 'ERROR!');
+      return sendApiError(500, 'ERROR!', 'SERVER_ERROR');
     }
   }
 }

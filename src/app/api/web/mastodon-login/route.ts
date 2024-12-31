@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   try {
     data = await validateStrict(loginReqDto, await req.json());
   } catch (err) {
-    return sendApiError(400, `${err}`);
+    return sendApiError(400, `${err}`, 'BAD_REQUEST');
   }
 
   const limiter = RateLimiterService.getLimiter();
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     req_limit: 60,
   });
   if (limited) {
-    return sendApiError(429, '요청 제한에 도달했습니다!');
+    return sendApiError(429, 'Rate Limited! Try Again Later', 'RATE_LIMITED');
   }
 
   const mastodonHost = data.host.toLowerCase();
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       }).then((r) => r.json());
 
       if (!res.id) {
-        return sendApiError(500, `Mastodon Response: ${JSON.stringify(res)}`);
+        return sendApiError(500, `Mastodon Response: ${JSON.stringify(res)}`, 'MASTODON_ERROR');
       }
       logger.log('New Mastodon OAuth2 App Created:', res);
 
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(session);
     }
   } catch (err) {
-    return sendApiError(500, `login error... ${err}`);
+    return sendApiError(500, `login error... ${err}`, 'SERVER_ERROR');
   }
 }
 

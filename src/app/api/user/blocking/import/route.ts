@@ -8,6 +8,6 @@ export async function POST(req: NextRequest) {
   try {
     return await blockService.importBlockFromRemote(req, null as any);
   } catch (err) {
-    return sendApiError(500, `ERROR! ${err}`);
+    return sendApiError(500, `ERROR! ${err}`, 'SERVER_ERROR');
   }
 }

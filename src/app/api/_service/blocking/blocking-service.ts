@@ -50,16 +50,16 @@ export class BlockingService {
     const user = await this.prisma.user.findUnique({ where: { handle: tokenBody.handle } });
     const targetUser = await this.prisma.user.findUnique({ where: { handle: data.targetHandle } });
     if (user === null || targetUser === null) {
-      return sendApiError(400, 'Bad Request. User not found');
+      return sendApiError(400, 'Bad Request. User not found', 'USER_NOT_EXIST');
     }
     try {
       if (data.targetHandle === tokenBody?.handle) {
-        return sendApiError(400, '자기 자신을 블락할 수 없어요!');
+        return sendApiError(400, 'Can not block Yourself!', 'CAN_NOT_BLOCK_YOURSELF');
       }
       const b = await this.createBlock(targetUser.handle, user.handle, false);
       this.logger.debug(`New Block created, hidden: ${b.hidden}, target: ${b.blockeeTarget}`);
     } catch (err) {
-      return sendApiError(500, JSON.stringify(err));
+      return sendApiError(500, String(err), 'SERVER_ERROR');
     }
 
     return NextResponse.json({}, { status: 200 });
@@ -76,14 +76,14 @@ export class BlockingService {
     try {
       const q = await this.prisma.question.findUnique({ where: { id: data.questionId } });
       if (!q) {
-        return sendApiError(400, 'questionId not found!');
+        return sendApiError(400, 'questionId not found!', 'NOT_FOUND');
       }
       if (q.questioneeHandle !== tokenBody?.handle) {
-        return sendApiError(403, 'Not your question!');
+        return sendApiError(403, 'Not your question!', 'NOT_YOUR_QUESTION');
       }
       if (q.questioner) {
         if (q.questioner === tokenBody.handle) {
-          return sendApiError(400, '자기 자신을 블락할 수 없어요!');
+          return sendApiError(400, 'Can not Block yourself', 'CAN_NOT_BLOCK_YOURSELF');
         }
         const b = await this.createBlock(q.questioner, tokenBody.handle, false, q.isAnonymous);
         this.logger.debug(`New Block created by Question ${q.id}, hidden: ${b.hidden}, target: ${b.blockeeTarget}`);
@@ -92,7 +92,7 @@ export class BlockingService {
         return NextResponse.json(`Block not created! (questioner is null)`, { status: 200 });
       }
     } catch (err) {
-      return sendApiError(500, 'ERROR!' + String(err));
+      return sendApiError(500, 'ERROR!' + String(err), 'SERVER_ERROR');
     }
   }
 
@@ -102,7 +102,7 @@ export class BlockingService {
   public async getBlockList(_req: NextRequest, @JwtPayload tokenBody: jwtPayloadType, @Body data: GetBlockListReqDto) {
     const user = await this.prisma.user.findUnique({ where: { handle: tokenBody!.handle } });
     if (user === null) {
-      return sendApiError(400, 'Bad request. user not found');
+      return sendApiError(400, 'Bad request. user not found', 'USER_NOT_EXIST');
     }
     // 내림차순이 기본값
     const orderBy = data.sort === 'ASC' ? 'asc' : 'desc';
@@ -168,7 +168,7 @@ export class BlockingService {
         data = await validateStrict(DeleteBlockDto, reqJson);
       }
     } catch (err) {
-      return sendApiError(400, `Bad Request ${String(err)}`);
+      return sendApiError(400, `Bad Request ${String(err)}`, 'BAD_REQUEST');
     }
 
     const user = await this.prisma.user.findUniqueOrThrow({ where: { handle: tokenBody.handle } });
@@ -198,7 +198,7 @@ export class BlockingService {
         return NextResponse.json({ message: `${r.count} block deleted` });
       }
     } catch {
-      return sendApiError(500, '차단 해제 오류');
+      return sendApiError(500, 'Unblock Error!', 'SERVER_ERROR');
     }
 
     await this.redisKvService.drop(`block-${user.handle}`);
@@ -210,7 +210,7 @@ export class BlockingService {
   public async importBlockFromRemote(_req: NextRequest, @JwtPayload tokenBody: jwtPayloadType) {
     const user = await this.prisma.user.findUnique({ where: { handle: tokenBody.handle } });
     if (!user) {
-      return sendApiError(400, '찾을 수 없는 유저입니다');
+      return sendApiError(400, 'User not exist', 'USER_NOT_EXIST');
     }
     await this.queueService.addBlockImportJob(user);
     return NextResponse.json(

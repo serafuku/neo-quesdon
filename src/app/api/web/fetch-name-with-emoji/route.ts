@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     data = await validateStrict(fetchNameWithEmojiReqDto, await req.json());
   } catch (err) {
-    return sendApiError(400, `${err}`);
+    return sendApiError(400, `${err}`, 'BAD_REQUEST');
   }
 
   const { name, baseUrl }: fetchNameWithEmojiReqDto = data;

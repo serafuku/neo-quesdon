@@ -46,7 +46,7 @@ export class QuestionService {
         headers: { 'Cache-Control': 'private, no-store, max-age=0' },
       });
     } catch {
-      sendApiError(500, 'Fail to Get my Questions');
+      sendApiError(500, 'Fail to Get my Questions', 'SERVER_ERROR');
     }
   }
 
@@ -72,10 +72,10 @@ export class QuestionService {
 
       if (questionee_profile.stopAnonQuestion && data.isAnonymous) {
         this.logger.debug('The user has prohibits anonymous questions.');
-        return sendApiError(403, 'The user has prohibits anonymous questions.');
+        return sendApiError(403, 'The user has prohibits anonymous questions.', 'USER_NOT_ACCEPT_ANONYMOUS_QUESTION');
       } else if (questionee_profile.stopNewQuestion) {
         this.logger.debug('User stops NewQuestion');
-        return sendApiError(403, 'User stops NewQuestion');
+        return sendApiError(403, 'User stops NewQuestion', 'USER_NOT_ACCEPT_NEW_QUESTION');
       }
       // 블락 여부 검사
 
@@ -84,12 +84,16 @@ export class QuestionService {
         where: { blockeeTarget: blockeeTarget, blockerHandle: questionee_user.handle },
       });
       if (blocked) {
-        return sendApiError(403, '이 사용자에게 질문을 보낼 수 없습니다!');
+        return sendApiError(403, 'You Can not Question to this user!', 'QUESTION_BLOCKED');
       }
 
       if (!data.isAnonymous && !tokenPayload?.handle) {
         this.logger.warn(`You must log in to send non-anonymous questions.`);
-        return sendApiError(403, `You must log in to send non-anonymous questions.`);
+        return sendApiError(
+          403,
+          `You must log in to send non-anonymous questions.`,
+          'YOU_MUST_LOGIN_TO_NON_ANONYMOUS_QUESTION',
+        );
       }
 
       const wordMuteList = questionee_profile.wordMuteList;
@@ -161,14 +165,14 @@ export class QuestionService {
   public async deleteQuestionApi(_req: NextRequest, id: number, @JwtPayload tokenPayload: jwtPayloadType) {
     try {
       if (!isInt(id)) {
-        return sendApiError(400, 'Bad QuestionId');
+        return sendApiError(400, 'Bad QuestionId', 'BAD_REQUEST');
       }
       const q = await this.prisma.question.findUnique({ where: { id: id } });
       if (!q) {
-        return sendApiError(400, 'No such question!');
+        return sendApiError(400, 'No such question!', 'NOT_FOUND');
       }
       if (q.questioneeHandle !== tokenPayload.handle) {
-        return sendApiError(403, 'You can not delete this question!');
+        return sendApiError(403, 'You can not delete this question!', 'NOT_YOUR_QUESTION');
       }
 
       await this.prisma.question.delete({
@@ -186,7 +190,7 @@ export class QuestionService {
       return new NextResponse(null, { status: 200, headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
     } catch (err) {
       this.logger.error('Fail to Delete question', err);
-      return sendApiError(500, 'Fail to Delete question!');
+      return sendApiError(500, 'Fail to Delete question!', 'SERVER_ERROR');
     }
   }
 
@@ -211,7 +215,7 @@ export class QuestionService {
       );
     } catch (err) {
       this.logger.error('Fail to delete questions', err);
-      return sendApiError(500, 'Fail to delete questions');
+      return sendApiError(500, 'Fail to delete questions', 'SERVER_ERROR');
     }
   }
 

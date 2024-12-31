@@ -27,10 +27,10 @@ class RemoteImageProxy {
         try {
           url = new URL(decodeURIComponent(urlParam));
           if (!isFQDN(url.hostname)) {
-            return sendApiError(400, 'URL hostname is not FQDN');
+            return sendApiError(400, 'URL hostname is not FQDN', 'BAD_REQUEST');
           }
           if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-            return sendApiError(400, 'protocol is not http/https');
+            return sendApiError(400, 'protocol is not http/https', 'BAD_REQUEST');
           }
           const remoteIp = await new Promise<string>((resolve, reject) => {
             dns.lookup(url.hostname, 4, (err, address) => {
@@ -52,10 +52,10 @@ class RemoteImageProxy {
             address.isInSubnet(new Address4('172.16.0.0/12')) ||
             address.isInSubnet(new Address4('100.64.0.0/10'))
           ) {
-            return sendApiError(400, 'Proxy to private network not allowed');
+            return sendApiError(400, 'Proxy to private network not allowed', 'BAD_REQUEST');
           }
         } catch (err) {
-          return sendApiError(400, `${String(err)}`);
+          return sendApiError(400, `${String(err)}`, 'BAD_REQUEST');
         }
         const remote_res = await axios.get(url.toString(), {
           signal: abortController.signal,
@@ -68,15 +68,21 @@ class RemoteImageProxy {
           responseType: 'stream',
         });
 
-        if (!(remote_res.status === 200)) {
-          return sendApiError(400, `Proxy Fail! Remote server Sent ${remote_res.status}`);
+        if (remote_res.status === 404) {
+          return sendApiError(remote_res.status, `Proxy Fail! Remote Server Send NOT_FOUND`, 'NOT_FOUND');
+        } else if (!(remote_res.status === 200)) {
+          return sendApiError(
+            remote_res.status,
+            `Proxy Fail! Remote server Sent ${remote_res.status}`,
+            'REMOTE_SERVER_UNKNOWN_ERROR',
+          );
         }
         const content_length = remote_res.headers['content-length'];
         let content_type = remote_res.headers['content-type'];
         if (isNumberString(content_length)) {
           if (parseInt(content_length) > REMOTE_MEDIA_SIZE_LIMIT) {
             abortController.abort();
-            return sendApiError(413, `Remote Content Too Large`);
+            return sendApiError(413, `Remote Content Too Large`, 'REMOTE_MEDIA_TOO_LARGE');
           }
         }
         if (typeof content_type !== 'string' || !content_type.startsWith('image/')) {
@@ -104,10 +110,10 @@ class RemoteImageProxy {
         return res;
       } catch (err) {
         abortController.abort();
-        return sendApiError(500, `${String(err)}`);
+        return sendApiError(500, `${String(err)}`, 'SERVER_ERROR');
       }
     } else {
-      return sendApiError(400, `No url param`);
+      return sendApiError(400, `No url param`, 'BAD_REQUEST');
     }
   }
 
