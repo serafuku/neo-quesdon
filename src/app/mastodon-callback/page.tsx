@@ -7,7 +7,7 @@ import { login } from '@/app/mastodon-callback/action';
 import { useRouter } from 'next/navigation';
 import DialogModalOneButton from '@/app/_components/modalOneButton';
 
-const onErrorModalClick = () => {
+const onErrorModalClose = () => {
   window.location.replace('/');
 };
 
@@ -78,7 +78,7 @@ export default function CallbackPage() {
         body={`${errMessage}`}
         buttonText={'확인'}
         ref={errModalRef}
-        onClick={onErrorModalClick}
+        onClose={onErrorModalClose}
       />
     </>
   );

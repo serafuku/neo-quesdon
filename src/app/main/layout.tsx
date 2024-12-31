@@ -177,7 +177,7 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
         body={'로그인 유효시간이 만료되어서 로그아웃 되었어요!'}
         buttonText={'확인'}
         ref={forcedLogoutModalRef}
-        onClick={logout}
+        onClose={logout}
       />
     </div>
   );

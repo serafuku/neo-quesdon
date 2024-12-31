@@ -9,7 +9,7 @@ import { misskeyCallbackTokenClaimPayload } from '@/app/_dto/misskey-callback/ca
 import { misskeyUserInfoPayload } from '@/app/_dto/misskey-callback/user-info.dto';
 import DialogModalOneButton from '@/app/_components/modalOneButton';
 
-const onErrorModalClick = () => {
+const onErrorModalClose = () => {
   window.location.replace('/');
 };
 export default function CallbackPage() {
@@ -77,7 +77,7 @@ export default function CallbackPage() {
         body={`${errMessage}`}
         buttonText={'확인'}
         ref={errModalRef}
-        onClick={onErrorModalClick}
+        onClose={onErrorModalClose}
       />
     </>
   );
