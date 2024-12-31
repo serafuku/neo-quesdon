@@ -83,7 +83,10 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
     fetchNoti(onResNotOk).then((v) => {
       setNoti(v);
     });
-    refreshJwt(onResNotOk);
+    const last_token_refresh = Number.parseInt(localStorage.getItem('last_token_refresh') ?? '0');
+    if (Date.now() / 1000 - last_token_refresh > 3600) {
+      refreshJwt(onResNotOk);
+    }
   }, []);
 
   // ------------- add Event callbacks --------------------
