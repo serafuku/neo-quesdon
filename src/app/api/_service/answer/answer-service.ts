@@ -25,6 +25,7 @@ import { NotificationService } from '@/app/api/_service/notification/notificatio
 import { mkMisskeyNote } from '@/app/api/_utils/uploadNote/misskeyNote';
 import { mastodonToot } from '@/app/api/_utils/uploadNote/mastodonToot';
 import { clampText } from '@/app/api/_utils/uploadNote/clampText';
+import { Body, ValidateBody } from '@/app/api/_utils/Validator/decorator';
 
 export class AnswerService {
   private static instance: AnswerService;
@@ -46,13 +47,12 @@ export class AnswerService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 300 }, 'user')
-  public async createAnswerApi(req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
-    let data: CreateAnswerDto;
-    try {
-      data = await validateStrict(CreateAnswerDto, await req.json());
-    } catch (err) {
-      return sendApiError(400, `${JSON.stringify(err)}`);
-    }
+  @ValidateBody(CreateAnswerDto)
+  public async createAnswerApi(
+    _req: NextRequest,
+    @Body data: CreateAnswerDto,
+    @JwtPayload tokenPayload: jwtPayloadType,
+  ) {
     const questionId = data.questionId;
     const q = await this.prisma.question.findUnique({ where: { id: questionId } });
     if (!q) {

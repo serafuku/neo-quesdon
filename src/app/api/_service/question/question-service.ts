@@ -1,7 +1,6 @@
 import { CreateQuestionDto } from '@/app/_dto/questions/create-question.dto';
 import type { PrismaClient, question, user } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
-import { validateStrict } from '@/utils/validator/strictValidator';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Logger } from '@/utils/logger/Logger';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
@@ -15,6 +14,7 @@ import { isInt } from 'class-validator';
 import { getIpHash } from '@/app/api/_utils/getIp/get-ip-hash';
 import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
 import { questionDto } from '@/app/_dto/questions/question.dto';
+import { Body, ValidateBody } from '@/app/api/_utils/Validator/decorator';
 
 export class QuestionService {
   private logger = new Logger('QuestionService');
@@ -52,16 +52,13 @@ export class QuestionService {
 
   @RateLimit({ bucket_time: 100, req_limit: 10 }, 'user-or-ip')
   @Auth({ isOptional: true })
-  public async CreateQuestionApi(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
+  @ValidateBody(CreateQuestionDto)
+  public async CreateQuestionApi(
+    req: NextRequest,
+    @JwtPayload tokenPayload: jwtPayloadType,
+    @Body data: CreateQuestionDto,
+  ) {
     try {
-      let data;
-      try {
-        data = await validateStrict(CreateQuestionDto, await req.json());
-      } catch (errors) {
-        this.logger.warn(errors);
-        return sendApiError(400, `${errors}`);
-      }
-
       const questionee_user = await this.prisma.user.findUniqueOrThrow({
         where: {
           handle: data.questionee,

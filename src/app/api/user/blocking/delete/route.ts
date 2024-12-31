@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from 'next/server';
 import { BlockingService } from '@/app/api/_service/blocking/blocking-service';
 
 export async function POST(req: NextRequest) {
   const service = BlockingService.get();
-  return await service.deleteBlock(req);
+  return await service.deleteBlock(req, null as any);
 }

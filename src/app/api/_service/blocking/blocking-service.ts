@@ -20,6 +20,7 @@ import { Logger } from '@/utils/logger/Logger';
 import { QueueService } from '@/app/api/_service/queue/queueService';
 import { RedisPubSubService } from '@/_service/redis-pubsub/redis-event.service';
 import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { Body, ValidateBody } from '@/app/api/_utils/Validator/decorator';
 
 export class BlockingService {
   private static instance: BlockingService;
@@ -44,15 +45,9 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 60 }, 'user')
-  public async createBlockApi(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
-    let data;
-    try {
-      data = await validateStrict(CreateBlockDto, await req.json());
-    } catch {
-      return sendApiError(400, 'Bad request');
-    }
-
-    const user = await this.prisma.user.findUnique({ where: { handle: tokenBody!.handle } });
+  @ValidateBody(CreateBlockDto)
+  public async createBlockApi(_req: NextRequest, @Body data: CreateBlockDto, @JwtPayload tokenBody: jwtPayloadType) {
+    const user = await this.prisma.user.findUnique({ where: { handle: tokenBody.handle } });
     const targetUser = await this.prisma.user.findUnique({ where: { handle: data.targetHandle } });
     if (user === null || targetUser === null) {
       return sendApiError(400, 'Bad Request. User not found');
@@ -72,16 +67,12 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 60 }, 'user')
+  @ValidateBody(createBlockByQuestionDto)
   public async createBlockByQuestionApi(
-    req: NextRequest,
-    @JwtPayload tokenBody?: jwtPayloadType,
+    _req: NextRequest,
+    @JwtPayload tokenBody: jwtPayloadType,
+    @Body data: createBlockByQuestionDto,
   ): Promise<NextResponse> {
-    let data;
-    try {
-      data = await validateStrict(createBlockByQuestionDto, await req.json());
-    } catch (err) {
-      return sendApiError(400, `Bad request ${String(err)}`);
-    }
     try {
       const q = await this.prisma.question.findUnique({ where: { id: data.questionId } });
       if (!q) {
@@ -107,13 +98,8 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
-  public async getBlockList(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
-    let data;
-    try {
-      data = await validateStrict(GetBlockListReqDto, await req.json());
-    } catch {
-      return sendApiError(400, 'Bad Request');
-    }
+  @ValidateBody(GetBlockListReqDto)
+  public async getBlockList(_req: NextRequest, @JwtPayload tokenBody: jwtPayloadType, @Body data: GetBlockListReqDto) {
     const user = await this.prisma.user.findUnique({ where: { handle: tokenBody!.handle } });
     if (user === null) {
       return sendApiError(400, 'Bad request. user not found');
@@ -152,16 +138,12 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
-  public async searchInBlockListByHandle(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
-    let data;
-    try {
-      data = await validateStrict(SearchBlockListReqDto, await req.json());
-    } catch {
-      return sendApiError(400, 'Bad Request');
-    }
-    if (!tokenBody) {
-      return sendApiError(401, '');
-    }
+  @ValidateBody(SearchBlockListReqDto)
+  public async searchInBlockListByHandle(
+    req: NextRequest,
+    @JwtPayload tokenBody: jwtPayloadType,
+    @Body data: SearchBlockListReqDto,
+  ) {
     const r = await this.prisma.blocking.findMany({
       where: {
         blockerHandle: tokenBody.handle,
@@ -176,7 +158,7 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 60 }, 'user')
-  public async deleteBlock(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
+  public async deleteBlock(req: NextRequest, @JwtPayload tokenBody: jwtPayloadType) {
     let data;
     try {
       const reqJson = await req.json();
@@ -189,7 +171,7 @@ export class BlockingService {
       return sendApiError(400, `Bad Request ${String(err)}`);
     }
 
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { handle: tokenBody!.handle } });
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { handle: tokenBody.handle } });
 
     try {
       const deleteById = (data as DeleteBlockByIdDto).targetId ? (data as DeleteBlockByIdDto) : null;
@@ -225,8 +207,8 @@ export class BlockingService {
 
   @Auth()
   @RateLimit({ bucket_time: 60, req_limit: 2 }, 'user')
-  public async importBlockFromRemote(_req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
-    const user = await this.prisma.user.findUnique({ where: { handle: tokenBody!.handle } });
+  public async importBlockFromRemote(_req: NextRequest, @JwtPayload tokenBody: jwtPayloadType) {
+    const user = await this.prisma.user.findUnique({ where: { handle: tokenBody.handle } });
     if (!user) {
       return sendApiError(400, '찾을 수 없는 유저입니다');
     }
