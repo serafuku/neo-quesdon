@@ -4,6 +4,8 @@ export const ApiErrorTypes_arr = [
   'USER_NOT_EXIST',
   'FORBIDDEN',
   'UNAUTHORIZED',
+  'JWT_EXPIRED',
+  'JWT_REVOKED',
   'SERVER_ERROR',
   'RATE_LIMITED',
   'QUESTION_BLOCKED',
