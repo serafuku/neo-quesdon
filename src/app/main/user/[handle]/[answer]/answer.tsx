@@ -26,23 +26,15 @@ export default function SingleAnswer({ answerBody }: { answerBody: AnswerDto }) 
     <div className="flex w-[90%] window:w-[80%] desktop:w-[70%]">
       {answerBody !== undefined ? (
         <>
-          {answerBody !== null ? (
-            <>
-              <Answer value={answerBody} id={answerBody.id} ref={singleQuestionDeleteModalRef} />
-              <DialogModalTwoButton
-                title={'답변 지우기'}
-                body={'답변을 지울까요...?'}
-                confirmButtonText={'확인'}
-                cancelButtonText={'취소'}
-                ref={singleQuestionDeleteModalRef}
-                onClick={() => handleDeleteAnswer(answerBody.id)}
-              />
-            </>
-          ) : (
-            <div className="w-full text-2xl flex gap-2 justify-center items-center border shadow rounded-box p-4 glass">
-              <span>찾으시는 답변이 없어요!</span>
-            </div>
-          )}
+          <Answer value={answerBody} id={answerBody.id} ref={singleQuestionDeleteModalRef} />
+          <DialogModalTwoButton
+            title={'답변 지우기'}
+            body={'답변을 지울까요...?'}
+            confirmButtonText={'확인'}
+            cancelButtonText={'취소'}
+            ref={singleQuestionDeleteModalRef}
+            onClick={() => handleDeleteAnswer(answerBody.id)}
+          />
         </>
       ) : (
         <div className="w-full text-center">
