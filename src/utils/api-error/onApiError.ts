@@ -50,7 +50,7 @@ export async function onApiError(code: number, res: Response) {
       break;
     case 'RATE_LIMITED':
       modalValue.title = '제한 초과';
-      modalValue.body = '';
+      modalValue.body = '요청 제한을 초과했어요...! 잠시 후 다시 시도해 주세요.';
       break;
     case 'SERVER_ERROR':
       modalValue.title = '서버 오류';
