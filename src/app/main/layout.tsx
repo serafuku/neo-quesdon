@@ -4,7 +4,7 @@ import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import MainHeader from '@/app/main/_header';
 import { createContext, useEffect, useRef, useState } from 'react';
 import { AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
-import { AnswerEv, MyProfileEv, NotificationEv } from './_events';
+import { AnswerEv, ApiErrorEv, ApiErrorEventValues, MyProfileEv, NotificationEv } from './_events';
 import { NotificationDto, NotificationPayloadTypes } from '../_dto/notification/notification.dto';
 import { AnswerCreatedPayload, AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { Logger } from '@/utils/logger/Logger';
@@ -13,8 +13,8 @@ import DialogModalOneButton from '@/app/_components/modalOneButton';
 import { logout } from '@/utils/logout/logout';
 import { fetchAllAnswers } from '@/utils/answers/fetchAllAnswers';
 import { fetchNoti } from '@/utils/notification/fetchNoti';
-import { ApiErrorResponseDto } from '@/app/_dto/api-error/api-error.dto';
 import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
+import { onApiError } from '@/utils/api-error/onApiError';
 
 type MainPageContextType = {
   answers: AnswerWithProfileDto[] | null;
@@ -33,45 +33,23 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
   const [noti, setNoti] = useState<NotificationDto>();
   const [questionsNum, setQuestions_num] = useState<number>(0);
   const [loginChecked, setLoginChecked] = useState<boolean>(false);
-  const [logoutModalText, setLogoutModalText] = useState<string>('');
-  const forceLogoutModalRef = useRef<HTMLDialogElement>(null);
+  const apiErrorModalRef = useRef<HTMLDialogElement>(null);
+  const [apiErrorModalValue, setApiErrorModalValue] = useState<ApiErrorEventValues>({
+    title: '',
+    body: '',
+    buttonText: '',
+    errorType: 'SERVER_ERROR',
+  });
+  const onApiErrorModalClose = useRef<undefined | (() => void)>(undefined);
 
-  const onResNotOk = async (code: number, res: Response) => {
-    try {
-      const errorRes = (await res.json()) as ApiErrorResponseDto;
-      switch (errorRes.error_type) {
-        case 'FORBIDDEN':
-          setLogoutModalText('요청이 거부 되었어요!');
-          break;
-        case 'JWT_EXPIRED':
-          setLogoutModalText('로그인 인증이 만료되었어요!');
-          break;
-        case 'REMOTE_ACCESS_TOKEN_REVOKED':
-          setLogoutModalText('원격 서버(Misskey/Mastodon...) 에서 인증이 해제 되었어요!');
-          break;
-        case 'JWT_REVOKED':
-          setLogoutModalText('로그인 인증이 해제되었어요!');
-          break;
-        case 'UNAUTHORIZED':
-          setLogoutModalText('인증에 실패했어요!');
-          break;
-        default:
-          setLogoutModalText('');
-          return;
-      }
-      forceLogoutModalRef.current?.showModal();
-    } catch (err) {
-      alert(`unknown error! code: ${code}, err: ${String(err)}`);
-    }
-  };
   // ------------ Initial Fetch -----------------------------
   useEffect(() => {
-    fetchMyProfile(onResNotOk).then((r) => {
+    fetchMyProfile(onApiError).then((r) => {
       setUserProfileData(r);
       setQuestions_num(r?.questions ?? 0);
       setLoginChecked(true);
     });
-    fetchAllAnswers({ sort: 'DESC', limit: 25 }, onResNotOk).then((r) => {
+    fetchAllAnswers({ sort: 'DESC', limit: 25 }, onApiError).then((r) => {
       if (r.length === 0) {
         setLoading(false);
         setAnswers([]);
@@ -80,12 +58,12 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
       setAnswers(r);
       setUntilId(r[r.length - 1].id);
     });
-    fetchNoti(onResNotOk).then((v) => {
+    fetchNoti(onApiError).then((v) => {
       setNoti(v);
     });
     const last_token_refresh = Number.parseInt(localStorage.getItem('last_token_refresh') ?? '0');
     if (Date.now() / 1000 - last_token_refresh > 3600) {
-      refreshJwt(onResNotOk);
+      refreshJwt(onApiError);
     }
   }, []);
 
@@ -96,16 +74,41 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
     AnswerEv.addAnswerCreatedEventListener(onAnswerCreated);
     AnswerEv.addAnswerDeletedEventListener(onAnswerDeleted);
     NotificationEv.addNotificationEventListener(onNotiEv);
+    ApiErrorEv.addEventListener(onApiErrorEv);
     return () => {
       MyProfileEv.removeEventListener(onProfileUpdateEvent);
       AnswerEv.removeFetchMoreRequestEventListener(onFetchMoreEv);
       AnswerEv.removeAnswerCreatedEventListener(onAnswerCreated);
       AnswerEv.removeAnswerDeletedEventListener(onAnswerDeleted);
       NotificationEv.removeNotificationEventListener(onNotiEv);
+      ApiErrorEv.removeEventListener(onApiErrorEv);
     };
   }, []);
 
   // ---------------- event callback functions -------------------
+  const onApiErrorEv = (ev: CustomEvent<ApiErrorEventValues>) => {
+    const data = ev.detail;
+    setApiErrorModalValue({
+      title: data.title,
+      body: data.body,
+      buttonText: data.buttonText,
+      errorType: data.errorType,
+    });
+    switch (data.errorType) {
+      case 'JWT_EXPIRED':
+      case 'JWT_REVOKED':
+      case 'REMOTE_ACCESS_TOKEN_REVOKED':
+      case 'UNAUTHORIZED':
+        if (localStorage.getItem('user_handle')) {
+          onApiErrorModalClose.current = logout;
+        }
+        break;
+      default:
+        onApiErrorModalClose.current = undefined;
+        break;
+    }
+    apiErrorModalRef.current?.showModal();
+  };
   const onNotiEv = (ev: CustomEvent<NotificationPayloadTypes>) => {
     const notiData = ev.detail;
     switch (notiData.notification_name) {
@@ -201,11 +204,11 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
         </AnswersContext.Provider>
       </MyProfileContext.Provider>
       <DialogModalOneButton
-        title={'자동 로그아웃'}
-        body={logoutModalText}
-        buttonText={'확인'}
-        ref={forceLogoutModalRef}
-        onClose={logout}
+        title={apiErrorModalValue.title}
+        body={apiErrorModalValue.body}
+        buttonText={apiErrorModalValue.buttonText}
+        ref={apiErrorModalRef}
+        onClick={onApiErrorModalClose.current}
       />
     </div>
   );

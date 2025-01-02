@@ -9,6 +9,7 @@ import { FetchUserAnswersDto } from '@/app/_dto/answers/fetch-user-answers.dto';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { AnswerEv } from '@/app/main/_events';
+import { onApiError } from '@/utils/api-error/onApiError';
 
 type ResponseType = {
   answers: AnswerDto[];
@@ -21,10 +22,10 @@ async function fetchProfile(handle: string) {
     if (profile.ok) {
       return profile.json() as unknown as userProfileDto;
     } else {
-      throw new Error(`프로필이 없습니다! ${await profile.text()}`);
+      onApiError(profile.status, profile);
+      return undefined;
     }
   } catch (err) {
-    alert(err);
     return undefined;
   }
 }
@@ -52,14 +53,10 @@ export default function UserPage() {
     const res = await fetch(`/api/db/answers/${handle}?${params}`, {
       method: 'GET',
     });
-    try {
-      if (res.ok) {
-        return res.json();
-      } else {
-        throw new Error(`fetch-user-answers fail! ${res.status}, ${await res.text()}`);
-      }
-    } catch (err) {
-      alert(err);
+    if (res.ok) {
+      return res.json();
+    } else {
+      onApiError(res.status, res);
       return { answers: [], count: 0 };
     }
   };
@@ -69,7 +66,7 @@ export default function UserPage() {
       method: 'DELETE',
     });
     if (!res.ok) {
-      alert(`답변을 삭제하는데 실패하였습니다! ${await res.text()}`);
+      onApiError(res.status, res);
       return;
     }
     if (answers && count) {

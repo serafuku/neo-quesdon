@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaEllipsisVertical } from 'react-icons/fa6';
 import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
+import { onApiError } from '@/utils/api-error/onApiError';
 
 type FormValue = {
   question: string;
@@ -21,14 +22,10 @@ type FormValue = {
 
 async function fetchProfile(handle: string) {
   const res = await fetch(`/api/db/fetch-profile/${handle}`);
-  try {
-    if (res && res.ok) {
-      return res.json() as unknown as userProfileDto;
-    } else {
-      throw new Error(`프로필을 불러오는데 실패했습니다! ${await res.text()}`);
-    }
-  } catch (err) {
-    alert(err);
+  if (res.ok) {
+    return res.json() as unknown as userProfileDto;
+  } else {
+    onApiError(res.status, res);
     return undefined;
   }
 }
@@ -124,7 +121,7 @@ export default function Profile() {
       body: JSON.stringify({ targetHandle: profileHandle }),
     });
     if (!res.ok) {
-      alert(await res.text());
+      onApiError(res.status, res);
       setIsLoading(false);
     }
     setIsUserBlocked(true);
@@ -140,7 +137,7 @@ export default function Profile() {
       body: JSON.stringify({ targetHandle: profileHandle }),
     });
     if (!res.ok) {
-      alert(await res.text());
+      onApiError(res.status, res);
       setIsLoading(false);
     }
     setIsUserBlocked(false);
@@ -239,7 +236,9 @@ export default function Profile() {
           method: 'POST',
           body: JSON.stringify({ targetHandle: profileHandle }),
         });
-        if (!res.ok) alert('차단여부를 불러오는데 오류가 발생했어요!');
+        if (!res.ok) {
+          onApiError(res.status, res);
+        }
         const data = (await res.json()) as SearchBlockListResDto;
         setIsUserBlocked(data.isBlocked);
       })();

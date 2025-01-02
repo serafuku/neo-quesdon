@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { AnswerDto } from '@/app/_dto/answers/Answers.dto';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
+import { onApiError } from '@/utils/api-error/onApiError';
 
 export default function SingleAnswer() {
   const [answerBody, setAnswerBody] = useState<AnswerDto | null>();
@@ -28,14 +29,11 @@ export default function SingleAnswer() {
     const res = await fetch(`/api/db/answers/${userHandle}/${id}`, {
       method: 'DELETE',
     });
-    try {
-      if (res.ok) {
-        window.history.back();
-      } else {
-        throw new Error(`답변을 지우는데 실패했어요! ${await res.text()}`);
-      }
-    } catch (err) {
-      alert(err);
+
+    if (res.ok) {
+      window.history.back();
+    } else {
+      onApiError(res.status, res);
     }
   };
 

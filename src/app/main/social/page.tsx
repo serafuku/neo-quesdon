@@ -3,6 +3,7 @@
 import UsernameAndProfile from '@/app/_components/userProfile';
 import { FollowingListResDto } from '@/app/_dto/following/following.dto';
 import { MyProfileContext } from '@/app/main/layout';
+import { onApiError } from '@/utils/api-error/onApiError';
 import { useContext, useEffect, useState } from 'react';
 
 export default function Social() {
@@ -18,13 +19,12 @@ export default function Social() {
           body: JSON.stringify({}),
         });
         if (!res.ok) {
-          throw new Error('팔로잉 목록을 받아오는데 실패했어요!');
+          onApiError(res.status, res);
+          throw new Error();
         }
         const data = (await res.json()) as FollowingListResDto;
         setFollowing(data);
-      } catch (err) {
-        alert(err);
-      }
+      } catch {}
     };
     if (profileContext) fn();
   }, [profileContext]);
