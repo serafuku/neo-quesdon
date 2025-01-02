@@ -21,20 +21,20 @@ export async function generateMetadata({
   return {
     title: answerBody.question,
     openGraph: {
-      title: answerBody.question,
-      description: answerBody.answer,
+      title: `Q. ${answerBody.question}`,
+      description: `A. ${answerBody.answer}`,
       images: answerBody.answeredPerson?.avatarUrl,
     },
   };
 }
 
-async function fetchAnswer(userHandle: string, id: string) {
+async function fetchAnswer(userHandle: string, id: string): Promise<AnswerWithProfileDto | undefined> {
   const url = process.env.WEB_URL;
   const res = await fetch(`${url}/api/db/answers/${userHandle}/${id}`, {
     method: 'GET',
   });
   if (res.status === 404) {
-    return null;
+    return undefined;
   } else if (!res.ok) {
     throw new Error(`Fail to fetch answer! ${await res.text()}`);
   }
