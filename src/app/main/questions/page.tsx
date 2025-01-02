@@ -9,7 +9,10 @@ import { MyQuestionEv } from '../_events';
 import { Logger } from '@/utils/logger/Logger';
 import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { MyProfileContext } from '@/app/main/layout';
-import { createBlockByQuestionDto } from '@/app/_dto/blocking/blocking.dto';
+import { ApiErrorResponseDto } from '@/app/_dto/api-error/api-error.dto';
+import DialogModalOneButton from '@/app/_components/modalOneButton';
+import { deleteQuestion } from '@/utils/questions/deleteQuestion';
+import { createBlock } from '@/utils/block/createBlock';
 
 const fetchQuestions = async (): Promise<questionDto[] | null> => {
   const res = await fetch('/api/db/questions');
@@ -28,29 +31,6 @@ const fetchQuestions = async (): Promise<questionDto[] | null> => {
   }
 };
 
-async function deleteQuestion(id: number) {
-  const res = await fetch(`/api/db/questions/${id}`, {
-    method: 'DELETE',
-    cache: 'no-cache',
-  });
-  if (!res.ok) {
-    throw new Error(`질문을 삭제하는데 실패했어요! ${await res.text()}`);
-  }
-}
-async function createBlock(id: number) {
-  const body: createBlockByQuestionDto = {
-    questionId: id,
-  };
-  const res = await fetch(`/api/user/blocking/create-by-question`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    throw new Error(`차단에 실패했어요! ${await res.text()}`);
-  }
-}
-
 export default function Questions() {
   const [questions, setQuestions] = useState<questionDto[] | null>();
   const profile = useContext(MyProfileContext);
@@ -58,6 +38,12 @@ export default function Questions() {
   const deleteQuestionModalRef = useRef<HTMLDialogElement>(null);
   const answeredQuestionModalRef = useRef<HTMLDialogElement>(null);
   const createBlockModalRef = useRef<HTMLDialogElement>(null);
+  const errorModalRef = useRef<HTMLDialogElement>(null);
+  const [errorModalValue, setErrorModalValue] = useState<{ title: string; body: string; buttonText: string }>({
+    title: '',
+    body: '',
+    buttonText: '',
+  });
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const onNewQuestionEvent = (ev: CustomEvent<questionDto>) => {
@@ -70,6 +56,31 @@ export default function Questions() {
     const logger = new Logger('onNewQuestion', { noColor: true });
     logger.log('Question Deleted: ', ev.detail);
     setQuestions((prev) => prev && prev.filter((el) => el.id !== ev.detail.deleted_id));
+  };
+
+  const onResNotOk = async (code: number, res: Response) => {
+    const errorRes = (await res.json()) as ApiErrorResponseDto;
+    setErrorModalValue({ title: '오류', body: '', buttonText: '알겠어요' });
+    switch (errorRes.error_type) {
+      case 'CAN_NOT_BLOCK_YOURSELF':
+        setErrorModalValue((prev) => ({ ...prev, title: '차단 오류', body: '자기 자신을 차단할 수 없어요!' }));
+        break;
+      case 'RATE_LIMITED':
+        setErrorModalValue((prev) => ({
+          ...prev,
+          body: '요청 제한을 초과했어요...! 잠시 후 다시 시도해 주세요',
+        }));
+        break;
+      case 'UNAUTHORIZED':
+        setErrorModalValue((prev) => ({ ...prev, body: 'API 인증에 실패했어요' }));
+        break;
+      default:
+        setErrorModalValue((prev) => ({
+          ...prev,
+          body: `알 수 없는 ${code} 오류가 발생했어요: ${errorRes.error_type}, ${errorRes.message}`,
+        }));
+    }
+    errorModalRef.current?.showModal();
   };
 
   useEffect(() => {
@@ -144,8 +155,7 @@ export default function Questions() {
         cancelButtonText={'취소'}
         ref={deleteQuestionModalRef}
         onClick={() => {
-          deleteQuestion(id);
-          setQuestions((prevQuestions) => (prevQuestions ? [...prevQuestions.filter((prev) => prev.id !== id)] : null));
+          deleteQuestion(id, onResNotOk);
         }}
       />
       <DialogModalTwoButton
@@ -155,9 +165,15 @@ export default function Questions() {
         cancelButtonText={'취소'}
         ref={createBlockModalRef}
         onClick={() => {
-          createBlock(id);
+          createBlock(id, onResNotOk);
         }}
       />
+      <DialogModalOneButton
+        title={errorModalValue.title}
+        body={errorModalValue.body}
+        buttonText={errorModalValue.buttonText}
+        ref={errorModalRef}
+      ></DialogModalOneButton>
     </div>
   );
 }
