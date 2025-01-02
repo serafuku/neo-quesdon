@@ -21,8 +21,8 @@ export async function generateMetadata({
   return {
     title: answerBody.question,
     openGraph: {
-      title: answerBody.question,
-      description: answerBody.answer,
+      title: `Q. ${answerBody.question}`,
+      description: `A. ${answerBody.answer}`,
       images: answerBody.answeredPerson?.avatarUrl,
     },
   };
