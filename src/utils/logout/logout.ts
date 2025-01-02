@@ -5,5 +5,6 @@ export async function logout() {
     await fetch('/api/web/logout');
   } catch {}
   localStorage.removeItem('user_handle');
+  localStorage.removeItem('last_token_refresh');
   window.location.reload();
 }

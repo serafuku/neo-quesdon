@@ -3,11 +3,10 @@ import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
 import { NextRequest, NextResponse } from 'next/server';
 import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
-import { validateStrict } from '@/utils/validator/strictValidator';
 import { FollowingListReqDto, FollowingListResDto } from '@/app/_dto/following/following.dto';
-import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { RedisKvCacheService } from '@/app/api/_service/kvCache/redisKvCacheService';
+import { Body, ValidateBody } from '@/app/api/_utils/Validator/decorator';
 
 export class FollowingService {
   private static instance: FollowingService;
@@ -22,15 +21,9 @@ export class FollowingService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 300 }, 'user')
-  public async getFollowing(req: NextRequest, @JwtPayload tokenBody?: jwtPayloadType) {
+  @ValidateBody(FollowingListReqDto)
+  public async getFollowing(_req: NextRequest, @JwtPayload tokenBody: jwtPayloadType, @Body data: FollowingListReqDto) {
     const prisma = GetPrismaClient.getClient();
-    let data;
-    try {
-      data = await validateStrict(FollowingListReqDto, await req.json());
-    } catch {
-      return sendApiError(400, 'Bad Request');
-    }
-
     const user = await prisma.user.findUniqueOrThrow({ where: { handle: tokenBody!.handle } });
 
     const fn = async () => {
@@ -84,7 +77,7 @@ export class FollowingService {
     };
 
     const kv = RedisKvCacheService.getInstance();
-    const filteredDto = await kv.get(fn, {key: `follow-${user.handle}`, ttl: 600});
+    const filteredDto = await kv.get(fn, { key: `follow-${user.handle}`, ttl: 600 });
     if (data.limit) {
       filteredDto.followingList = filteredDto.followingList.slice(0, data.limit);
     }

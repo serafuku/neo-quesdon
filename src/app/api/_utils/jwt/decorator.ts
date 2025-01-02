@@ -5,6 +5,7 @@ import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 import 'reflect-metadata';
 import { Logger } from '@/utils/logger/Logger';
+import { TokenValidteError } from '@/app/api/_utils/jwt/ValidationErrorType';
 
 export function Auth(options?: { isOptional: boolean }) {
   return function (target: any, methodName: string, descriptor: PropertyDescriptor) {
@@ -17,11 +18,28 @@ export function Auth(options?: { isOptional: boolean }) {
       if (jwt) {
         try {
           jwtBody = await verifyToken(jwt);
-        } catch {
-          return sendApiError(401, 'Auth Error: JWT check fail!');
+        } catch (err) {
+          const e = err as TokenValidteError;
+
+          switch (e.code) {
+            case 'JWT_PAYLOAD_ERROR':
+            case 'JWS_INVALID': {
+              // 토큰의 형식 자체가 잘못된 경우는 400 응답
+              return sendApiError(400, `Error: invalid JWT ${e.code}`, 'BAD_REQUEST');
+            }
+            case 'JWT_EXPIRED':
+            case 'JWT_REVOKED': {
+              const apiErrorType = e.code;
+              return sendApiError(401, `Auth Error: ${e.code}`, apiErrorType);
+            }
+            default: {
+              const apiErrorType = 'UNAUTHORIZED';
+              return sendApiError(401, `Auth Error: ${e.code}`, apiErrorType);
+            }
+          }
         }
       } else if (options?.isOptional !== true) {
-        return sendApiError(401, 'Auth Error: No Auth Token');
+        return sendApiError(401, 'Auth Error: No Auth Token', 'UNAUTHORIZED');
       }
 
       // 메타데이터에서 인자 위치 추출

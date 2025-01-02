@@ -25,6 +25,7 @@ import { NotificationService } from '@/app/api/_service/notification/notificatio
 import { mkMisskeyNote } from '@/app/api/_utils/uploadNote/misskeyNote';
 import { mastodonToot } from '@/app/api/_utils/uploadNote/mastodonToot';
 import { clampText } from '@/app/api/_utils/uploadNote/clampText';
+import { Body, ValidateBody } from '@/app/api/_utils/Validator/decorator';
 
 export class AnswerService {
   private static instance: AnswerService;
@@ -46,20 +47,19 @@ export class AnswerService {
 
   @Auth()
   @RateLimit({ bucket_time: 300, req_limit: 300 }, 'user')
-  public async createAnswerApi(req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
-    let data: CreateAnswerDto;
-    try {
-      data = await validateStrict(CreateAnswerDto, await req.json());
-    } catch (err) {
-      return sendApiError(400, `${JSON.stringify(err)}`);
-    }
+  @ValidateBody(CreateAnswerDto)
+  public async createAnswerApi(
+    _req: NextRequest,
+    @Body data: CreateAnswerDto,
+    @JwtPayload tokenPayload: jwtPayloadType,
+  ) {
     const questionId = data.questionId;
     const q = await this.prisma.question.findUnique({ where: { id: questionId } });
     if (!q) {
-      return sendApiError(400, 'No such question');
+      return sendApiError(400, 'No such question', 'NOT_FOUND');
     }
     if (q.questioneeHandle !== tokenPayload.handle) {
-      return sendApiError(403, `This question is not for you`);
+      return sendApiError(403, `This question is not for you`, 'NOT_YOUR_QUESTION');
     }
     const answeredUser = await this.prisma.user.findUnique({
       where: {
@@ -71,7 +71,7 @@ export class AnswerService {
       },
     });
     if (!answeredUser || !answeredUser.profile) {
-      return sendApiError(500, 'User or Profile not found');
+      return sendApiError(500, 'User or Profile not found', 'USER_NOT_EXIST');
     }
 
     const server = answeredUser.server;
@@ -179,7 +179,7 @@ export class AnswerService {
   @RateLimit({ bucket_time: 600, req_limit: 300 }, 'user')
   public async deleteAnswer(req: NextRequest, answerId: string, @JwtPayload tokenPayload: jwtPayloadType) {
     if (!isString(answerId)) {
-      return sendApiError(400, 'answerId is not string');
+      return sendApiError(400, 'answerId is not string', 'BAD_REQUEST');
     }
     const prisma = GetPrismaClient.getClient();
 
@@ -188,11 +188,11 @@ export class AnswerService {
     });
     if (!willBeDeletedAnswer) {
       // 그런 답변이 없음
-      return sendApiError(404, 'Not Found');
+      return sendApiError(404, 'Not Found', 'NOT_FOUND');
     }
     if (willBeDeletedAnswer.answeredPersonHandle !== tokenPayload!.handle) {
       // 너의 답변이 아님
-      return sendApiError(403, 'This is Not Your Answer!');
+      return sendApiError(403, 'This is Not Your Answer!', 'NOT_YOUR_ANSWER');
     }
     try {
       this.logger.log(`Delete answer... : ${answerId}`);
@@ -202,7 +202,7 @@ export class AnswerService {
       return NextResponse.json({ message: 'Delete Answer Successful' }, { status: 200 });
     } catch (err) {
       this.logger.error('Error: Delete answer:', err);
-      return sendApiError(500, `Error ${JSON.stringify(err)}`);
+      return sendApiError(500, `Error ${JSON.stringify(err)}`, 'SERVER_ERROR');
     }
   }
 
@@ -221,7 +221,7 @@ export class AnswerService {
         limit: searchParams.get('limit') ?? undefined,
       });
     } catch (err) {
-      return sendApiError(400, `${err}`);
+      return sendApiError(400, `${err}`, 'BAD_REQUEST');
     }
 
     const query_limit = data.limit ? Math.max(1, Math.min(data.limit, 100)) : 100;
@@ -287,17 +287,17 @@ export class AnswerService {
     const prisma = GetPrismaClient.getClient();
     const searchParams = req.nextUrl.searchParams;
     const query_params = {
-      limit: searchParams.get('limit') ?? undefined,
-      sinceId: searchParams.get('sinceId') ?? undefined,
-      untilId: searchParams.get('untilId') ?? undefined,
-      sort: searchParams.get('sort') ?? undefined,
+      limit: searchParams.get('limit'),
+      sinceId: searchParams.get('sinceId'),
+      untilId: searchParams.get('untilId'),
+      sort: searchParams.get('sort'),
     };
     try {
       let data;
       try {
         data = await validateStrict(FetchUserAnswersDto, query_params);
       } catch (err) {
-        return sendApiError(400, `${err}`);
+        return sendApiError(400, `${err}`, 'BAD_REQUEST');
       }
 
       const query_limit = data.limit ? Math.max(1, Math.min(data.limit, 100)) : 100;
@@ -308,7 +308,7 @@ export class AnswerService {
       const orderBy = data.sort === 'ASC' ? 'asc' : 'desc';
 
       if (!userHandle || !isHandle(userHandle)) {
-        return sendApiError(400, 'User handle validation Error!');
+        return sendApiError(400, 'User handle validation Error!', 'BAD_REQUEST');
       }
 
       const res = await prisma.answer.findMany({
@@ -362,7 +362,7 @@ export class AnswerService {
       },
     });
     if (!answer) {
-      return sendApiError(404, 'Not found');
+      return sendApiError(404, 'Not found', 'NOT_FOUND');
     }
     const profileDto = profileToDto(
       answer.answeredPerson,

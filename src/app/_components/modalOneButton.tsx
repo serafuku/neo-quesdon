@@ -8,12 +8,13 @@ type modalProps = {
   buttonText: string;
   ref: RefObject<HTMLDialogElement>;
   onClick?: () => void;
+  onClose?: () => void;
 };
 
-export default function DialogModalOneButton({ title, body, buttonText, ref, onClick }: modalProps) {
+export default function DialogModalOneButton({ title, body, buttonText, ref, onClick, onClose }: modalProps) {
   return (
     <>
-      <dialog ref={ref} className="modal">
+      <dialog ref={ref} className="modal" onClose={onClose}>
         <div className="modal-box">
           <h3 className="font-bold text-lg">{title}</h3>
           <p className="py-4">{body}</p>

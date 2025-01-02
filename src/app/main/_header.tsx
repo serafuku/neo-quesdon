@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { FaInfoCircle, FaUser } from 'react-icons/fa';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
-import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
 import { logout } from '@/utils/logout/logout';
 import { FaXmark } from 'react-icons/fa6';
 import WebSocketState from '../_components/webSocketState';
@@ -80,17 +79,6 @@ export default function MainHeader({ questionsNum, loginChecked }: headerProps) 
     setNotiNum(notificationContext.unread_count);
   }, [notificationContext]);
 
-  useEffect(() => {
-    const fn = async () => {
-      const now = Math.ceil(Date.now() / 1000);
-      // JWT 리프레시로부터 1시간이 지난 경우 refresh 시도
-      const last_token_refresh = Number.parseInt(localStorage.getItem('last_token_refresh') ?? '0');
-      if (now - last_token_refresh > 3600) {
-        await refreshJwt();
-      }
-    };
-    fn();
-  }, []);
 
   return (
     <div className="w-[90%] window:w-[80%] desktop:w-[70%] navbar bg-base-100 shadow rounded-box my-4">

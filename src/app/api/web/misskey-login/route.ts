@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   try {
     data = await validateStrict(loginReqDto, await req.json());
   } catch (err) {
-    return sendApiError(400, `${err}`);
+    return sendApiError(400, `${err}`, 'BAD_REQUEST');
   }
 
   const limiter = RateLimiterService.getLimiter();
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     req_limit: 60,
   });
   if (limited) {
-    return sendApiError(429, '요청 제한에 도달했습니다!');
+    return sendApiError(429, 'Rate Limited! Try Again Later', 'RATE_LIMITED');
   }
 
   const misskeyHost = data.host.toLowerCase();
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        return sendApiError(500, `Login Error! From Remote: ${await res.text()}`);
+        return sendApiError(500, `Login Error! From Remote: ${await res.text()}`, 'MISSKEY_ERROR');
       }
       const data = await res.json();
       const appSecret = data.secret;
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       });
       const authRes = await initiateMisskeyAuthSession(misskeyHost, appSecret);
       if (!authRes.ok) {
-        return sendApiError(500, `Fail to Create Auth Session: ${await authRes.text()}`);
+        return sendApiError(500, `Fail to Create Auth Session: ${await authRes.text()}`, 'SERVER_ERROR');
       }
       const misskeyAuthSession = (await authRes.json()) as MiAuthSession;
       const redis = RedisService.getRedis();
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
             data: { appSecret: null },
           });
         }
-        return sendApiError(500, `Fail to Create Misskey Auth Session`);
+        return sendApiError(500, `Fail to Create Misskey Auth Session`, 'SERVER_ERROR');
       }
       const misskeyAuthSession = (await res.json()) as MiAuthSession;
       const redis = RedisService.getRedis();
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(misskeyAuthSession);
     }
   } catch (err) {
-    return sendApiError(500, `login error... ${err}`);
+    return sendApiError(500, `login error... ${err}`, 'SERVER_ERROR');
   }
 }
 

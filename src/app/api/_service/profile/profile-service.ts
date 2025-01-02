@@ -29,9 +29,9 @@ export class ProfileService {
     const prisma = GetPrismaClient.getClient();
     const handle = isMe ? tokenPayload?.handle : handlePath;
     if (isMe && !tokenPayload?.handle) {
-      return sendApiError(401, 'Unauthorized');
+      return sendApiError(401, 'Unauthorized', 'UNAUTHORIZED');
     } else if (!handle) {
-      return sendApiError(400, 'Bad request');
+      return sendApiError(400, 'Bad request', 'BAD_REQUEST');
     }
 
     try {

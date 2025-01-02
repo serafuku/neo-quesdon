@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { UserSettingsDto, UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
-import { validateStrict } from '@/utils/validator/strictValidator';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
 import RE2 from 're2';
 import { RedisPubSubService } from '@/_service/redis-pubsub/redis-event.service';
 import { QuestionDeletedPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
+import { Body, ValidateBody } from '@/app/api/_utils/Validator/decorator';
 
 export class UserSettingsService {
   private constructor() {}
@@ -41,7 +41,7 @@ export class UserSettingsService {
       };
       return NextResponse.json(res_body);
     } catch {
-      return sendApiError(400, 'Bad Request');
+      return sendApiError(400, 'Bad Request', 'BAD_REQUEST');
     }
   }
 
@@ -53,17 +53,12 @@ export class UserSettingsService {
     'user',
   )
   @Auth()
-  public async updateSettings(req: NextRequest, @JwtPayload jwtBody?: jwtPayloadType) {
-    let data;
-    try {
-      const body = await req.json();
-      if (!jwtBody) {
-        throw new Error('jwtBody not found?');
-      }
-      data = await validateStrict(UserSettingsUpdateDto, body);
-    } catch {
-      return sendApiError(400, 'Bad Request');
-    }
+  @ValidateBody(UserSettingsUpdateDto)
+  public async updateSettings(
+    _req: NextRequest,
+    @Body data: UserSettingsUpdateDto,
+    @JwtPayload jwtBody: jwtPayloadType,
+  ) {
     const prisma = GetPrismaClient.getClient();
     if (data.wordMuteList) {
       this.onUpdateWordMute(jwtBody.handle, data.wordMuteList);

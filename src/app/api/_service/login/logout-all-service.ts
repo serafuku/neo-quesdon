@@ -43,7 +43,7 @@ export class LogoutAllService {
       return NextResponse.json({ message: 'OK' }, { status: 200 });
     } catch (err) {
       this.logger.error(err);
-      return sendApiError(500, 'Error!');
+      return sendApiError(500, 'Error!', 'SERVER_ERROR');
     }
   }
 }

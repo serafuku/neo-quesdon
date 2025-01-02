@@ -6,8 +6,6 @@ export async function GET() {
     const cookieStore = await cookies();
 
     cookieStore.delete('jwtToken');
-    cookieStore.delete('server');
-    cookieStore.delete('handle');
 
     return NextResponse.json({ status: 200 });
   } catch (err) {

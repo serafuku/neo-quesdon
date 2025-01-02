@@ -34,7 +34,7 @@ export function RateLimit(
       const limiter = RateLimiterService.getLimiter();
       const isLimited = await limiter.limit(limit_key, limitOptions);
       if (isLimited) {
-        return sendApiError(429, 'Rate Limit. 요청 한도를 초과했습니다. 잠시후 다시 시도해 주세요. ');
+        return sendApiError(429, 'Rate Limited! Try Again Later', 'RATE_LIMITED');
       }
       return await originMethod.apply(this, args);
     };

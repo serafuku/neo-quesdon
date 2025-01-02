@@ -15,7 +15,7 @@ export async function generateJwt(hostname: string, handle: string, jwtIndex: nu
   };
 
   const webUrl = process.env.WEB_URL;
-  const jwtToken = await new SignJWT(jwtPayload)
+  const jwtToken = await new SignJWT({ ...jwtPayload })
     .setProtectedHeader({ alg })
     .setIssuedAt()
     .setIssuer(`${webUrl}`)

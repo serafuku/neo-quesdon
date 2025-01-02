@@ -13,6 +13,8 @@ import DialogModalOneButton from '@/app/_components/modalOneButton';
 import { logout } from '@/utils/logout/logout';
 import { fetchAllAnswers } from '@/utils/answers/fetchAllAnswers';
 import { fetchNoti } from '@/utils/notification/fetchNoti';
+import { ApiErrorResponseDto } from '@/app/_dto/api-error/api-error.dto';
+import { refreshJwt } from '@/utils/refreshJwt/refresh-jwt-token';
 
 type MainPageContextType = {
   answers: AnswerWithProfileDto[] | null;
@@ -31,13 +33,35 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
   const [noti, setNoti] = useState<NotificationDto>();
   const [questionsNum, setQuestions_num] = useState<number>(0);
   const [loginChecked, setLoginChecked] = useState<boolean>(false);
-  const forcedLogoutModalRef = useRef<HTMLDialogElement>(null);
+  const [logoutModalText, setLogoutModalText] = useState<string>('');
+  const forceLogoutModalRef = useRef<HTMLDialogElement>(null);
 
   const onResNotOk = async (code: number, res: Response) => {
-    if (code === 401) {
-      forcedLogoutModalRef.current?.showModal();
-    } else {
-      alert(await res.text());
+    try {
+      const errorRes = (await res.json()) as ApiErrorResponseDto;
+      switch (errorRes.error_type) {
+        case 'FORBIDDEN':
+          setLogoutModalText('요청이 거부 되었어요!');
+          break;
+        case 'JWT_EXPIRED':
+          setLogoutModalText('로그인 인증이 만료되었어요!');
+          break;
+        case 'REMOTE_ACCESS_TOKEN_REVOKED':
+          setLogoutModalText('원격 서버(Misskey/Mastodon...) 에서 인증이 해제 되었어요!');
+          break;
+        case 'JWT_REVOKED':
+          setLogoutModalText('로그인 인증이 해제되었어요!');
+          break;
+        case 'UNAUTHORIZED':
+          setLogoutModalText('인증에 실패했어요!');
+          break;
+        default:
+          setLogoutModalText('');
+          return;
+      }
+      forceLogoutModalRef.current?.showModal();
+    } catch (err) {
+      alert(`unknown error! code: ${code}, err: ${String(err)}`);
     }
   };
   // ------------ Initial Fetch -----------------------------
@@ -59,6 +83,10 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
     fetchNoti(onResNotOk).then((v) => {
       setNoti(v);
     });
+    const last_token_refresh = Number.parseInt(localStorage.getItem('last_token_refresh') ?? '0');
+    if (Date.now() / 1000 - last_token_refresh > 3600) {
+      refreshJwt(onResNotOk);
+    }
   }, []);
 
   // ------------- add Event callbacks --------------------
@@ -174,10 +202,10 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
       </MyProfileContext.Provider>
       <DialogModalOneButton
         title={'자동 로그아웃'}
-        body={'로그인 유효시간이 만료되어서 로그아웃 되었어요!'}
+        body={logoutModalText}
         buttonText={'확인'}
-        ref={forcedLogoutModalRef}
-        onClick={logout}
+        ref={forceLogoutModalRef}
+        onClose={logout}
       />
     </div>
   );

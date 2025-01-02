@@ -81,7 +81,7 @@ export class NotificationService {
     @JwtPayload tokenPayload?: jwtPayloadType,
   ): Promise<NextResponse> {
     if (!tokenPayload) {
-      return sendApiError(401, '');
+      return sendApiError(401, '', 'UNAUTHORIZED');
     }
     try {
       const notifications = await this.prisma.notification.findMany({
@@ -109,7 +109,7 @@ export class NotificationService {
       });
     } catch (err) {
       this.logger.warn('getMyNotificationsApi Error!', err);
-      return sendApiError(500, 'getMyNotificationsApi Error!');
+      return sendApiError(500, 'getMyNotificationsApi Error!', 'SERVER_ERROR');
     }
   }
 
@@ -121,14 +121,14 @@ export class NotificationService {
   ): Promise<NextResponse> {
     const handle = tokenPayload?.handle;
     if (!handle) {
-      return sendApiError(401, 'unauthorized');
+      return sendApiError(401, 'unauthorized', 'UNAUTHORIZED');
     }
     try {
       const count = await this.readAllNotifications(handle);
       return NextResponse.json({ message: `OK! ${count} notifications read` });
     } catch (err) {
       this.logger.warn('readAllNotificationsApi FAIL!', err);
-      return sendApiError(500, 'readAllNotificationsApi FAIL!');
+      return sendApiError(500, 'readAllNotificationsApi FAIL!', 'SERVER_ERROR');
     }
   }
 
@@ -140,7 +140,7 @@ export class NotificationService {
   ): Promise<NextResponse> {
     const handle = tokenPayload?.handle;
     if (!handle) {
-      return sendApiError(401, 'Unauthorized');
+      return sendApiError(401, 'Unauthorized', 'UNAUTHORIZED');
     }
     try {
       const deleted = await this.prisma.notification.deleteMany({ where: { userHandle: handle } });
@@ -151,7 +151,7 @@ export class NotificationService {
       });
       return NextResponse.json({ message: `OK! ${deleted.count} notifications Deleted` });
     } catch (err) {
-      return sendApiError(500, JSON.stringify(err));
+      return sendApiError(500, JSON.stringify(err), 'SERVER_ERROR');
     }
   }
 }
