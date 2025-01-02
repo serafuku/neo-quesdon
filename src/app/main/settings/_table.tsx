@@ -4,6 +4,7 @@ import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalLoadingOneButton from '@/app/_components/modalLoadingOneButton';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { Block, DeleteBlockByIdDto, GetBlockListReqDto, GetBlockListResDto } from '@/app/_dto/blocking/blocking.dto';
+import { onApiError } from '@/utils/api-error/onApiError';
 import { useEffect, useRef, useState } from 'react';
 
 export default function BlockList() {
@@ -49,10 +50,10 @@ export default function BlockList() {
         const blocklist = ((await res.json()) as GetBlockListResDto).blockList;
         return blocklist;
       } else {
+        onApiError(res.status, res);
         throw new Error('차단 리스트를 불러오는데 에러가 발생했어요!');
       }
     } catch (err) {
-      alert(err);
       throw err;
     }
   };

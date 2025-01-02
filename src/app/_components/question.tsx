@@ -5,6 +5,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
 import { CreateAnswerDto } from '@/app/_dto/answers/create-answer.dto';
 import { questionDto } from '@/app/_dto/questions/question.dto';
+import { onApiError } from '@/utils/api-error/onApiError';
 
 interface formValue {
   answer: string;
@@ -100,9 +101,8 @@ export default function Question({
         visibility: e.visibility,
       };
       await postAnswer(req);
-    } catch (err) {
+    } catch {
       answerRef.current?.close();
-      alert(err);
     } finally {
       setIsLoading(false);
     }
@@ -254,6 +254,7 @@ async function postAnswer(req: CreateAnswerDto) {
     headers: { 'Content-type': 'application/json' },
   });
   if (!res.ok) {
-    throw new Error(`답변을 작성하는데 실패했어요!, ${await res.text()}`);
+    onApiError(res.status, res);
+    throw new Error();
   }
 }

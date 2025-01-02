@@ -26,7 +26,6 @@ export async function fetchAllAnswers(
       throw new Error(`답변을 불러오는데 실패했어요!: ${await res.text()}`);
     }
   } catch (err) {
-    alert(err);
     throw err;
   }
 }

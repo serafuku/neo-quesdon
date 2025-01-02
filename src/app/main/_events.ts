@@ -7,6 +7,7 @@ import {
 } from '../_dto/websocket-event/websocket-event.dto';
 import { NotificationPayloadTypes } from '../_dto/notification/notification.dto';
 import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
+import { ApiErrorTypes } from '../_dto/api-error/apiErrorTypes';
 
 const QuestionCreateEvent = 'QuestionCreateEvent';
 const QuestionDeleteEvent = 'QuestionDeleteEvent';
@@ -142,5 +143,21 @@ export class MyProfileEv {
   static removeEventListener(onEvent: (ev: CustomEvent<ProfileUpdateReqData>) => void) {
     MyProfileEv.logger.debug('Remove Profile Update Req EventListener');
     window.removeEventListener(ProfileUpdateReqEvent, onEvent as EventListener);
+  }
+}
+
+export type ApiErrorEventValues = { title: string; body: string; buttonText: string; errorType: ApiErrorTypes };
+const ApiErrorEvent = 'ApiErrorEvent';
+export class ApiErrorEv {
+  private constructor() {}
+  static async SendApiErrorEvent(data: ApiErrorEventValues) {
+    const ev = new CustomEvent<ApiErrorEventValues>(ApiErrorEvent, { bubbles: true, detail: data });
+    window.dispatchEvent(ev);
+  }
+  static addEventListener(onEvent: (ev: CustomEvent<ApiErrorEventValues>) => void) {
+    window.addEventListener(ApiErrorEvent, onEvent as EventListener);
+  }
+  static removeEventListener(onEvent: (ev: CustomEvent<ApiErrorEventValues>) => void) {
+    window.removeEventListener(ApiErrorEvent, onEvent as EventListener);
   }
 }

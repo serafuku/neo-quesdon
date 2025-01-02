@@ -15,6 +15,7 @@ import { MdDeleteSweep, MdOutlineCleaningServices } from 'react-icons/md';
 import { MyProfileContext } from '@/app/main/layout';
 import { MyProfileEv } from '@/app/main/_events';
 import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
+import { onApiError } from '@/utils/api-error/onApiError';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -48,11 +49,11 @@ async function updateUserSettings(value: FormValue) {
       },
     });
     if (!res.ok) {
-      throw await res.text();
+      onApiError(res.status, res);
+      return;
     }
     MyProfileEv.SendUpdateReq({ ...body });
   } catch (err) {
-    alert(`설정 업데이트에 실패했어요 ${err}`);
     throw err;
   }
 }
@@ -111,12 +112,8 @@ export default function Settings() {
     if (res.ok) {
       localStorage.removeItem('user_handle');
       window.location.href = '/';
-    } else if (res.status === 429) {
-      alert('요청 제한을 초과했어요. 몇분 후 다시 시도해 주세요');
-      setButtonClicked(false);
-      return;
     } else {
-      alert('오류가 발생했어요');
+      onApiError(res.status, res);
       setButtonClicked(false);
       return;
     }
@@ -129,7 +126,6 @@ export default function Settings() {
     setButtonClicked(true);
     const user_handle = userInfo?.handle;
     if (!user_handle) {
-      alert(`오류: 유저 정보를 알 수 없어요!`);
       return;
     }
     const req: AccountCleanReqDto = {
@@ -142,12 +138,8 @@ export default function Settings() {
     });
     if (res.ok) {
       console.log('계정청소 시작됨...');
-    } else if (res.status === 429) {
-      alert('요청 제한을 초과했어요. 잠시 후 다시 시도해 주세요');
-      setButtonClicked(false);
-      return;
     } else {
-      alert('오류가 발생했어요');
+      onApiError(res.status, res);
     }
     setTimeout(() => {
       setButtonClicked(false);
@@ -161,12 +153,8 @@ export default function Settings() {
     });
     if (res.ok) {
       console.log('블락 리스트 가져오기 시작됨...');
-    } else if (res.status === 429) {
-      alert('요청 제한을 초과했어요. 잠시 후 다시 시도해 주세요');
-      setButtonClicked(false);
-      return;
     } else {
-      alert(`오류가 발생했어요 ${await res.text()}`);
+      onApiError(res.status, res);
     }
     setTimeout(() => {
       setButtonClicked(false);
