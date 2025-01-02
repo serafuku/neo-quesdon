@@ -41,12 +41,11 @@ export default function Answer({ value, idState, ref }: askProps) {
 
   useEffect(() => {
     fetchProfile(value).then((r) => setUserInfo(r));
-    setShowNsfw(!value.nsfwedAnswer);
   }, [value]);
 
   return (
     <div className="w-full glass rounded-box px-2 desktop:px-8 py-4 mb-2 shadow">
-      {!showNsfw && (
+      {!showNsfw && value.nsfwedAnswer && (
         <div className="fixed top-0 left-0 z-10 gap-2 w-full h-full flex flex-col justify-center items-center">
           <span>답변자가 NSFW로 체크한 질문이에요!</span>
           <button className="btn" onClick={() => setShowNsfw(!showNsfw)}>
@@ -55,7 +54,7 @@ export default function Answer({ value, idState, ref }: askProps) {
         </div>
       )}
 
-      <div className={`${!showNsfw && 'blur'} w-full h-full`}>
+      <div className={`${!showNsfw && value.nsfwedAnswer && 'blur'} w-full h-full`}>
         <div className="chat chat-start flex ml-2 desktop:ml-0 justify-between">
           <div className="w-full">
             <div className="chat-header dark:text-white">

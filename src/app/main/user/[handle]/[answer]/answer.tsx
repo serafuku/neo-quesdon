@@ -2,12 +2,13 @@
 
 import Answer from '@/app/_components/answer';
 import { useParams } from 'next/navigation';
-import { useRef } from 'react';
-import { AnswerDto } from '@/app/_dto/answers/Answers.dto';
+import { useEffect, useRef, useState } from 'react';
+import { AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { onApiError } from '@/utils/api-error/onApiError';
 
-export default function SingleAnswer({ answerBody }: { answerBody: AnswerDto }) {
+export default function SingleAnswer({ answerBody }: { answerBody: AnswerWithProfileDto }) {
+  const [answerBodyState, setAnswerBodyState] = useState<AnswerWithProfileDto | undefined>();
   const singleQuestionDeleteModalRef = useRef<HTMLDialogElement>(null);
   const { userHandle } = useParams() as { userHandle: string };
 
@@ -22,9 +23,13 @@ export default function SingleAnswer({ answerBody }: { answerBody: AnswerDto }) 
     }
   };
 
+  useEffect(() => {
+    setAnswerBodyState(answerBody);
+  }, [answerBody]);
+
   return (
     <div className="flex w-[90%] window:w-[80%] desktop:w-[70%]">
-      {answerBody !== undefined ? (
+      {answerBodyState ? (
         <>
           <Answer value={answerBody} id={answerBody.id} ref={singleQuestionDeleteModalRef} />
           <DialogModalTwoButton
