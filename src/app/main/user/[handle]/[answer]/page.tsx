@@ -1,93 +1,58 @@
-'use client';
+import { Metadata } from 'next';
+import SingleAnswer from './answer';
+import { AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
+import { notFound } from 'next/navigation';
 
-import Answer from '@/app/_components/answer';
-import { useParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-import { AnswerDto } from '@/app/_dto/answers/Answers.dto';
-import DialogModalTwoButton from '@/app/_components/modalTwoButton';
+export const dynamic = 'force-dynamic';
 
-export default function SingleAnswer() {
-  const [answerBody, setAnswerBody] = useState<AnswerDto | null>();
-  const singleQuestionDeleteModalRef = useRef<HTMLDialogElement>(null);
-  const { answer } = useParams() as { answer: string };
-  const { userHandle } = useParams() as { userHandle: string };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ handle: string; answer: string }>;
+}): Promise<Metadata> {
+  const { handle, answer } = await params;
+  const profileHandle = decodeURIComponent(handle);
 
-  async function fetchAnswer(id: string) {
-    const res = await fetch(`/api/db/answers/${userHandle}/${id}`, {
-      method: 'GET',
-    });
-    if (res.status === 404) {
-      return null;
-    } else if (!res.ok) {
-      throw new Error(`Fail to fetch answer! ${await res.text()}`);
-    }
-    return await res.json();
+  const answerBody = (await fetchAnswer(profileHandle, answer)) as AnswerWithProfileDto;
+
+  if (!answerBody) {
+    return {};
   }
-
-  const handleDeleteAnswer = async (id: string) => {
-    const res = await fetch(`/api/db/answers/${userHandle}/${id}`, {
-      method: 'DELETE',
-    });
-    try {
-      if (res.ok) {
-        window.history.back();
-      } else {
-        throw new Error(`답변을 지우는데 실패했어요! ${await res.text()}`);
-      }
-    } catch (err) {
-      alert(err);
-    }
+  return {
+    title: answerBody.question,
+    openGraph: {
+      title: answerBody.question,
+      description: answerBody.answer,
+      images: answerBody.answeredPerson?.avatarUrl,
+    },
   };
+}
 
-  useEffect(() => {
-    fetchAnswer(answer).then((r) => setAnswerBody(r));
-  }, [answer]);
+async function fetchAnswer(userHandle: string, id: string) {
+  const url = process.env.WEB_URL;
+  const res = await fetch(`${url}/api/db/answers/${userHandle}/${id}`, {
+    method: 'GET',
+  });
+  if (res.status === 404) {
+    return null;
+  } else if (!res.ok) {
+    throw new Error(`Fail to fetch answer! ${await res.text()}`);
+  }
+  return await res.json();
+}
 
+export default async function singleAnswerWrapper({ params }: { params: Promise<{ handle: string; answer: string }> }) {
+  const { handle, answer } = await params;
+  const profileHandle = decodeURIComponent(handle);
+
+  const answerBody = await fetchAnswer(profileHandle, answer);
+
+  if (!answerBody) {
+    return notFound();
+  }
   return (
-    <div className="flex w-[90%] window:w-[80%] desktop:w-[70%]">
-      {answerBody !== undefined ? (
-        <>
-          {answerBody !== null ? (
-            <>
-              <Answer value={answerBody} id={answerBody.id} ref={singleQuestionDeleteModalRef} />
-              <DialogModalTwoButton
-                title={'답변 지우기'}
-                body={'답변을 지울까요...?'}
-                confirmButtonText={'확인'}
-                cancelButtonText={'취소'}
-                ref={singleQuestionDeleteModalRef}
-                onClick={() => handleDeleteAnswer(answerBody.id)}
-              />
-              <input type="checkbox" id={`answer_delete_modal_${answerBody.id}`} className="modal-toggle" />
-              <div className="modal" role="dialog">
-                <div className="modal-box">
-                  <h3 className="py-4 text-2xl">답변을 지울까요...?</h3>
-                  <div className="modal-action">
-                    <label
-                      htmlFor={`answer_delete_modal_${answerBody.id}`}
-                      className="btn btn-error"
-                      onClick={() => handleDeleteAnswer(answerBody.id)}
-                    >
-                      확인
-                    </label>
-                    <label htmlFor={`answer_delete_modal_${answerBody.id}`} className="btn">
-                      취소
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="w-full text-2xl flex gap-2 justify-center items-center border shadow rounded-box p-4 glass">
-              <span>찾으시는 답변이 없어요!</span>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="w-full text-center">
-          <span className="loading loading-spinner loading-lg" />
-        </div>
-      )}
-    </div>
+    <>
+      <SingleAnswer answerBody={answerBody} />
+    </>
   );
 }
