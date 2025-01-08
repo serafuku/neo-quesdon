@@ -24,7 +24,7 @@ export default function NameComponents({ username, height }: username) {
                   key={key}
                 />
               ) : (
-                <span className="break-keep" key={key}>
+                <span className="break-all" key={key}>
                   {el}
                 </span>
               )}
