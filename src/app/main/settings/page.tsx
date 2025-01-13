@@ -167,6 +167,7 @@ export default function Settings() {
     if (res.ok) {
       localStorage.removeItem('user_handle');
       localStorage.removeItem('last_token_refresh');
+      await fetch('/api/web/logout');
       window.location.replace('/');
     } else {
       onApiError(res.status, res);
