@@ -328,6 +328,23 @@ export default function Settings() {
                           </button>
                           <Divider />
                           <div className="font-normal text-xl py-3 flex items-center gap-2">
+                            <MdDeleteSweep size={24} />
+                            모든 질문 삭제하기
+                          </div>
+                          <div className="font-thin px-4 py-2 break-keep">
+                            아직 답변하지 않은 모든 질문들을 지워요. 지워진 글은 되돌릴 수 없으니 주의하세요.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              deleteAllQuestionsModalRef.current?.showModal();
+                            }}
+                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-warning'}`}
+                          >
+                            {buttonClicked ? '잠깐만요...' : '모든 질문을 삭제'}
+                          </button>
+                          <Divider />
+                          <div className="font-normal text-xl py-3 flex items-center gap-2">
                             <FaUserLargeSlash />
                             차단 목록 가져오기
                           </div>
@@ -362,23 +379,6 @@ export default function Settings() {
                           >
                             {buttonClicked ? '잠깐만요...' : '모든 답변을 삭제'}
                           </button>
-                          <Divider />
-                          <div className="font-normal text-xl py-3 flex items-center gap-2">
-                            <MdDeleteSweep size={24} />
-                            모든 질문 삭제하기
-                          </div>
-                          <div className="font-thin px-4 py-2 break-keep">
-                            아직 답변하지 않은 모든 질문들을 지워요. 지워진 글은 되돌릴 수 없으니 주의하세요.
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              deleteAllQuestionsModalRef.current?.showModal();
-                            }}
-                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-error'}`}
-                          >
-                            {buttonClicked ? '잠깐만요...' : '모든 질문을 삭제'}
-                          </button>
                         </div>
                       </CollapseMenu>
                     </>
@@ -404,20 +404,14 @@ export default function Settings() {
             onClick={onDeleteAllNotifications}
           />
           <DialogModalTwoButton
-            title={'경고'}
-            body={'미답변 질문들을 모두 지울까요? \n이 작업은 시간이 걸리고, 지워진 질문은 복구할 수 없어요!'}
+            title={'주의'}
+            body={
+              '아직 답변하지 않은 질문들을 모두 지울까요? \n이 작업은 시간이 걸리고, 지워진 질문은 복구할 수 없어요!'
+            }
             confirmButtonText={'네'}
             cancelButtonText={'아니오'}
             ref={deleteAllQuestionsModalRef}
             onClick={onDeleteAllQuestions}
-          />
-          <DialogModalTwoButton
-            title={'경고'}
-            body={'그동안 썼던 모든 답변을 지울까요? \n이 작업은 시간이 걸리고, 지워진 답변은 복구할 수 없어요!'}
-            confirmButtonText={'네'}
-            cancelButtonText={'아니오'}
-            ref={accountCleanModalRef}
-            onClick={onAccountClean}
           />
           <DialogModalTwoButton
             title={'주의'}
@@ -426,6 +420,14 @@ export default function Settings() {
             cancelButtonText={'아니오'}
             ref={importBlockModalRef}
             onClick={onImportBlock}
+          />
+          <DialogModalTwoButton
+            title={'경고'}
+            body={'그동안 썼던 모든 답변을 지울까요? \n이 작업은 시간이 걸리고, 지워진 답변은 복구할 수 없어요!'}
+            confirmButtonText={'네'}
+            cancelButtonText={'아니오'}
+            ref={accountCleanModalRef}
+            onClick={onAccountClean}
           />
         </>
       )}
