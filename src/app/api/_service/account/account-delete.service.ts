@@ -1,4 +1,5 @@
 import { AccountDeleteReqDto } from '@/app/_dto/account-delete/account-delete.dto';
+import { RateLimit } from '@/app/api/_service/ratelimiter/decorator';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
 import { Auth, JwtPayload } from '@/app/api/_utils/jwt/decorator';
@@ -25,6 +26,7 @@ export class AccountDeleteService {
 
   @ValidateBody(AccountDeleteReqDto)
   @Auth()
+  @RateLimit({ bucket_time: 60, req_limit: 60 }, 'ip')
   public async deleteAccountApi(
     _req: NextRequest,
     @Body body: AccountDeleteReqDto,
