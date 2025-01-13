@@ -354,15 +354,27 @@ export class AnswerService {
   }
 
   @RateLimit({ bucket_time: 300, req_limit: 600 }, 'ip')
-  public async GetSingleAnswerApi(_req: NextRequest, answerId: string) {
+  public async GetSingleAnswerApi(_req: NextRequest, answerId: string, userHandle: string) {
+    const dto = await this.GetSingleAnswerDto(answerId, userHandle);
+    if (!dto) {
+      return sendApiError(404, 'Not found', 'NOT_FOUND');
+    }
+    return NextResponse.json(dto, {
+      status: 200,
+      headers: { 'Content-type': 'application/json', 'Cache-Control': 'public, max-age=60' },
+    });
+  }
+
+  public async GetSingleAnswerDto(answerId: string, userHandle: string): Promise<AnswerWithProfileDto | undefined> {
     const answer = await this.prisma.answer.findUnique({
       include: { answeredPerson: { include: { user: { include: { server: { select: { instanceType: true } } } } } } },
       where: {
         id: answerId,
+        answeredPersonHandle: userHandle,
       },
     });
     if (!answer) {
-      return sendApiError(404, 'Not found', 'NOT_FOUND');
+      return;
     }
     const profileDto = profileToDto(
       answer.answeredPerson,
@@ -374,10 +386,7 @@ export class AnswerService {
       ...answerDto,
       answeredPerson: profileDto,
     };
-    return NextResponse.json(dto, {
-      status: 200,
-      headers: { 'Content-type': 'application/json', 'Cache-Control': 'public, max-age=60' },
-    });
+    return dto;
   }
 
   public async filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {

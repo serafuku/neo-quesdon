@@ -11,11 +11,12 @@ import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { AccountCleanReqDto } from '@/app/_dto/account-clean/account-clean.dto';
 import { FaLock, FaUserLargeSlash } from 'react-icons/fa6';
-import { MdDeleteSweep, MdOutlineCleaningServices } from 'react-icons/md';
+import { MdDeleteForever, MdDeleteSweep, MdOutlineCleaningServices } from 'react-icons/md';
 import { MyProfileContext } from '@/app/main/layout';
 import { MyProfileEv } from '@/app/main/_events';
 import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 import { onApiError } from '@/utils/api-error/onApiError';
+import { AccountDeleteReqDto } from '@/app/_dto/account-delete/account-delete.dto';
 
 export type FormValue = {
   stopAnonQuestion: boolean;
@@ -68,6 +69,7 @@ export default function Settings() {
   const [defaultFormValue, setDefaultFormValue] = useState<FormValue>();
   const logoutAllModalRef = useRef<HTMLDialogElement>(null);
   const accountCleanModalRef = useRef<HTMLDialogElement>(null);
+  const accountDeleteModalRef = useRef<HTMLDialogElement>(null);
   const importBlockModalRef = useRef<HTMLDialogElement>(null);
   const deleteAllQuestionsModalRef = useRef<HTMLDialogElement>(null);
   const deleteAllNotificationsModalRef = useRef<HTMLDialogElement>(null);
@@ -144,6 +146,31 @@ export default function Settings() {
     setTimeout(() => {
       setButtonClicked(false);
     }, 2000);
+  };
+
+  const onAccountDelete = async () => {
+    setButtonClicked(true);
+    setTimeout(() => {
+      setButtonClicked(false);
+    }, 2000);
+    const user_handle = userInfo?.handle;
+    if (!user_handle) {
+      return;
+    }
+    const req: AccountDeleteReqDto = {
+      handle: user_handle,
+    };
+    const res = await fetch('/api/user/account-delete', {
+      method: 'POST',
+      body: JSON.stringify(req),
+    });
+    if (res.ok) {
+      localStorage.removeItem('user_handle');
+      localStorage.removeItem('last_token_refresh');
+      window.location.replace('/');
+    } else {
+      onApiError(res.status, res);
+    }
   };
 
   const onImportBlock = async () => {
@@ -328,6 +355,23 @@ export default function Settings() {
                           </button>
                           <Divider />
                           <div className="font-normal text-xl py-3 flex items-center gap-2">
+                            <MdDeleteSweep size={24} />
+                            미답변 질문 비우기
+                          </div>
+                          <div className="font-thin px-4 py-2 break-keep">
+                            아직 답변하지 않은 모든 질문들을 지워요. 지워진 질문은 되돌릴 수 없으니 주의하세요.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              deleteAllQuestionsModalRef.current?.showModal();
+                            }}
+                            className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-warning'}`}
+                          >
+                            {buttonClicked ? '잠깐만요...' : '모든 질문을 삭제'}
+                          </button>
+                          <Divider />
+                          <div className="font-normal text-xl py-3 flex items-center gap-2">
                             <FaUserLargeSlash />
                             차단 목록 가져오기
                           </div>
@@ -362,22 +406,24 @@ export default function Settings() {
                           >
                             {buttonClicked ? '잠깐만요...' : '모든 답변을 삭제'}
                           </button>
+
                           <Divider />
                           <div className="font-normal text-xl py-3 flex items-center gap-2">
-                            <MdDeleteSweep size={24} />
-                            모든 질문 삭제하기
+                            <MdDeleteForever size={24} />
+                            계정 삭제하기
                           </div>
                           <div className="font-thin px-4 py-2 break-keep">
-                            아직 답변하지 않은 모든 질문들을 지워요. 지워진 글은 되돌릴 수 없으니 주의하세요.
+                            네오 퀘스돈에서 이 계정을 삭제해요. 이 계정으로 했던 모든 활동은 지워져요. 이 작업은 되돌릴
+                            수 없으니 주의하세요.
                           </div>
                           <button
                             type="button"
                             onClick={() => {
-                              deleteAllQuestionsModalRef.current?.showModal();
+                              accountDeleteModalRef.current?.showModal();
                             }}
                             className={`btn ${buttonClicked ? 'btn-disabled' : 'btn-error'}`}
                           >
-                            {buttonClicked ? '잠깐만요...' : '모든 질문을 삭제'}
+                            {buttonClicked ? '잠깐만요...' : '계정 삭제'}
                           </button>
                         </div>
                       </CollapseMenu>
@@ -404,12 +450,22 @@ export default function Settings() {
             onClick={onDeleteAllNotifications}
           />
           <DialogModalTwoButton
-            title={'경고'}
-            body={'미답변 질문들을 모두 지울까요? \n이 작업은 시간이 걸리고, 지워진 질문은 복구할 수 없어요!'}
+            title={'주의'}
+            body={
+              '아직 답변하지 않은 질문들을 모두 지울까요? \n이 작업은 시간이 걸리고, 지워진 질문은 복구할 수 없어요!'
+            }
             confirmButtonText={'네'}
             cancelButtonText={'아니오'}
             ref={deleteAllQuestionsModalRef}
             onClick={onDeleteAllQuestions}
+          />
+          <DialogModalTwoButton
+            title={'주의'}
+            body={`${userInfo.instanceType} 에서 차단 목록을 가져올까요? \n 이 작업은 완료되는데 시간이 조금 걸려요!`}
+            confirmButtonText={'네'}
+            cancelButtonText={'아니오'}
+            ref={importBlockModalRef}
+            onClick={onImportBlock}
           />
           <DialogModalTwoButton
             title={'경고'}
@@ -420,12 +476,12 @@ export default function Settings() {
             onClick={onAccountClean}
           />
           <DialogModalTwoButton
-            title={'주의'}
-            body={`${userInfo.instanceType} 에서 블락 목록을 가져올까요? \n 이 작업은 완료되는데 시간이 조금 걸려요!`}
+            title={'경고'}
+            body={'정말 계정을 삭제할까요...? \n 이 계정의 모든 정보가 지워져요!'}
             confirmButtonText={'네'}
             cancelButtonText={'아니오'}
-            ref={importBlockModalRef}
-            onClick={onImportBlock}
+            ref={accountDeleteModalRef}
+            onClick={onAccountDelete}
           />
         </>
       )}

@@ -25,7 +25,7 @@ async function fetchProfile(handle: string) {
       onApiError(profile.status, profile);
       return undefined;
     }
-  } catch (err) {
+  } catch {
     return undefined;
   }
 }

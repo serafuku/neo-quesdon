@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import SingleAnswer from './answer';
 import { AnswerWithProfileDto } from '@/app/_dto/answers/Answers.dto';
 import { notFound } from 'next/navigation';
+import { AnswerService } from '@/app/api/_service/answer/answer-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,16 +30,12 @@ export async function generateMetadata({
 }
 
 async function fetchAnswer(userHandle: string, id: string): Promise<AnswerWithProfileDto | undefined> {
-  const url = process.env.WEB_URL;
-  const res = await fetch(`${url}/api/db/answers/${userHandle}/${id}`, {
-    method: 'GET',
-  });
-  if (res.status === 404) {
+  const answerService = AnswerService.getInstance();
+  const answer = await answerService.GetSingleAnswerDto(id, userHandle);
+  if (!answer) {
     return undefined;
-  } else if (!res.ok) {
-    throw new Error(`Fail to fetch answer! ${await res.text()}`);
   }
-  return await res.json();
+  return answer;
 }
 
 export default async function singleAnswerWrapper({ params }: { params: Promise<{ handle: string; answer: string }> }) {
