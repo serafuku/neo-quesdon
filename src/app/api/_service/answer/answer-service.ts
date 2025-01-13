@@ -354,11 +354,12 @@ export class AnswerService {
   }
 
   @RateLimit({ bucket_time: 300, req_limit: 600 }, 'ip')
-  public async GetSingleAnswerApi(_req: NextRequest, answerId: string) {
+  public async GetSingleAnswerApi(_req: NextRequest, answerId: string, userHandle: string) {
     const answer = await this.prisma.answer.findUnique({
       include: { answeredPerson: { include: { user: { include: { server: { select: { instanceType: true } } } } } } },
       where: {
         id: answerId,
+        answeredPersonHandle: userHandle,
       },
     });
     if (!answer) {
