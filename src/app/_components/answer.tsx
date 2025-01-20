@@ -101,7 +101,7 @@ export default function Answer({ value, idState, ref }: askProps) {
             {value.answer}
           </div>
           <div className="chat-footer font-thin text-xs mt-2 underline text-blue-900 dark:text-slate-100">
-            <Link href={`/main/user/${value.answeredPersonHandle}/${value.id}`}>
+            <Link prefetch={false} href={`/main/user/${value.answeredPersonHandle}/${value.id}`}>
               {new Date(value.answeredAt).toLocaleString('ko-kr', { hour12: false })}
             </Link>
           </div>
