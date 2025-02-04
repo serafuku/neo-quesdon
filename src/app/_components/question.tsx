@@ -225,7 +225,7 @@ export default function Question({
                 </div>
                 <div className="tooltip" data-tip="답변 노트를 올릴 범위">
                   <select {...register('visibility')} className="select select-ghost select-sm dark:shadow tooltip">
-                    <option className={'hidden'} value={undefined}>
+                    <option className={'hidden'} disabled={true} value={undefined}>
                       ...
                     </option>
                     <option value="public">공개</option>
