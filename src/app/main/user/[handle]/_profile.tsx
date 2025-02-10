@@ -293,12 +293,12 @@ export default function Profile() {
           )}
           <div className="flex items-center text-xl mb-2">
             {userProfile && userProfile.stopNewQuestion ? (
-              <div className="flex flex-col items-center desktop:flex-row">
+              <div className="flex flex-col items-center">
                 <NameComponents username={userProfile.name} width={32} height={32} />
                 <span>님은 지금 질문을 받지 않고 있어요...</span>
               </div>
             ) : (
-              <div className="flex flex-col items-center desktop:flex-row window:flex-row window:text-2xl">
+              <div className="flex flex-col items-center window:text-2xl">
                 <NameComponents username={userProfile?.name} width={32} height={32} />
                 <span>님의 {josa(userProfile?.questionBoxName, '이에요!', '예요!')}</span>
               </div>
