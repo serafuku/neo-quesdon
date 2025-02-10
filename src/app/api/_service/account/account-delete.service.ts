@@ -1,4 +1,5 @@
 import { AccountDeleteReqDto } from '@/app/_dto/account-delete/account-delete.dto';
+import { QueueService } from '@/app/api/_service/queue/queueService';
 import { RateLimit } from '@/app/api/_service/ratelimiter/decorator';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { GetPrismaClient } from '@/app/api/_utils/getPrismaClient/get-prisma-client';
@@ -13,9 +14,11 @@ export class AccountDeleteService {
   private logger: Logger;
   private prisma: PrismaClient;
   private static instance: AccountDeleteService;
+  private queueService: QueueService;
   private constructor() {
     this.logger = new Logger('AccountDeleteService');
     this.prisma = GetPrismaClient.getClient();
+    this.queueService = QueueService.get();
   }
   public static getInstance() {
     if (!AccountDeleteService.instance) {
@@ -37,14 +40,7 @@ export class AccountDeleteService {
     }
     const user = await this.prisma.user.findUniqueOrThrow({ where: { handle: tokenBody.handle } });
     this.logger.log(`Delete user ${user.handle}`);
-    await this.prisma.question.deleteMany({ where: { questioneeHandle: user.handle } });
-    await this.prisma.answer.deleteMany({ where: { answeredPersonHandle: user.handle } });
-    await this.prisma.following.deleteMany({ where: { followerHandle: user.handle } });
-    await this.prisma.blocking.deleteMany({ where: { blockerHandle: user.handle } });
-    await this.prisma.notification.deleteMany({ where: { userHandle: user.handle } });
-    await this.prisma.profile.delete({ where: { handle: user.handle } });
-    await this.prisma.user.delete({ where: { handle: user.handle } });
-    this.logger.log(`User ${user.handle} deleted!`);
+    await this.queueService.addAccountDeleteJob(user);
     return NextResponse.json({ message: 'Good bye' }, { status: 200 });
   }
 }
