@@ -21,7 +21,7 @@ export class RedisPubSubService {
     channel_name: websocketEventNameType,
     onMessage: (data: T) => void,
   ) {
-    const sub_redis = RedisService.getRedis();
+    const sub_redis = RedisService.getRedisSub();
     sub_redis.subscribe(channel_name);
     sub_redis.on('message', (channel, message) => {
       if (channel === channel_name) {

@@ -7,11 +7,13 @@ import { AccountCleanJob } from './workers/AccountClean';
 import { ImportBlockQueueService } from '@/app/api/_service/queue/workers/ImportBlock';
 import { RedisService } from '@/app/api/_service/redisService/redis-service';
 import { ScheduleJobs } from '@/app/api/_service/queue/workers/ScheduleJobs';
+import { AccountDeleteJob } from '@/app/api/_service/queue/workers/AccountDelete';
 
 export class QueueService {
   private testLogProcess: TestLogQueueWorkerService;
   private followWorker: RefreshFollowWorkerService;
   private accountClean: AccountCleanJob;
+  private accountDelete: AccountDeleteJob;
   private importBlockService: ImportBlockQueueService;
   private static instance: QueueService;
   private logger = new Logger('QueueService');
@@ -19,10 +21,11 @@ export class QueueService {
   private constructor() {
     const host = process.env.REDIS_HOST ?? '';
     const port = Number.parseInt(process.env.REDIS_PORT ?? '');
-    const connection = RedisService.getRedis({ maxRetriesPerRequest: null });
+    const connection = RedisService.getRedis();
     this.testLogProcess = new TestLogQueueWorkerService(connection);
     this.followWorker = new RefreshFollowWorkerService(connection);
     this.accountClean = new AccountCleanJob(connection);
+    this.accountDelete = new AccountDeleteJob(connection);
     this.importBlockService = new ImportBlockQueueService(connection);
     new ScheduleJobs(connection);
 
@@ -60,6 +63,9 @@ export class QueueService {
 
   public async addAccountCleanJob(user: user) {
     await this.accountClean.addJob({ handle: user.handle });
+  }
+  public async addAccountDeleteJob(user: user) {
+    await this.accountDelete.addJob({ handle: user.handle });
   }
   public async addBlockImportJob(user: user) {
     await this.importBlockService.addJob({ userHandle: user.handle });

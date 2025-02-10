@@ -184,7 +184,7 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
           notifications: prev.notifications.filter((v) => {
             return v.notification_name !== 'answer_on_my_question' || v.data.id !== ev.detail.deleted_id;
           }),
-          unread_count: prev.unread_count - 1,
+          unread_count: prev.unread_count,
         };
       }
     });

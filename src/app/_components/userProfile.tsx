@@ -12,7 +12,7 @@ interface Props {
 export default function UsernameAndProfile({ profile }: Props) {
   return (
     <div className="backdrop-brightness-105 shadow-md dark:backdrop-brightness-75 rounded-box border-base-300 p-4 dark:text-white">
-      <Link href={`/main/user/${profile.handle}`} className="flex items-center gap-4">
+      <Link prefetch={false} href={`/main/user/${profile.handle}`} className="flex items-center gap-4">
         <img
           src={getProxyUrl(profile.avatarUrl)}
           alt="following avatar"
