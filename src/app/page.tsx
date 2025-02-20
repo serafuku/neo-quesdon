@@ -115,6 +115,7 @@ export default function Home() {
                 errModalRef.current?.showModal();
               });
             break;
+          case 'Iceshrimp.NET':
           case 'mastodon':
             mastodonAuth(payload)
               .then((r) => {
