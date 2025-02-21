@@ -62,7 +62,8 @@ export async function POST(req: NextRequest) {
       }
       logger.log('New Mastodon OAuth2 App Created:', res);
 
-      const detectedInstanceType = await detectInstance(mastodonHost);
+      const detectedInstanceType = (await detectInstance(mastodonHost)).replaceAll('.', '_');
+      // Prisma가 enum 에 . 을 넣는것을 지원하지 않음;
       switch (detectedInstanceType) {
         case 'mastodon':
         case 'Iceshrimp_NET':
