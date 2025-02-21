@@ -130,6 +130,7 @@ export class AnswerService {
               { title: title, text: text, visibility: data.visibility },
             );
             break;
+          case 'Iceshrimp.NET':
           case 'mastodon':
             const titleTotalLen = title.length + titleEnd.length;
             const textTotalLen = text.length + textEnd.length;

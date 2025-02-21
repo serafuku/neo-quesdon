@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
   const instanceType = await detectInstance(baseUrl);
 
   switch (instanceType) {
+    case 'Iceshrimp.NET':
     case 'mastodon':
       try {
         if (emojiInUsername && data.emojis !== null) {

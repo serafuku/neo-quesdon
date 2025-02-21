@@ -125,7 +125,8 @@ async function process(job: Job<importBlockType>) {
       await kvCache.drop(`block-${user.handle}`);
       return `${user.handle} 의 블락 ${counter} 개를 가져왔습니다.`;
     }
-
+    
+    case 'Iceshrimp.NET':
     case 'mastodon': {
       let counter = 0;
       let url = `https://${user.hostName}/api/v1/blocks?limit=50`;
