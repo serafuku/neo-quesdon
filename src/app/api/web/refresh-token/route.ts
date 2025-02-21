@@ -125,7 +125,7 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
       logger.log(`Misskey User Updated!`);
       break;
     }
-    case  'Iceshrimp.NET':
+    case  'Iceshrimp_NET':
     case 'mastodon': {
       logger.debug('try to get User info from mastodon...');
       let mastodonUser;

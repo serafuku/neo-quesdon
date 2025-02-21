@@ -9,6 +9,7 @@ import { getIpFromRequest } from '@/app/api/_utils/getIp/get-ip-from-Request';
 import { sendApiError } from '@/app/api/_utils/apiErrorResponse/sendApiError';
 import { randomUUID } from 'crypto';
 import { RedisService } from '@/app/api/_service/redisService/redis-service';
+import detectInstance from '@/utils/detectInstance/detectInstance';
 
 const logger = new Logger('mastodon-login');
 export async function POST(req: NextRequest) {
@@ -61,6 +62,15 @@ export async function POST(req: NextRequest) {
       }
       logger.log('New Mastodon OAuth2 App Created:', res);
 
+      const detectedInstanceType = (await detectInstance(mastodonHost)).replaceAll('.', '_');
+      // Prisma가 enum 에 . 을 넣는것을 지원하지 않음;
+      switch (detectedInstanceType) {
+        case 'mastodon':
+        case 'Iceshrimp_NET':
+          break;
+        default:
+          return sendApiError(400, 'Unknown instance type', 'BAD_REQUEST');
+      }
       await prisma.server.upsert({
         where: {
           instances: mastodonHost,
@@ -68,13 +78,13 @@ export async function POST(req: NextRequest) {
         update: {
           client_id: res.client_id,
           client_secret: res.client_secret,
-          instanceType: 'mastodon',
+          instanceType: detectedInstanceType,
         },
         create: {
           instances: mastodonHost,
           client_id: res.client_id,
           client_secret: res.client_secret,
-          instanceType: 'mastodon',
+          instanceType: detectedInstanceType,
         },
       });
       const session = await initiateMastodonAuthSession(mastodonHost, res.client_id);
