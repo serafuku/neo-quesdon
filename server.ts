@@ -7,10 +7,10 @@ import { WebsocketService } from '@/app/api/_service/websocket/websocket-service
 const dev = process.env.NODE_ENV !== 'production';
 const port = parseInt(process.env.PORT || '3000', 10);
 const app = next({ dev, turbo: true, turbopack: true });
-const handle = app.getRequestHandler();
-const dev_server_upgradeHandler = app.getUpgradeHandler();
 
 app.prepare().then(() => {
+  const handle = app.getRequestHandler();
+  const dev_server_upgradeHandler = app.getUpgradeHandler();
   if (process.env.NODE_ENV === 'production') {
     const env_arr = ['REDIS_HOST', 'REDIS_PORT', 'WEB_URL', 'DATABASE_URL', 'JWT_SECRET', 'NOTI_TOKEN', 'NOTI_HOST'];
     env_arr.forEach((key) => {
