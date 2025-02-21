@@ -63,10 +63,18 @@ export class RefreshFollowWorkerService {
   }
 
   public async addJob(user: user, instanceType: server['instanceType']) {
-    if (instanceType === 'misskey' || instanceType == 'cherrypick') {
-      this.misskeyQueue.add(RefreshFollowMisskey, user, {});
-    } else if (instanceType === 'mastodon') {
-      this.mastodonQueue.add(RefreshFollowMastodon, user, {});
+    switch (instanceType) {
+      case 'misskey':
+      case 'cherrypick':
+        this.misskeyQueue.add(RefreshFollowMisskey, user, {});
+        break;
+      
+      case 'mastodon':
+      case 'Iceshrimp_NET':
+        this.mastodonQueue.add(RefreshFollowMastodon, user, {});
+        break;
+      default:
+        logger.warn(`Unknown instance type ${instanceType}`);
     }
   }
 

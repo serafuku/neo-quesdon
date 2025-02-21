@@ -63,7 +63,14 @@ export async function POST(req: NextRequest) {
       const data = await res.json();
       const appSecret = data.secret;
       logger.log('New Misskey APP created!', data);
-      const detectedInstanceType = (await detectInstance(misskeyHost)) === 'cherrypick' ? 'cherrypick' : 'misskey';
+      const detectedInstanceType = await detectInstance(misskeyHost);
+      switch (detectedInstanceType) {
+        case 'misskey':
+        case 'cherrypick':
+          break;
+        default:
+          return sendApiError(400, 'Unknown instance type', 'BAD_REQUEST');
+      }
       await prisma.server.upsert({
         where: {
           instances: misskeyHost,
