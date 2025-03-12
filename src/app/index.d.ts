@@ -23,7 +23,7 @@ export interface misskeyAccessKeyApiResponse {
 
 
 export interface MkNoteAnswers {
-  i: string;
+  i?: string;
   cw: string;
   text: string;
   visibility: 'public' | 'home' | 'followers';

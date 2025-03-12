@@ -6,7 +6,7 @@ import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
 import { cookies } from 'next/headers';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
-import { profile, user } from '@prisma/client';
+import { profile, server, user } from '@prisma/client';
 import { createHash } from 'crypto';
 import { MiUser } from '@/api/_misskey-entities/user';
 import { fetchNameWithEmoji } from '@/api/_utils/fetchUsername';
@@ -74,23 +74,14 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
   const prisma = GetPrismaClient.getClient();
   const userServer = await prisma.server.findUniqueOrThrow({ where: { instances: user.hostName } });
 
-  /** 테이블에 저장된 user의 Misskey / Mastodon access token */
-  let userToken = user.token;
-  if (userServer.instanceType === 'cherrypick' || userServer.instanceType === 'misskey') {
-    /** Misskey/Cherrypick 인 경우는 저장된 access token을 i로 변환해야 함 */
-    const i = createHash('sha256')
-      .update(userToken + userServer.appSecret, 'utf-8')
-      .digest('hex');
-    userToken = i;
-  }
-
   switch (userServer.instanceType) {
     case 'misskey':
-    case 'cherrypick': {
+    case 'cherrypick':
+    case 'iceshrimp': {
       logger.debug('try to get user info from misskey...');
       let miUser: MiUser;
       try {
-        const miResponse: MiUser | boolean = await fetchMisskeyUserInfo(userToken, user.hostName);
+        const miResponse: MiUser | boolean = await fetchMisskeyUserInfo(userServer, user);
         if ((miResponse as boolean) === false) {
           //단순한 fetch 실패
           return;
@@ -125,12 +116,12 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
       logger.log(`Misskey User Updated!`);
       break;
     }
-    case  'Iceshrimp_NET':
+    case 'Iceshrimp_NET':
     case 'mastodon': {
       logger.debug('try to get User info from mastodon...');
       let mastodonUser;
       try {
-        const ret = await fetchMastodonUserInfo(userToken, user.hostName);
+        const ret = await fetchMastodonUserInfo(userServer, user);
         if ((ret as boolean) === false) {
           return;
         } else {
@@ -178,16 +169,21 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
  * @returns misskey API 'i' 에서 반환된 JSON, 또는 false
  * @throws Misskey에서 토큰 인증에 실패한 경우
  */
-async function fetchMisskeyUserInfo(i: string, host: string): Promise<boolean | MiUser> {
+async function fetchMisskeyUserInfo(server: server, user: user): Promise<boolean | MiUser> {
   let res;
+  const i = createHash('sha256')
+    .update(user.token + server.appSecret, 'utf-8')
+    .digest('hex');
+  const body = { ...(server.instanceType === 'iceshrimp' ? {} : { i: i }) };
+
   try {
-    res = await fetch(`https://${host}/api/i`, {
+    res = await fetch(`https://${server.instances}/api/i`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${i}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ i: i }),
+      body: JSON.stringify(body),
     });
   } catch {
     logger.debug('미스키 i API 호출 실패');
@@ -212,16 +208,16 @@ async function fetchMisskeyUserInfo(i: string, host: string): Promise<boolean | 
 /**
  * Mastodon 에서 유저 정보를 fetch 후 반환.
  * Mastodon 응답이 200인 경우 json 반환, 인증 실패시 throw, 단순 오류시 false 반환
- * @param i token
- * @param host Misskey host
+ * @param server server
+ * @param user user
  * @returns  Mastodon 응답이 200인 경우 json 반환, 권한이 아닌 이유로 실패시 false반환
  * @throws Mastodon 토큰 인증 실패시 throw
  */
-async function fetchMastodonUserInfo(token: string, host: string): Promise<boolean | MastodonUser> {
+async function fetchMastodonUserInfo(server: server, user: user): Promise<boolean | MastodonUser> {
   let res;
   try {
-    res = await fetch(`https://${host}/api/v1/accounts/verify_credentials`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-type': 'application/json' },
+    res = await fetch(`https://${server.instances}/api/v1/accounts/verify_credentials`, {
+      headers: { Authorization: `Bearer ${user.token}`, 'Content-type': 'application/json' },
     });
   } catch {
     // 네트워크 등의 이유로 fetch 자체가 실패한 경우

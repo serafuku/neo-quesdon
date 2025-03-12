@@ -66,9 +66,10 @@ export class RefreshFollowWorkerService {
     switch (instanceType) {
       case 'misskey':
       case 'cherrypick':
+      case 'iceshrimp':
         this.misskeyQueue.add(RefreshFollowMisskey, user, {});
         break;
-      
+
       case 'mastodon':
       case 'Iceshrimp_NET':
         this.mastodonQueue.add(RefreshFollowMastodon, user, {});
@@ -99,7 +100,7 @@ export class RefreshFollowWorkerService {
         const body = {
           limit: 100,
           ...(cursor ? { untilId: cursor } : {}),
-          i: i,
+          ...(server.instanceType === 'iceshrimp' ? {} : { i: i }),
           userId: job.data.userId,
         };
         const options = {

@@ -106,6 +106,7 @@ export default function Home() {
         switch (type) {
           case 'misskey':
           case 'cherrypick':
+          case 'iceshrimp':
             misskeyAuth(payload)
               .then((r) => {
                 router.replace(r.url);

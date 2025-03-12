@@ -48,12 +48,13 @@ export async function POST(req: NextRequest) {
 
     case 'misskey':
     case 'cherrypick':
+    case 'iceshrimp':
       try {
         if (emojiInUsername) {
           for (let i = 0; i < emojiInUsername.length; i++) {
             try {
               const emojiAddress = await fetch(`https://${baseUrl}/emojis/${emojiInUsername[i]}`).then((r) => r.json());
-  
+
               usernameEmojiAddress.push(emojiAddress.icon.url);
             } catch {
               console.error(`emoji ${emojiInUsername[i]} not found in instance ${baseUrl}`);

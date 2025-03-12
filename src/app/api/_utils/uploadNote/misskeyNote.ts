@@ -28,7 +28,7 @@ export async function mkMisskeyNote(
     .update(user.token + server.appSecret, 'utf-8')
     .digest('hex');
   const newAnswerNote: MkNoteAnswers = {
-    i: i,
+    i: server.instanceType === 'iceshrimp' ? undefined : i,
     cw: title,
     text: text,
     visibility: visibility,
