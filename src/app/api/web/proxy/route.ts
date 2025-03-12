@@ -17,15 +17,14 @@ class RemoteImageProxy {
   @RateLimit({ bucket_time: 600, req_limit: 600 }, 'ip')
   public static async imageProxy(req: NextRequest): Promise<NextResponse | Response> {
     const REMOTE_MEDIA_SIZE_LIMIT = 31457280;
-    const searchParams = req.nextUrl.searchParams;
-    const urlParam = searchParams.get('url');
+    const urlParam = req.nextUrl.searchParams.get('url');
 
     if (urlParam) {
       const abortController = new AbortController();
       try {
         let url: URL;
         try {
-          url = new URL(decodeURIComponent(urlParam));
+          url = new URL(urlParam);
           if (!isFQDN(url.hostname)) {
             return sendApiError(400, 'URL hostname is not FQDN', 'BAD_REQUEST');
           }
