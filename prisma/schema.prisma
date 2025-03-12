@@ -11,6 +11,7 @@ datasource db {
 enum InstanceType {
   mastodon
   Iceshrimp_NET @map("Iceshrimp.NET")
+  iceshrimp
   misskey
   cherrypick
 }

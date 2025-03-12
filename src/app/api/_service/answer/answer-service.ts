@@ -123,6 +123,7 @@ export class AnswerService {
         switch (server.instanceType) {
           case 'misskey':
           case 'cherrypick':
+          case 'iceshrimp':
             text = clampText(text, 3000, textEnd, more);
             title = clampText(title, 100, titleEnd, more);
             await mkMisskeyNote(
