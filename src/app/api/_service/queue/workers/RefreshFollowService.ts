@@ -67,6 +67,7 @@ export class RefreshFollowWorkerService {
       case 'misskey':
       case 'cherrypick':
       case 'iceshrimp':
+      case 'sharkey':
         this.misskeyQueue.add(RefreshFollowMisskey, user, {});
         break;
 

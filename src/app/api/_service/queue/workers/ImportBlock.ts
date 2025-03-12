@@ -72,7 +72,8 @@ async function process(job: Job<importBlockType>) {
   switch (server.instanceType) {
     case 'misskey':
     case 'cherrypick':
-    case 'iceshrimp': {
+    case 'iceshrimp':
+    case 'sharkey': {
       let cursor: string | undefined;
       let counter = 0;
       const i = createHash('sha256')

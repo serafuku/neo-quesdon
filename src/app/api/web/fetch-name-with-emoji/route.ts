@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     case 'misskey':
     case 'cherrypick':
     case 'iceshrimp':
+    case 'sharkey':
       try {
         if (emojiInUsername) {
           for (let i = 0; i < emojiInUsername.length; i++) {

@@ -107,6 +107,7 @@ export default function Home() {
           case 'misskey':
           case 'cherrypick':
           case 'iceshrimp':
+          case 'sharkey':
             misskeyAuth(payload)
               .then((r) => {
                 router.replace(r.url);
@@ -183,7 +184,7 @@ export default function Home() {
             <h1 className="text-7xl font-bold z-10 mb-2 desktop:mb-0">Neo-Quesdon</h1>
           </div>
           <span className="font-thin tracking-wider text-base desktop:text-lg">
-            Misskey / CherryPick / Mastodon 에서 사용할 수 있는 새로운 Quesdon
+            Misskey 계열과 Mastodon 에서 사용할 수 있는 새로운 Quesdon
           </span>
         </div>
         <div className="flex flex-col desktop:flex-row items-center">

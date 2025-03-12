@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
         case 'misskey':
         case 'cherrypick':
         case 'iceshrimp':
+        case 'sharkey':
           break;
         default:
           return sendApiError(400, 'Unknown instance type', 'BAD_REQUEST');

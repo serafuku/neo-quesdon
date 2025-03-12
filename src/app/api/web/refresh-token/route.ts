@@ -77,7 +77,8 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
   switch (userServer.instanceType) {
     case 'misskey':
     case 'cherrypick':
-    case 'iceshrimp': {
+    case 'iceshrimp':
+    case 'sharkey': {
       logger.debug('try to get user info from misskey...');
       let miUser: MiUser;
       try {
@@ -161,7 +162,7 @@ async function refreshAndReValidateToken(user: user): Promise<void> {
 }
 
 /**
- * Misskey/Cherrypick 에서 유저 정보를 fetch
+ * Misskey 계열에서 에서 유저 정보를 fetch
  * 미스키의 응답이 200 인 경우는 json을 반환, 401, 403인 경우는 throw
  * 401, 403 이 아닌 실패는 false 반환
  * @param i token
