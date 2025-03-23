@@ -48,12 +48,7 @@ export default function Question({
     formState: { errors },
     reset,
   } = useForm<formValue>({
-    defaultValues: {
-      nsfw: false,
-      hideFromMain: false,
-      visibility: defaultVisibility,
-      answer: '',
-    },
+    defaultValues: { nsfw: false, hideFromMain: false, visibility: defaultVisibility, answer: '' },
     mode: 'onChange',
   });
 
@@ -79,10 +74,7 @@ export default function Question({
     const detectWhiteSpaces = new RegExp(/^\s+$/);
 
     if (detectWhiteSpaces.test(e.answer) === true) {
-      setError('answer', {
-        type: 'answerOnlyWhiteSpace',
-        message: '답변에 아무말 안 하시게요...?',
-      });
+      setError('answer', { type: 'answerOnlyWhiteSpace', message: '답변에 아무말 안 하시게요...?' });
       return;
     }
 
@@ -223,7 +215,7 @@ export default function Question({
                     <span className="w-full text-sm desktop:text-md break-keep">메인에서 숨기기</span>
                   </div>
                 </div>
-                <div className="tooltip" data-tip="답변 노트를 올릴 범위">
+                <div className="tooltip tooltip-left desktop:tooltip-top" data-tip="연합우주에 답변 노트를 올릴 범위">
                   <select {...register('visibility')} className="select select-ghost select-sm dark:shadow tooltip">
                     <option className={'hidden'} disabled={true} value={undefined}>
                       ...
