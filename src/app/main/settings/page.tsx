@@ -256,18 +256,17 @@ export default function Settings() {
                             <span className="font-thin">새 질문 DM으로 받지 않기</span>
                             <input {...register('stopPostAnswer')} type="checkbox" className="toggle toggle-success" />
                             <span className="font-thin">내 답변을 올리지 않기</span>
-                            <input
-                              {...register('defaultHideFromTimeline')}
-                              type="checkbox"
-                              className="toggle toggle-success"
-                            />
                             <div
-                              className="tooltip flex items-center"
-                              data-tip="네오퀘스돈 메인화면에서 나의 답변을 보이지 않게 할 수 있습니다."
+                              className="tooltip tooltip-right flex justify-self-start before:max-w-[14rem] before:break-keep"
+                              data-tip="나의 답변을 네오퀘스돈 메인화면에서 숨길 수 있어요."
                             >
-                              <span className="font-thin">내 답변을 네오퀘스돈 메인화면에서 숨기기</span>
-                              <MdInfoOutline className="ml-1" />
+                              <input
+                                {...register('defaultHideFromTimeline')}
+                                type="checkbox"
+                                className="toggle toggle-success"
+                              />
                             </div>
+                            <span className="font-thin">내 답변을 메인화면에서 숨기기</span>
                             <div className="w-fit col-span-2 desktop:grid desktop:grid-cols-subgrid flex flex-col-reverse justify-center desktop:items-center gap-2 ml-[calc(20%+8px)] desktop:ml-0">
                               <select
                                 {...register('visibility')}
