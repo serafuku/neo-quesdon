@@ -89,6 +89,7 @@ export default function Questions() {
                         blockingRef={createBlockModalRef}
                         setIsLoading={setIsLoading}
                         defaultVisibility={profile?.defaultPostVisibility}
+                        defaultHideFromTimeline={profile?.defaultHideFromTimeline}
                       />
                     </div>
                   ))}

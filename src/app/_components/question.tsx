@@ -24,6 +24,7 @@ interface askProps {
   blockingRef: RefObject<HTMLDialogElement>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   defaultVisibility: 'public' | 'home' | 'followers' | undefined;
+  defaultHideFromTimeline: boolean | undefined;
 }
 
 export default function Question({
@@ -36,6 +37,7 @@ export default function Question({
   blockingRef,
   setIsLoading,
   defaultVisibility,
+  defaultHideFromTimeline,
 }: askProps) {
   const {
     register,
@@ -48,7 +50,7 @@ export default function Question({
     formState: { errors },
     reset,
   } = useForm<formValue>({
-    defaultValues: { nsfw: false, hideFromMain: false, visibility: defaultVisibility, answer: '' },
+    defaultValues: { nsfw: false, hideFromMain: defaultHideFromTimeline, visibility: defaultVisibility, answer: '' },
     mode: 'onChange',
   });
 
@@ -139,8 +141,8 @@ export default function Question({
   };
 
   useEffect(() => {
-    reset({ visibility: defaultVisibility, nsfw: false, hideFromMain: false });
-  }, [defaultVisibility]);
+    reset({ visibility: defaultVisibility, nsfw: false, hideFromMain: defaultHideFromTimeline });
+  }, [defaultVisibility, defaultHideFromTimeline]);
 
   return (
     <div className="rounded-box p-2 desktop:p-4 mb-2 glass shadow">
@@ -206,13 +208,20 @@ export default function Question({
                     <span className="w-full text-sm desktop:text-md">NSFW로 체크</span>
                   </div>
                   <div className="flex items-center gap-2 tooltip" data-tip="'최근 올라온 답변'에서 답변이 숨겨져요.">
-                    <input
-                      type="checkbox"
-                      className="toggle toggle-accent toggle-sm"
-                      onClick={() => setValue('hideFromMain', !hideFromMain)}
-                    />
-                    <input type="hidden" {...register('hideFromMain')} />
-                    <span className="w-full text-sm desktop:text-md break-keep">메인에서 숨기기</span>
+                    {hideFromMain !== undefined ? (
+                      <>
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-accent toggle-sm"
+                          defaultChecked={defaultHideFromTimeline}
+                          onClick={() => setValue('hideFromMain', !hideFromMain)}
+                        />
+                        <input type="hidden" {...register('hideFromMain')} />
+                        <span className="w-full text-sm desktop:text-md break-keep">메인에서 숨기기</span>
+                      </>
+                    ) : (
+                      <span>로딩중...</span>
+                    )}
                   </div>
                 </div>
                 <div className="tooltip tooltip-left desktop:tooltip-top" data-tip="연합우주에 답변 노트를 올릴 범위">
