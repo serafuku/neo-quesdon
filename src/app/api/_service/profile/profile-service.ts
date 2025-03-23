@@ -78,6 +78,7 @@ export class ProfileService {
         questions: questionCount,
         instanceType: instanceType,
         defaultPostVisibility: userProfile.defaultPostVisibility,
+        defaultHideFromTimeline: userProfile.defaultHideFromTimeline,
         hostname: userProfile.user.hostName,
         wordMuteList: userProfile.wordMuteList,
       };

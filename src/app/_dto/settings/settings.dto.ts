@@ -1,19 +1,6 @@
 import { IsArray, IsBoolean, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { $Enums, profile } from '@prisma/client';
 
-export class UserSettingsDto {
-  @IsBoolean()
-  stopAnonQuestion: boolean;
-  @IsBoolean()
-  stopNewQuestion: boolean;
-  @IsBoolean()
-  stopNotiNewQuestion: boolean;
-  @IsBoolean()
-  stopPostAnswer: boolean;
-  @IsString()
-  questionBoxName: string;
-}
-
 export class UserSettingsUpdateDto {
   @IsOptional()
   @IsBoolean()
@@ -39,6 +26,10 @@ export class UserSettingsUpdateDto {
   @IsOptional()
   @IsEnum($Enums.PostVisibility)
   defaultPostVisibility?: $Enums.PostVisibility;
+
+  @IsOptional()
+  @IsBoolean()
+  defaultHideFromTimeline?: boolean;
 
   @IsArray()
   @IsString({ each: true })

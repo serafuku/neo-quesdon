@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
-import { UserSettingsDto, UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
+import { UserSettingsUpdateDto } from '@/app/_dto/settings/settings.dto';
 import { Auth, JwtPayload } from '@/api/_utils/jwt/decorator';
 import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
@@ -23,31 +23,6 @@ export class UserSettingsService {
   @RateLimit(
     {
       bucket_time: 600,
-      req_limit: 300,
-    },
-    'user',
-  )
-  @Auth()
-  public async getSettings(_req: NextRequest, @JwtPayload jwtBody?: jwtPayloadType) {
-    const prisma = GetPrismaClient.getClient();
-    try {
-      const user_profile = await prisma.profile.findUniqueOrThrow({ where: { handle: jwtBody!.handle } });
-      const res_body: UserSettingsDto = {
-        stopAnonQuestion: user_profile.stopAnonQuestion,
-        stopNewQuestion: user_profile.stopNewQuestion,
-        stopNotiNewQuestion: user_profile.stopNotiNewQuestion,
-        stopPostAnswer: user_profile.stopPostAnswer,
-        questionBoxName: user_profile.questionBoxName,
-      };
-      return NextResponse.json(res_body);
-    } catch {
-      return sendApiError(400, 'Bad Request', 'BAD_REQUEST');
-    }
-  }
-
-  @RateLimit(
-    {
-      bucket_time: 600,
       req_limit: 60,
     },
     'user',
@@ -63,8 +38,12 @@ export class UserSettingsService {
     if (data.wordMuteList) {
       this.onUpdateWordMute(jwtBody.handle, data.wordMuteList);
     }
-    const updated = await prisma.profile.update({ where: { handle: jwtBody.handle }, data: data });
-    return NextResponse.json(updated);
+    try {
+      const updated = await prisma.profile.update({ where: { handle: jwtBody.handle }, data: data });
+      return NextResponse.json(updated);
+    } catch {
+      return sendApiError(500, `Update Settings Error`, 'SERVER_ERROR');
+    }
   }
 
   private async onUpdateWordMute(userHandle: string, wordMuteList: string[]) {
