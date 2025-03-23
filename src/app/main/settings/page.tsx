@@ -11,7 +11,7 @@ import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { AccountCleanReqDto } from '@/app/_dto/account-clean/account-clean.dto';
 import { FaLock, FaUserLargeSlash } from 'react-icons/fa6';
-import { MdDeleteForever, MdDeleteSweep, MdOutlineCleaningServices } from 'react-icons/md';
+import { MdDeleteForever, MdDeleteSweep, MdInfoOutline, MdOutlineCleaningServices } from 'react-icons/md';
 import { MyProfileContext } from '@/app/main/layout';
 import { MyProfileEv } from '@/app/main/_events';
 import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
@@ -23,6 +23,7 @@ export type FormValue = {
   stopNewQuestion: boolean;
   stopNotiNewQuestion: boolean;
   stopPostAnswer: boolean;
+  defaultHideFromTimeline: boolean;
   questionBoxName: string;
   visibility: $Enums.PostVisibility;
   wordMuteList: string;
@@ -33,6 +34,7 @@ async function updateUserSettings(value: FormValue) {
     stopNewQuestion: value.stopNewQuestion,
     stopNotiNewQuestion: value.stopNotiNewQuestion,
     stopPostAnswer: value.stopPostAnswer,
+    defaultHideFromTimeline: value.defaultHideFromTimeline,
     questionBoxName: value.questionBoxName || '질문함',
     defaultPostVisibility: value.visibility,
     wordMuteList: value.wordMuteList
@@ -45,9 +47,7 @@ async function updateUserSettings(value: FormValue) {
     const res = await fetch('/api/user/settings', {
       method: 'POST',
       body: JSON.stringify(body),
-      headers: {
-        'Content-type': 'application/json',
-      },
+      headers: { 'Content-type': 'application/json' },
     });
     if (!res.ok) {
       onApiError(res.status, res);
@@ -79,9 +79,7 @@ export default function Settings() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<FormValue>({
-    values: defaultFormValue,
-  });
+  } = useForm<FormValue>({ values: defaultFormValue });
 
   const formValues = watch();
   useEffect(() => {
@@ -91,6 +89,7 @@ export default function Settings() {
         stopNewQuestion: userInfo.stopNewQuestion,
         stopNotiNewQuestion: userInfo.stopNotiNewQuestion,
         stopPostAnswer: userInfo.stopPostAnswer,
+        defaultHideFromTimeline: userInfo.defaultHideFromTimeline,
         questionBoxName: userInfo.questionBoxName,
         visibility: userInfo.defaultPostVisibility,
         wordMuteList: userInfo.wordMuteList.join('\n'),
@@ -130,9 +129,7 @@ export default function Settings() {
     if (!user_handle) {
       return;
     }
-    const req: AccountCleanReqDto = {
-      handle: user_handle,
-    };
+    const req: AccountCleanReqDto = { handle: user_handle };
     const res = await fetch('/api/user/account-clean', {
       method: 'POST',
       body: JSON.stringify(req),
@@ -157,13 +154,8 @@ export default function Settings() {
     if (!user_handle) {
       return;
     }
-    const req: AccountDeleteReqDto = {
-      handle: user_handle,
-    };
-    const res = await fetch('/api/user/account-delete', {
-      method: 'POST',
-      body: JSON.stringify(req),
-    });
+    const req: AccountDeleteReqDto = { handle: user_handle };
+    const res = await fetch('/api/user/account-delete', { method: 'POST', body: JSON.stringify(req) });
     if (res.ok) {
       localStorage.removeItem('user_handle');
       localStorage.removeItem('last_token_refresh');
@@ -176,9 +168,7 @@ export default function Settings() {
 
   const onImportBlock = async () => {
     setButtonClicked(true);
-    const res = await fetch('/api/user/blocking/import', {
-      method: 'POST',
-    });
+    const res = await fetch('/api/user/blocking/import', { method: 'POST' });
     if (res.ok) {
       console.log('블락 리스트 가져오기 시작됨...');
     } else {
@@ -191,9 +181,7 @@ export default function Settings() {
 
   const onDeleteAllQuestions = async () => {
     setButtonClicked(true);
-    const res = await fetch('/api/db/questions', {
-      method: 'DELETE',
-    });
+    const res = await fetch('/api/db/questions', { method: 'DELETE' });
     setButtonClicked(false);
     if (!res.ok) {
       throw new Error('질문을 모두 삭제하는데 실패했어요!');
@@ -202,9 +190,7 @@ export default function Settings() {
 
   const onDeleteAllNotifications = async () => {
     setButtonClicked(true);
-    const res = await fetch('/api/user/notification', {
-      method: 'DELETE',
-    });
+    const res = await fetch('/api/user/notification', { method: 'DELETE' });
     setButtonClicked(false);
     if (!res.ok) {
       throw new Error('알림을 삭제하는데 실패했어요!');
@@ -270,23 +256,37 @@ export default function Settings() {
                             <span className="font-thin">새 질문 DM으로 받지 않기</span>
                             <input {...register('stopPostAnswer')} type="checkbox" className="toggle toggle-success" />
                             <span className="font-thin">내 답변을 올리지 않기</span>
+                            <div
+                              className="tooltip tooltip-right flex justify-self-start before:max-w-[14rem] before:break-keep"
+                              data-tip="나의 답변을 네오퀘스돈 메인화면에서 숨길 수 있어요."
+                            >
+                              <input
+                                {...register('defaultHideFromTimeline')}
+                                type="checkbox"
+                                className="toggle toggle-success"
+                              />
+                            </div>
+                            <span className="font-thin">내 답변을 메인화면에서 숨기기</span>
                             <div className="w-fit col-span-2 desktop:grid desktop:grid-cols-subgrid flex flex-col-reverse justify-center desktop:items-center gap-2 ml-[calc(20%+8px)] desktop:ml-0">
-                              <select
-                                {...register('visibility')}
-                                className="select select-ghost select-sm w-fit"
-                                disabled={formValues.stopPostAnswer}
+                              <div
+                                className="tooltip tooltip-top desktop:tooltip-right w-fit justify-self-start flex before:max-w-[12rem] break-keep"
+                                data-tip="연합우주 계정에 답변을 올릴 때의 공개 범위를 설정해요."
                               >
-                                <option value="public">공개</option>
-                                <option value="home">홈</option>
-                                <option value="followers">팔로워</option>
-                              </select>
+                                <select
+                                  {...register('visibility')}
+                                  className="select select-ghost select-sm w-fit"
+                                  disabled={formValues.stopPostAnswer}
+                                >
+                                  <option value="public">공개</option>
+                                  <option value="home">홈</option>
+                                  <option value="followers">팔로워</option>
+                                </select>
+                              </div>
                               <span className="font-thin"> 답변을 올릴 때 기본 공개 범위</span>
                             </div>
                             <div className="col-start-2 flex flex-col-reverse gap-2">
                               <input
-                                {...register('questionBoxName', {
-                                  maxLength: 10,
-                                })}
+                                {...register('questionBoxName', { maxLength: 10 })}
                                 type="text"
                                 placeholder="질문함"
                                 className={`input input-bordered input-sm w-48 ${
