@@ -268,15 +268,20 @@ export default function Settings() {
                             </div>
                             <span className="font-thin">내 답변을 메인화면에서 숨기기</span>
                             <div className="w-fit col-span-2 desktop:grid desktop:grid-cols-subgrid flex flex-col-reverse justify-center desktop:items-center gap-2 ml-[calc(20%+8px)] desktop:ml-0">
-                              <select
-                                {...register('visibility')}
-                                className="select select-ghost select-sm w-fit"
-                                disabled={formValues.stopPostAnswer}
+                              <div
+                                className="tooltip tooltip-top desktop:tooltip-right w-fit justify-self-start flex before:max-w-[12rem] break-keep"
+                                data-tip="연합우주 계정에 답변을 올릴 때의 공개 범위를 설정해요."
                               >
-                                <option value="public">공개</option>
-                                <option value="home">홈</option>
-                                <option value="followers">팔로워</option>
-                              </select>
+                                <select
+                                  {...register('visibility')}
+                                  className="select select-ghost select-sm w-fit"
+                                  disabled={formValues.stopPostAnswer}
+                                >
+                                  <option value="public">공개</option>
+                                  <option value="home">홈</option>
+                                  <option value="followers">팔로워</option>
+                                </select>
+                              </div>
                               <span className="font-thin"> 답변을 올릴 때 기본 공개 범위</span>
                             </div>
                             <div className="col-start-2 flex flex-col-reverse gap-2">
