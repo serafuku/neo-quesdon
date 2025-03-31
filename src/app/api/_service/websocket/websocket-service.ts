@@ -126,6 +126,7 @@ export class WebsocketService {
         ws.ping(`Mua ${Date.now()}`);
         if (Date.now() - context.lastPongTimeStamp > 60 * 1000) {
           this.logger.debug(`Ping Timeout! terminate ${context.id}`);
+          clearInterval(pingInterval);
           ws.terminate();
         }
       }, 10000);
