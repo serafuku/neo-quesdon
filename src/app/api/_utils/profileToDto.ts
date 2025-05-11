@@ -12,6 +12,7 @@ export function profileToDto(profile: profile, hostName: string, instanceType: $
     questionBoxName: profile.questionBoxName,
     hostname: hostName,
     instanceType: instanceType,
+    announcement: profile.announcement,
   };
   return data;
 }
