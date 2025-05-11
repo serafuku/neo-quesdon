@@ -59,6 +59,7 @@ model profile {
   defaultPostVisibility   PostVisibility @default(public)
   defaultHideFromTimeline Boolean        @default(false)
   wordMuteList            String[]       @default([])
+  announcement            String         @default("")
 }
 
 model answer {
