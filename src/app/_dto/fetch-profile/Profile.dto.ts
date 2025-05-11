@@ -9,6 +9,7 @@ export interface userProfileDto {
   questionBoxName: string;
   hostname: string;
   instanceType: $Enums.InstanceType;
+  announcement: string;
 }
 
 export interface userProfileMeDto extends userProfileDto {

@@ -34,4 +34,9 @@ export class UserSettingsUpdateDto {
   @IsArray()
   @IsString({ each: true })
   wordMuteList: profile['wordMuteList'];
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(80)
+  announcement: profile['announcement'];
 }

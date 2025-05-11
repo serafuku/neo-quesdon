@@ -37,16 +37,10 @@ export class ProfileService {
     try {
       const userProfile = await prisma.profile.findUnique({
         include: {
-          user: {
-            include: { server: { select: { instanceType: true } } },
-          },
-          _count: {
-            select: { answer: true, questions: true },
-          },
+          user: { include: { server: { select: { instanceType: true } } } },
+          _count: { select: { answer: true, questions: true } },
         },
-        where: {
-          handle: handle,
-        },
+        where: { handle: handle },
       });
       if (!userProfile) {
         return NextResponse.json({ message: `User not found` }, { status: 404 });
@@ -65,21 +59,14 @@ export class ProfileService {
         stopNotiNewQuestion: userProfile.stopNotiNewQuestion,
         hostname: userProfile.user.hostName,
         instanceType: instanceType,
+        announcement: userProfile.announcement,
       };
       const resMe: userProfileMeDto = {
-        handle: userProfile.handle,
-        name: userProfile.name,
-        stopNewQuestion: userProfile.stopNewQuestion,
-        stopAnonQuestion: userProfile.stopAnonQuestion,
-        avatarUrl: userProfile.avatarUrl,
-        questionBoxName: userProfile.questionBoxName,
-        stopNotiNewQuestion: userProfile.stopNotiNewQuestion,
-        stopPostAnswer: userProfile.stopPostAnswer,
+        ...resNotMe,
         questions: questionCount,
-        instanceType: instanceType,
+        stopPostAnswer: userProfile.stopPostAnswer,
         defaultPostVisibility: userProfile.defaultPostVisibility,
         defaultHideFromTimeline: userProfile.defaultHideFromTimeline,
-        hostname: userProfile.user.hostName,
         wordMuteList: userProfile.wordMuteList,
       };
       if (isMe) {
