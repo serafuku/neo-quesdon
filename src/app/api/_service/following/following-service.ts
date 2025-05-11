@@ -27,9 +27,7 @@ export class FollowingService {
     const user = await prisma.user.findUniqueOrThrow({ where: { handle: tokenBody!.handle } });
 
     const fn = async () => {
-      const follows = await prisma.following.findMany({
-        where: { followerHandle: user.handle },
-      });
+      const follows = await prisma.following.findMany({ where: { followerHandle: user.handle } });
 
       const filteredList = [];
       for (const f of follows) {
@@ -70,6 +68,7 @@ export class FollowingService {
             questionBoxName: exist.questionBoxName,
             hostname: exist.user.hostName,
             instanceType: exist.user.server.instanceType,
+            announcement: exist.announcement,
           },
         });
       });

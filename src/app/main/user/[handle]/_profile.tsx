@@ -14,6 +14,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaEllipsisVertical } from 'react-icons/fa6';
 import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 import { onApiError } from '@/utils/api-error/onApiError';
+import { FaInfoCircle } from 'react-icons/fa';
 
 type FormValue = {
   question: string;
@@ -305,6 +306,12 @@ export default function Profile() {
             )}
           </div>
         </div>
+        {userProfile?.announcement && (
+          <div className="mb-2 p-2 w-[90%] flex items-center gap-2 border border-indigo-400 dark:border-indigo-200 rounded-lg">
+            <FaInfoCircle className='flex-shrink-0' />
+            <span className='grow break-all'>{userProfile.announcement}</span>
+          </div>
+        )}
         <form className="w-full flex flex-col items-center" onSubmit={handleSubmit(onSubmit)}>
           <textarea
             {...register('question', {
@@ -312,9 +319,8 @@ export default function Profile() {
               maxLength: 1000,
             })}
             placeholder="질문 내용을 입력해 주세요"
-            className={`w-[90%] mb-2 font-thin leading-loose textarea ${
-              errors.question ? 'textarea-error' : 'textarea-bordered'
-            }`}
+            className={`w-[90%] mb-2 font-thin leading-loose textarea ${errors.question ? 'textarea-error' : 'textarea-bordered'
+              }`}
             onKeyDown={onCtrlEnter}
             disabled={userProfile?.stopNewQuestion === true ? true : false}
             style={{ resize: 'none' }}

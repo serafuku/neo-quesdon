@@ -11,7 +11,7 @@ import CollapseMenu from '@/app/_components/collapseMenu';
 import DialogModalTwoButton from '@/app/_components/modalTwoButton';
 import { AccountCleanReqDto } from '@/app/_dto/account-clean/account-clean.dto';
 import { FaLock, FaUserLargeSlash } from 'react-icons/fa6';
-import { MdDeleteForever, MdDeleteSweep, MdInfoOutline, MdOutlineCleaningServices } from 'react-icons/md';
+import { MdDeleteForever, MdDeleteSweep, MdOutlineCleaningServices } from 'react-icons/md';
 import { MyProfileContext } from '@/app/main/layout';
 import { MyProfileEv } from '@/app/main/_events';
 import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
@@ -27,6 +27,7 @@ export type FormValue = {
   questionBoxName: string;
   visibility: $Enums.PostVisibility;
   wordMuteList: string;
+  announcement: string;
 };
 async function updateUserSettings(value: FormValue) {
   const body: UserSettingsUpdateDto = {
@@ -42,6 +43,7 @@ async function updateUserSettings(value: FormValue) {
       .map((v) => v.trim())
       .filter((v) => v.length > 0)
       .map((word) => word.replace(/^\/|\/[igmsuy]{0,6}$/g, '')),
+    announcement: value.announcement,
   };
   try {
     const res = await fetch('/api/user/settings', {
@@ -93,6 +95,7 @@ export default function Settings() {
         questionBoxName: userInfo.questionBoxName,
         visibility: userInfo.defaultPostVisibility,
         wordMuteList: userInfo.wordMuteList.join('\n'),
+        announcement: userInfo.announcement,
       };
       setDefaultFormValue(value);
     }
@@ -289,14 +292,23 @@ export default function Settings() {
                                 {...register('questionBoxName', { maxLength: 10 })}
                                 type="text"
                                 placeholder="질문함"
-                                className={`input input-bordered input-sm w-48 ${
-                                  errors.questionBoxName?.type === 'maxLength' && 'input-error'
-                                }`}
+                                className={`input input-bordered input-sm w-48 ${errors.questionBoxName?.type === 'maxLength' && 'input-error'
+                                  }`}
                               />
                               <span className="font-thin">질문함 이름 (10글자 이내)</span>
                             </div>
                           </div>
                           <Divider />
+                          <div className='flex flex-col desktop:w-[24rem] gap-2 items-center p-2'>
+                            <h3 className='text-lg'>질문함 공지</h3>
+                            <span className='font-thin'>질문함에 올릴 공지를 입력합니다.</span>
+                            <textarea
+                              {...register("announcement")}
+                              className='textarea textarea-bordered w-full min-h-[15vh] text-base'
+                              placeholder='최대 80자'
+                              maxLength={80}
+                            />
+                          </div>
                           <div className="flex flex-col desktop:w-[24rem] gap-2 items-center p-2">
                             <div className="text-lg"> 질문 단어 뮤트 </div>
                             <div className="font-thin">
