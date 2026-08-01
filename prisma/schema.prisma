@@ -52,6 +52,7 @@ model profile {
   stopAnonQuestion        Boolean        @default(false)
   stopNotiNewQuestion     Boolean        @default(false)
   stopPostAnswer          Boolean        @default(false)
+  mutualOnly              Boolean        @default(false)
   avatarUrl               String
   questionBoxName         String         @default("질문함")
   lastFollowRefreshed     DateTime       @default("1996-12-19T16:39:57-08:00")
