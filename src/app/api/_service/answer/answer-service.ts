@@ -213,6 +213,7 @@ export class AnswerService {
   @RateLimit({ bucket_time: 600, req_limit: 600 }, 'ip')
   public async GetAllAnswersApi(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
     const prisma = GetPrismaClient.getClient();
+    const kv = RedisKvCacheService.getInstance();
     const searchParams = req.nextUrl.searchParams;
 
     let data;
@@ -234,13 +235,47 @@ export class AnswerService {
     //내림차순이 기본값
     const orderBy = data.sort === 'ASC' ? 'asc' : 'desc';
 
+    // 차단 리스트 가져오기 (로그인 상태에서만)
+    const getBlockList = async (): Promise<blocking[]> => {
+      return prisma.blocking.findMany({
+        where: { blockerHandle: tokenPayload!.handle, hidden: false },
+      });
+    };
+    const blockList = tokenPayload?.handle
+      ? await kv.get(getBlockList, { key: `block-${tokenPayload.handle}`, ttl: 600 })
+      : [];
+    const blockTargets = blockList.map((b) => b.blockeeTarget).filter((v): v is string => !!v);
+
+    const blockedList = tokenPayload?.handle
+      ? await prisma.blocking.findMany({
+          where: { blockeeTarget: tokenPayload.handle, hidden: false },
+          select: { blockerHandle: true },
+        })
+      : [];
+    const blockedByHandles = blockedList.map((b) => b.blockerHandle).filter((v): v is string => !!v);
+
     const answersWithProfile = await prisma.answer.findMany({
       where: {
         hideFromMain: false,
-        id: {
-          ...(typeof sinceId === 'string' ? { gt: sinceId } : {}),
-          ...(typeof untilId === 'string' ? { lt: untilId } : {}),
-        },
+        AND: [
+          // 내가 차단한 사용자가 작성한 답변/질문 제외
+          ...(blockTargets.length > 0
+            ? [{ answeredPersonHandle: { notIn: blockTargets } }, ...buildQuestionerNotIn(blockTargets)]
+            : []),
+          // 나를 차단한 사용자가 작성한 답변/질문 제외
+          ...(blockedByHandles.length > 0
+            ? [
+                { answeredPersonHandle: { notIn: blockedByHandles } },
+                ...buildQuestionerNotIn(blockedByHandles),
+              ]
+            : []),
+          {
+            id: {
+              ...(typeof sinceId === 'string' ? { gt: sinceId } : {}),
+              ...(typeof untilId === 'string' ? { lt: untilId } : {}),
+            },
+          },
+        ],
       },
       include: {
         answeredPerson: {
@@ -254,7 +289,7 @@ export class AnswerService {
       },
       take: query_limit,
     });
-    let list: AnswerWithProfileDto[] = [];
+    const list: AnswerWithProfileDto[] = [];
     for (const answer of answersWithProfile) {
       const instanceType = (
         await prisma.server.findUniqueOrThrow({
@@ -269,11 +304,6 @@ export class AnswerService {
         answeredPerson: profileDto,
       };
       list.push(data);
-    }
-
-    if (tokenPayload?.handle) {
-      // 로그인 상태면 블락 필터링
-      list = await this.filterBlock(list, tokenPayload.handle);
     }
 
     const return_data: AnswerListWithProfileDto = {
@@ -395,20 +425,12 @@ export class AnswerService {
   public async filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
     const prisma = GetPrismaClient.getClient();
     const kv = RedisKvCacheService.getInstance();
-    const getBlockListOnlyExist = async (): Promise<blocking[]> => {
-      const all_blockList = await prisma.blocking.findMany({ where: { blockerHandle: myHandle, hidden: false } });
-      const existList = [];
-      for (const block of all_blockList) {
-        const exist = await prisma.user.findUnique({
-          where: { handle: block.blockeeTarget },
-        });
-        if (exist) {
-          existList.push(block);
-        }
-      }
-      return existList;
+    const getBlockList = async (): Promise<blocking[]> => {
+      return prisma.blocking.findMany({
+        where: { blockerHandle: myHandle, hidden: false },
+      });
     };
-    const blockList = await kv.get(getBlockListOnlyExist, { key: `block-${myHandle}`, ttl: 600 });
+    const blockList = await kv.get(getBlockList, { key: `block-${myHandle}`, ttl: 600 });
     const blockedList = await prisma.blocking.findMany({ where: { blockeeTarget: myHandle, hidden: false } });
     const filteredAnswers = answers.filter((ans) => {
       if (blockList.find((b) => b.blockeeTarget === ans.answeredPersonHandle || b.blockeeTarget === ans.questioner)) {
@@ -446,4 +468,12 @@ function isHandle(str: string | null | undefined) {
     return true;
   }
   return false;
+}
+
+function buildQuestionerNotIn(targets: string[]) {
+  return [
+    {
+      OR: [{ questioner: null }, { questioner: { notIn: targets } }],
+    },
+  ];
 }
