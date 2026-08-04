@@ -33,6 +33,7 @@ model user {
   blocking     blocking[]     @relation("blocks")
   following    following[]    @relation("user")
   Notification Notification[] @relation("Notification")
+  foreignServerUserKeys ForeignServerUserKey[]
 }
 
 enum PostVisibility {
@@ -99,6 +100,7 @@ model server {
   client_secret String? /// Mastodon OAuth2 client secret
 
   user user[]
+  foreignServerUserKeys ForeignServerUserKey[]
 
   @@index([instances])
 }
@@ -147,4 +149,17 @@ model Notification {
   @@index([createdAt])
   @@index([read])
   @@index([notiType])
+}
+
+model ForeignServerUserKey {
+  id            String   @id @default(cuid())
+  userHandle    String
+  user          user     @relation(fields: [userHandle], references: [handle], onDelete: Cascade)
+  serverDomain  String
+  server        server   @relation(fields: [serverDomain], references: [instances], onDelete: Cascade)
+  userKey       String
+
+  @@unique([userHandle, serverDomain])
+  @@index([userHandle])
+  @@index([serverDomain])
 }
