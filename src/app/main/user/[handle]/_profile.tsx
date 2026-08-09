@@ -324,7 +324,7 @@ export default function Profile() {
             onKeyDown={onCtrlEnter}
             disabled={(() => {
               if (userProfile?.stopNewQuestion) { return true; }
-              if (userProfile?.stopAnonQuestion && !localStorage.getItem('user_handle')) { return true; }
+              if (userProfile?.stopAnonQuestion && !localHandle) { return true; }
               return false;
             })()}
             style={{ resize: 'none' }}
