@@ -261,6 +261,11 @@ export class QuestionService {
             }
             break;
           }
+
+          default: {
+            this.logger.warn(`Unknown instanceType for mutual check: ${questionee_server.instanceType}`);
+            return sendApiError(403, '...', 'MUTUAL_FOLLOW_CHECK_FAILED');
+          }
         }
       }
 
