@@ -8,6 +8,7 @@ export function profileToDto(profile: profile, hostName: string, instanceType: $
     stopNewQuestion: profile.stopNewQuestion,
     stopAnonQuestion: profile.stopAnonQuestion,
     stopNotiNewQuestion: profile.stopNotiNewQuestion,
+    mutualOnly: profile.mutualOnly,
     avatarUrl: profile.avatarUrl,
     questionBoxName: profile.questionBoxName,
     hostname: hostName,

@@ -23,7 +23,11 @@ export class RedisKvCacheService {
   }
   public async get<T>(
     fn: () => Promise<T>,
-    cacheConfig: { key: string; ttl: number },
+    cacheConfig: {
+      key: string;
+      /** TTL in seconds */
+      ttl: number;
+    },
     noCache: boolean = false,
   ): Promise<T> {
     const { key, ttl } = cacheConfig;

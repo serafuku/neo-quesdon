@@ -57,6 +57,7 @@ export class ProfileService {
         avatarUrl: userProfile.avatarUrl,
         questionBoxName: userProfile.questionBoxName,
         stopNotiNewQuestion: userProfile.stopNotiNewQuestion,
+        mutualOnly: userProfile.mutualOnly,
         hostname: userProfile.user.hostName,
         instanceType: instanceType,
         announcement: userProfile.announcement,

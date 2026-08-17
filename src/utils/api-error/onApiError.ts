@@ -72,6 +72,18 @@ export async function onApiError(code: number, res: Response) {
       modalValue.title = '질문 거절';
       modalValue.body = '이 사용자는 질문을 받지 않고 있어요!';
       break;
+    case 'USER_USING_MUTUAL_ONLY_WITHOUT_LOGIN':
+      modalValue.title = '로그인 필요';
+      modalValue.body = '이 사용자는 맞팔로우한 사람만 질문을 받고 있어요. 로그인 후 다시 시도해 주세요!';
+      break;
+    case 'NOT_MUTUAL_FOLLOWING':
+      modalValue.title = '질문 거절';
+      modalValue.body = '이 사용자는 맞팔로우한 사람만 질문을 받고 있어요!';
+      break;
+    case 'MUTUAL_FOLLOW_CHECK_FAILED':
+      modalValue.title = '확인 실패';
+      modalValue.body = '맞팔로우 확인에 실패했어요... 잠시 후 다시 시도해 주세요.';
+      break;
     case 'REMOTE_ACCESS_TOKEN_REVOKED':
       modalValue.title = '인증 해제됨';
       modalValue.body = '마스토돈/미스키 서버에서 API토큰 인증이 해제 되었어요!';

@@ -19,6 +19,10 @@ export class UserSettingsUpdateDto {
   stopPostAnswer?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  mutualOnly?: boolean;
+
+  @IsOptional()
   @IsString()
   @MaxLength(10)
   questionBoxName?: string;

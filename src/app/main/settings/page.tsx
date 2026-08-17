@@ -23,6 +23,7 @@ export type FormValue = {
   stopNewQuestion: boolean;
   stopNotiNewQuestion: boolean;
   stopPostAnswer: boolean;
+  mutualOnly: boolean;
   defaultHideFromTimeline: boolean;
   questionBoxName: string;
   visibility: $Enums.PostVisibility;
@@ -35,6 +36,7 @@ async function updateUserSettings(value: FormValue) {
     stopNewQuestion: value.stopNewQuestion,
     stopNotiNewQuestion: value.stopNotiNewQuestion,
     stopPostAnswer: value.stopPostAnswer,
+    mutualOnly: value.mutualOnly,
     defaultHideFromTimeline: value.defaultHideFromTimeline,
     questionBoxName: value.questionBoxName || '질문함',
     defaultPostVisibility: value.visibility,
@@ -91,6 +93,7 @@ export default function Settings() {
         stopNewQuestion: userInfo.stopNewQuestion,
         stopNotiNewQuestion: userInfo.stopNotiNewQuestion,
         stopPostAnswer: userInfo.stopPostAnswer,
+        mutualOnly: userInfo.mutualOnly,
         defaultHideFromTimeline: userInfo.defaultHideFromTimeline,
         questionBoxName: userInfo.questionBoxName,
         visibility: userInfo.defaultPostVisibility,
@@ -250,6 +253,13 @@ export default function Settings() {
                               disabled={formValues.stopNewQuestion}
                             />
                             <span className="font-thin">익명 질문을 받지 않기</span>
+                            <input
+                              {...register('mutualOnly')}
+                              type="checkbox"
+                              className="toggle toggle-success"
+                              disabled={formValues.stopNewQuestion}
+                            />
+                            <span className="font-thin">상호 팔로우된 사람만 허용하기</span>
                             <input
                               {...register('stopNotiNewQuestion')}
                               type="checkbox"

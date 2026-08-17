@@ -64,6 +64,7 @@ export class FollowingService {
             stopNewQuestion: exist.stopNewQuestion,
             stopAnonQuestion: exist.stopAnonQuestion,
             stopNotiNewQuestion: exist.stopNotiNewQuestion,
+            mutualOnly: exist.mutualOnly,
             avatarUrl: exist.avatarUrl,
             questionBoxName: exist.questionBoxName,
             hostname: exist.user.hostName,

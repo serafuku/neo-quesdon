@@ -31,6 +31,32 @@ async function fetchProfile(handle: string) {
   }
 }
 
+function ChatBubble({ userProfile }: { userProfile: userProfileDto } ) {
+  if (userProfile?.stopNewQuestion) {
+    return <></>
+  }
+
+  let bubble_message = '';
+  if (userProfile?.stopAnonQuestion && userProfile?.mutualOnly) {
+    bubble_message = '작성자 공개 + 서로 팔로우한 사람만 질문할 수 있어요!';
+  } else if (userProfile?.stopAnonQuestion) {
+    bubble_message = '작성자 공개 질문만 받아요!';
+  } else if (userProfile?.mutualOnly) {
+    bubble_message = '서로 팔로우한 사람만 질문할 수 있어요!';
+  }
+
+  if (!bubble_message) {
+    return <></>
+  }
+  return <>
+      <div className="chat chat-end w-32 window:w-full desktop:w-full relative bottom-[40%] right-[22%] window:right-[60%] deskstop:left-[60%]">
+        <div className="chat-bubble text-xs flex items-center bg-base-100 text-slate-700 dark:text-slate-400">
+          { bubble_message }
+        </div>
+      </div>
+  </>
+}
+
 export default function Profile() {
   const { handle } = useParams() as { handle: string };
   const profileHandle = decodeURIComponent(handle);
@@ -180,7 +206,8 @@ export default function Profile() {
         setIsLoading(false);
       } else {
         setIsLoading(false);
-        setQuestionSendingDoneMessage({ title: '에러', body: `질문을 보내는데 실패했어요! ${await res.text()}` });
+        questionSendingModalRef.current?.close();
+        await onApiError(res.status, res);
       }
     }
     // 작성자 비공개
@@ -217,7 +244,8 @@ export default function Profile() {
           });
         } else {
           setIsLoading(false);
-          setQuestionSendingDoneMessage({ title: '에러', body: `질문을 보내는데 실패했어요! ${await res.text()}` });
+          questionSendingModalRef.current?.close();
+          await onApiError(res.status, res);
         }
       }
     }
@@ -281,13 +309,8 @@ export default function Profile() {
                   className={`w-24 h-24 object-cover absolute left-[calc(50%-3rem)] rounded-full`}
                 />
               </Link>
-              {userProfile.stopAnonQuestion && !userProfile.stopNewQuestion && (
-                <div className="chat chat-end w-32 window:w-full desktop:w-full relative bottom-[40%] right-[22%] window:right-[60%] deskstop:left-[60%]">
-                  <div className="chat-bubble text-xs flex items-center bg-base-100 text-slate-700 dark:text-slate-400">
-                    작성자 공개 질문만 받아요!
-                  </div>
-                </div>
-              )}
+              <ChatBubble userProfile={ userProfile }></ChatBubble>
+
             </div>
           ) : (
             <div className="skeleton h-24 w-24 rounded-full" />
