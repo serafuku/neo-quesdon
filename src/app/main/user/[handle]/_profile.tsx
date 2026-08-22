@@ -353,6 +353,7 @@ export default function Profile() {
             disabled={(() => {
               if (userProfile?.stopNewQuestion) { return true; }
               if (userProfile?.stopAnonQuestion && !localHandle) { return true; }
+              if (userProfile?.mutualOnly && !localHandle) { return true; }
               return false;
             })()}
             style={{ resize: 'none' }}
