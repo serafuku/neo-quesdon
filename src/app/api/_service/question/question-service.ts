@@ -45,10 +45,13 @@ export class QuestionService {
           where: { blockerHandle: tokenPayload.handle, hidden: false },
         });
       };
+      const getBlockedList = async () => {
+        return prisma.blocking.findMany({
+          where: { blockeeTarget: tokenPayload.handle, hidden: false },
+        })
+      }
       const blockList = await kv.get(getBlockList, { key: `block-${tokenPayload.handle}`, ttl: 600 });
-      const blockedList = await prisma.blocking.findMany({
-        where: { blockeeTarget: tokenPayload.handle, hidden: false },
-      });
+      const blockedList = await kv.get(getBlockedList, { key: `blocked-${tokenPayload.handle}`, ttl: 600 });
       const questions = await this.prisma.question.findMany({
         where: { questioneeHandle: tokenPayload.handle },
         orderBy: { questionedAt: 'desc' },

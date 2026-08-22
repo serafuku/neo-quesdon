@@ -241,16 +241,18 @@ export class AnswerService {
         where: { blockerHandle: tokenPayload!.handle, hidden: false },
       });
     };
+    const getBlockedList = async (): Promise<blocking[]> => {
+      return prisma.blocking.findMany({
+        where: { blockeeTarget: tokenPayload!.handle, hidden: false },
+      });
+    }
     const blockList = tokenPayload?.handle
       ? await kv.get(getBlockList, { key: `block-${tokenPayload.handle}`, ttl: 600 })
       : [];
     const blockTargets = blockList.map((b) => b.blockeeTarget).filter((v): v is string => !!v);
 
     const blockedList = tokenPayload?.handle
-      ? await prisma.blocking.findMany({
-          where: { blockeeTarget: tokenPayload.handle, hidden: false },
-          select: { blockerHandle: true },
-        })
+      ? await kv.get(getBlockedList, { key: `blocked-${tokenPayload.handle}`, ttl: 600 })
       : [];
     const blockedByHandles = blockedList.map((b) => b.blockerHandle).filter((v): v is string => !!v);
 
