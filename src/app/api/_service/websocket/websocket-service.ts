@@ -65,7 +65,7 @@ export class WebsocketService {
         ev_name: 'answer-created-event',
         data: data,
       };
-      const filteredClients = await this.filterBlock(data.answeredPersonHandle);
+      const filteredClients = await this.filterBlock(data.answeredPersonHandle, data.questioner);
       this.sendToList<AnswerCreatedPayload>(filteredClients, ev_data);
     });
     this.eventService.sub<AnswerDeletedEvPayload>('answer-deleted-event', (data) => {
@@ -111,6 +111,7 @@ export class WebsocketService {
     {
       context = {
         id: randomUUID(),
+        user_handle: tokenBody?.handle,
         client_ip: getIpFromIncomingMessage(req),
         pingInterval: undefined,
         lastPongTimeStamp: Date.now(),
@@ -258,43 +259,63 @@ export class WebsocketService {
       };
 
       this.logger.debug(
-        `같은 user/ip ${kv_key} 에 Websocket 커넥션이 10개가 넘었습니다. 가장 오래된 연결 ${target.id} 을 종료합니다...`,
+        `같은 user/ip ${kv_key} 에 Websocket 커넥션이 10개가 넘었습니다. 가장 오래된 연결 ${target.id} 을 종료합니다.`,
       );
       target.ws.addEventListener('close', onClose);
       target.ws.close();
     }
   }
 
-  private async filterBlock(target_handle: string) {
-    const redis_kv_cache = RedisKvCacheService.getInstance();
+  private async filterBlock(handle: string, questioner?: string | null) {
+    const kv = RedisKvCacheService.getInstance();
     const all_values = Array.from(this.clientKvMap.values(), (v) => v);
     const client_list = all_values.flatMap((v) => v);
-    const getBlockListOnlyExistFunction = async (): Promise<blocking[]> => {
-      const all_blockList = await this.prisma.blocking.findMany({
-        where: { blockerHandle: target_handle, hidden: false },
+    const getBlockList = async (): Promise<blocking[]> => {
+      return this.prisma.blocking.findMany({
+        where: { blockerHandle: handle, hidden: false },
       });
-      const existList = [];
-      for (const block of all_blockList) {
-        const exist = await this.prisma.user.findUnique({
-          where: { handle: block.blockeeTarget },
-        });
-        if (exist) {
-          existList.push(block);
-        }
-      }
-      return existList;
     };
-    const blockList = await redis_kv_cache.get(getBlockListOnlyExistFunction, {
-      key: `block-${target_handle}`,
+    const blockList = await kv.get(getBlockList, {
+      key: `block-${handle}`,
       ttl: 600,
     });
-    const blockedList = await this.prisma.blocking.findMany({ where: { blockeeTarget: target_handle, hidden: false } });
+    const blockedList = await this.prisma.blocking.findMany({
+      where: { blockeeTarget: handle, hidden: false },
+    });
+
+    const questionerBlockList: blocking[] = questioner
+      ? await kv.get(
+          async () => {
+            return this.prisma.blocking.findMany({
+              where: { blockerHandle: questioner, hidden: false },
+            });
+          },
+          { key: `block-${questioner}`, ttl: 600 },
+        )
+      : [];
+    const questionerBlockedList = questioner
+      ? await this.prisma.blocking.findMany({
+          where: { blockeeTarget: questioner, hidden: false },
+        })
+      : [];
+
     const filteredClients = client_list.filter((c) => {
+      if (!c.user_handle) {
+        return true;
+      }
       if (blockList.find((b) => b.blockeeTarget === c.user_handle)) {
         return false;
       }
       if (blockedList.find((b) => b.blockerHandle === c.user_handle)) {
         return false;
+      }
+      if (questioner) {
+        if (questionerBlockList.find((b) => b.blockeeTarget === c.user_handle)) {
+          return false;
+        }
+        if (questionerBlockedList.find((b) => b.blockerHandle === c.user_handle)) {
+          return false;
+        }
       }
       return true;
     });
