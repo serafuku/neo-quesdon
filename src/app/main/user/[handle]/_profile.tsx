@@ -15,6 +15,7 @@ import { FaEllipsisVertical } from 'react-icons/fa6';
 import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 import { onApiError } from '@/utils/api-error/onApiError';
 import { FaInfoCircle } from 'react-icons/fa';
+import { BlockEv } from '@/app/main/_events';
 
 type FormValue = {
   question: string;
@@ -124,9 +125,11 @@ export default function Profile() {
     if (!res.ok) {
       onApiError(res.status, res);
       setIsLoading(false);
+      return;
     }
     setIsUserBlocked(true);
     setIsLoading(false);
+    BlockEv.sendBlockUpdatedEvent();
   };
 
   // 차단 해제하는 함수
@@ -140,9 +143,11 @@ export default function Profile() {
     if (!res.ok) {
       onApiError(res.status, res);
       setIsLoading(false);
+      return;
     }
     setIsUserBlocked(false);
     setIsLoading(false);
+    BlockEv.sendBlockUpdatedEvent();
   };
 
   const onSubmit: SubmitHandler<FormValue> = async (e) => {

@@ -1,4 +1,5 @@
 import { createBlockByQuestionDto } from '@/app/_dto/blocking/blocking.dto';
+import { BlockEv } from '@/app/main/_events';
 
 export async function createBlock(id: number, onResNotOk?: (code: number, res: Response) => void) {
   const body: createBlockByQuestionDto = {
@@ -13,5 +14,7 @@ export async function createBlock(id: number, onResNotOk?: (code: number, res: R
     if (onResNotOk) {
       onResNotOk(res.status, res);
     }
+    return;
   }
+  BlockEv.sendBlockUpdatedEvent();
 }

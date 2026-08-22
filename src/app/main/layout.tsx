@@ -4,7 +4,7 @@ import { userProfileMeDto } from '@/app/_dto/fetch-profile/Profile.dto';
 import MainHeader from '@/app/main/_header';
 import { createContext, useEffect, useRef, useState } from 'react';
 import { AnswerWithProfileDto } from '../_dto/answers/Answers.dto';
-import { AnswerEv, ApiErrorEv, ApiErrorEventValues, MyProfileEv, NotificationEv } from './_events';
+import { AnswerEv, ApiErrorEv, ApiErrorEventValues, BlockEv, MyProfileEv, NotificationEv } from './_events';
 import { NotificationDto, NotificationPayloadTypes } from '../_dto/notification/notification.dto';
 import { AnswerCreatedPayload, AnswerDeletedEvPayload } from '@/app/_dto/websocket-event/websocket-event.dto';
 import { Logger } from '@/utils/logger/Logger';
@@ -75,6 +75,7 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
     AnswerEv.addAnswerDeletedEventListener(onAnswerDeleted);
     NotificationEv.addNotificationEventListener(onNotiEv);
     ApiErrorEv.addEventListener(onApiErrorEv);
+    BlockEv.addBlockUpdatedEventListener(onBlockUpdated);
     return () => {
       MyProfileEv.removeEventListener(onProfileUpdateEvent);
       AnswerEv.removeFetchMoreRequestEventListener(onFetchMoreEv);
@@ -82,6 +83,7 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
       AnswerEv.removeAnswerDeletedEventListener(onAnswerDeleted);
       NotificationEv.removeNotificationEventListener(onNotiEv);
       ApiErrorEv.removeEventListener(onApiErrorEv);
+      BlockEv.removeBlockUpdatedEventListener(onBlockUpdated);
     };
   }, []);
 
@@ -160,6 +162,20 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
       }
       setAnswers((prev_answers) => (prev_answers ? [...prev_answers, ...r] : null));
       setUntilId(r[r.length - 1].id);
+    });
+  };
+
+  const onBlockUpdated = () => {
+    setLoading(true);
+    fetchAllAnswers({ sort: 'DESC', limit: 25 }, onApiError).then((r) => {
+      if (r.length === 0) {
+        setAnswers([]);
+        setLoading(false);
+        return;
+      }
+      setAnswers(r);
+      setUntilId(r[r.length - 1].id);
+      setLoading(false);
     });
   };
 
