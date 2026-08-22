@@ -327,7 +327,11 @@ export default function Profile() {
             className={`w-[90%] mb-2 font-thin leading-loose textarea ${errors.question ? 'textarea-error' : 'textarea-bordered'
               }`}
             onKeyDown={onCtrlEnter}
-            disabled={userProfile?.stopNewQuestion === true ? true : false}
+            disabled={(() => {
+              if (userProfile?.stopNewQuestion) { return true; }
+              if (userProfile?.stopAnonQuestion && !localHandle) { return true; }
+              return false;
+            })()}
             style={{ resize: 'none' }}
           />
           {errors.nonAnonQuestion && errors.nonAnonQuestion.type === 'stopAnonQuestion' && (
