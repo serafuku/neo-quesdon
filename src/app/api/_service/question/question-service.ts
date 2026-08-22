@@ -39,11 +39,32 @@ export class QuestionService {
   @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
   public async GetMyQuestionsApi(_req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
     try {
+      const prisma = GetPrismaClient.getClient();
+      const kv = RedisKvCacheService.getInstance();
+
+      const getBlockList = async () => {
+        return prisma.blocking.findMany({
+          where: { blockerHandle: tokenPayload.handle, hidden: false },
+        });
+      };
+      const getBlockedList = async () => {
+        return prisma.blocking.findMany({
+          where: { blockeeTarget: tokenPayload.handle, hidden: false },
+        })
+      }
+      const blockList = await kv.get(getBlockList, { key: `block-${tokenPayload.handle}`, ttl: 600 });
+      const blockedList = await kv.get(getBlockedList, { key: `blocked-${tokenPayload.handle}`, ttl: 600 });
       const questions = await this.prisma.question.findMany({
         where: { questioneeHandle: tokenPayload.handle },
         orderBy: { questionedAt: 'desc' },
       });
-      const questionDtos = questions.map((q) => questionEntityToDto(q));
+      const filteredQuestions = questions.filter((q) => {
+        if (!q.questioner) return true;
+        if (blockList.find((b) => b.blockeeTarget === q.questioner)) return false;
+        if (blockedList.find((b) => b.blockerHandle === q.questioner)) return false;
+        return true;
+      });
+      const questionDtos = filteredQuestions.map((q) => questionEntityToDto(q));
       return NextResponse.json(questionDtos, {
         status: 200,
         headers: { 'Cache-Control': 'private, no-store, max-age=0' },

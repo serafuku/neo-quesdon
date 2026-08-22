@@ -183,6 +183,7 @@ export class BlockingService {
             blockerHandle: user.handle,
           },
         });
+        await this.redisKvService.drop(`block-${user.handle}`);
         this.logger.debug(`${r.count} block deleted (by id ${deleteById.targetId})`);
         return NextResponse.json({ message: `${r.count} block deleted (by id ${deleteById.targetId})` });
       }
@@ -194,6 +195,7 @@ export class BlockingService {
             hidden: false,
           },
         });
+        await this.redisKvService.drop(`block-${user.handle}`);
         this.logger.debug(`${r.count} block deleted`);
         return NextResponse.json({ message: `${r.count} block deleted` });
       }
@@ -201,7 +203,6 @@ export class BlockingService {
       return sendApiError(500, 'Unblock Error!', 'SERVER_ERROR');
     }
 
-    await this.redisKvService.drop(`block-${user.handle}`);
     return NextResponse.json({}, { status: 200 });
   }
 

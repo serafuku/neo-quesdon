@@ -146,6 +146,30 @@ export class MyProfileEv {
   }
 }
 
+const BlockUpdatedEvent = 'BlockUpdatedEvent';
+/**
+ * 차단 생성/해제 시 answers 목록을 refetch하기 위한 Event
+ */
+export class BlockEv {
+  private constructor() {}
+  private static logger = new Logger('BlockEv', { noColor: true });
+  static sendBlockUpdatedEvent() {
+    const ev = new CustomEvent(BlockUpdatedEvent, { bubbles: true });
+    window.dispatchEvent(ev);
+    BlockEv.logger.debug('Send Block Updated Event...');
+  }
+
+  static addBlockUpdatedEventListener(onEvent: () => void) {
+    BlockEv.logger.debug('add Block Updated EventListener');
+    window.addEventListener(BlockUpdatedEvent, onEvent as EventListener);
+  }
+
+  static removeBlockUpdatedEventListener(onEvent: () => void) {
+    BlockEv.logger.debug('Remove Block Updated EventListener');
+    window.removeEventListener(BlockUpdatedEvent, onEvent as EventListener);
+  }
+}
+
 export type ApiErrorEventValues = { title: string; body: string; buttonText: string; errorType: ApiErrorTypes };
 const ApiErrorEvent = 'ApiErrorEvent';
 export class ApiErrorEv {
