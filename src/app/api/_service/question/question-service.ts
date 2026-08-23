@@ -149,23 +149,23 @@ export class QuestionService {
       }
 
       if (questionee_profile.mutualOnly && tokenPayload?.handle !== questionee_user.handle) {
-        const questionee_server = await this.prisma.server.findUniqueOrThrow({
-          where: {
-            instances: questionee_user.hostName
-          }
-        })
+        const kv = RedisKvCacheService.getInstance();
+        const cacheKey = `mutual:${questionee_user.handle}:${tokenPayload.handle}`;
+        let mutual_following: boolean;
+        try {
+          mutual_following = await kv.get(
+            async () => {
+              const questionee_server = await this.prisma.server.findUniqueOrThrow({
+                where: {
+                  instances: questionee_user.hostName,
+                },
+              });
 
-        switch (questionee_server.instanceType) {
-          case 'misskey':
-          case 'cherrypick':
-          case 'iceshrimp':
-          case 'sharkey': {
-            const kv = RedisKvCacheService.getInstance();
-            const cacheKey = `mutual:${questionee_user.handle}:${tokenPayload.handle}`;
-            let mutual_following: boolean;
-            try {
-              mutual_following = await kv.get(
-                async () => {
+              switch (questionee_server.instanceType) {
+                case 'misskey':
+                case 'cherrypick':
+                case 'iceshrimp':
+                case 'sharkey': {
                   const res = await fetch(
                     `https://${questionee_server.instances}/api/users/show`,
                     {
@@ -181,78 +181,54 @@ export class QuestionService {
                     throw new Error(`Mutual follow check failed: ${questionee_server.instances} returned ${res.status}`);
                   }
                   const questioner_data_from_questionee = (await res.json()) as MiUser;
-                  return !! (
+                  return !!(
                     questioner_data_from_questionee.isFollowed && questioner_data_from_questionee.isFollowing
                   );
-                },
-                { key: cacheKey, ttl: 60 },
-              );
-            } catch (err) {
-              this.logger.error('Mutual follow check failed', err);
-              return sendApiError(
-                403,
-                "Mutual follow check failed: questionee's server returned error.",
-                'MUTUAL_FOLLOW_CHECK_FAILED',
-              );
-            }
-            if (!mutual_following) {
-              return sendApiError(403, 'You are not following each other.', 'NOT_MUTUAL_FOLLOWING');
-            }
-            break;
-          }
+                }
 
-          case 'Iceshrimp_NET':
-          case 'mastodon': {
-            const kv = RedisKvCacheService.getInstance();
+                case 'Iceshrimp_NET':
+                case 'mastodon': {
+                  let questioner_key: string;
+                  const cached_key = await this.prisma.foreignServerUserKey.findUnique({
+                    where: {
+                      userHandle_serverDomain: {
+                        userHandle: tokenPayload.handle,
+                        serverDomain: questionee_server.instances,
+                      },
+                    },
+                  });
+                  if (cached_key) {
+                    questioner_key = cached_key.userKey;
+                  } else {
+                    const lookup_res = await fetch(
+                      `https://${questionee_server.instances}/api/v1/accounts/lookup?acct=${tokenPayload.handle.slice(1)}`,
+                      {
+                        headers: { Authorization: `Bearer ${questionee_user.token}` },
+                      },
+                    );
+                    if (!lookup_res.ok) {
+                      throw new Error(
+                        `Mutual follow check failed: ${questionee_server.instances} returned ${lookup_res.status}`,
+                      );
+                    }
+                    const lookup_data = (await lookup_res.json()) as { id: string };
+                    const saved = await this.prisma.foreignServerUserKey.upsert({
+                      where: {
+                        userHandle_serverDomain: {
+                          userHandle: tokenPayload.handle,
+                          serverDomain: questionee_server.instances,
+                        },
+                      },
+                      update: {},
+                      create: {
+                        userHandle: tokenPayload.handle,
+                        serverDomain: questionee_server.instances,
+                        userKey: lookup_data.id,
+                      },
+                    });
+                    questioner_key = saved.userKey;
+                  }
 
-            let questioner_key: string;
-            const cached_key = await this.prisma.foreignServerUserKey.findUnique({
-              where: {
-                userHandle_serverDomain: {
-                  userHandle: tokenPayload.handle,
-                  serverDomain: questionee_server.instances,
-                },
-              },
-            });
-            if (cached_key) {
-              questioner_key = cached_key.userKey;
-            } else {
-              const lookup_res = await fetch(
-                `https://${questionee_server.instances}/api/v1/accounts/lookup?acct=${tokenPayload.handle.slice(1)}`,
-                {
-                  headers: { Authorization: `Bearer ${questionee_user.token}` },
-                },
-              );
-              if (!lookup_res.ok) {
-                return sendApiError(
-                  403,
-                  "Mutual follow check failed: questionee's server returned error.",
-                  'MUTUAL_FOLLOW_CHECK_FAILED',
-                );
-              }
-              const lookup_data = (await lookup_res.json()) as { id: string };
-              const saved = await this.prisma.foreignServerUserKey.upsert({
-                where: {
-                  userHandle_serverDomain: {
-                    userHandle: tokenPayload.handle,
-                    serverDomain: questionee_server.instances,
-                  },
-                },
-                update: {},
-                create: {
-                  userHandle: tokenPayload.handle,
-                  serverDomain: questionee_server.instances,
-                  userKey: lookup_data.id,
-                },
-              });
-              questioner_key = saved.userKey;
-            }
-
-            const cacheKey = `mutual:${questionee_user.handle}:${tokenPayload.handle}`;
-            let mutual_following: boolean;
-            try {
-              mutual_following = await kv.get(
-                async () => {
                   const rel_res = await fetch(
                     `https://${questionee_server.instances}/api/v1/accounts/relationships?id[]=${questioner_key}`,
                     {
@@ -266,27 +242,28 @@ export class QuestionService {
                   }
                   const rel_data = (await rel_res.json()) as MastodonRelationship[];
                   return !!(rel_data[0]?.following && rel_data[0]?.followed_by);
-                },
-                { key: cacheKey, ttl: 60 },
-              );
-            } catch (err) {
-              this.logger.error('Mutual follow check failed', err);
-              return sendApiError(
-                403,
-                "Mutual follow check failed: questionee's server returned error.",
-                'MUTUAL_FOLLOW_CHECK_FAILED',
-              );
-            }
-            if (!mutual_following) {
-              return sendApiError(403, 'You are not following each other.', 'NOT_MUTUAL_FOLLOWING');
-            }
-            break;
-          }
+                }
 
-          default: {
-            this.logger.warn(`Unknown instanceType for mutual check: ${questionee_server.instanceType}`);
-            return sendApiError(403, '...', 'MUTUAL_FOLLOW_CHECK_FAILED');
-          }
+                default: {
+                  this.logger.warn(`Unknown instanceType for mutual check: ${questionee_server.instanceType}`);
+                  throw new Error(
+                    `Mutual follow check failed: unknown instanceType ${questionee_server.instanceType}`,
+                  );
+                }
+              }
+            },
+            { key: cacheKey, ttl: 60 },
+          );
+        } catch (err) {
+          this.logger.error('Mutual follow check failed', err);
+          return sendApiError(
+            403,
+            "Mutual follow check failed: questionee's server returned error.",
+            'MUTUAL_FOLLOW_CHECK_FAILED',
+          );
+        }
+        if (!mutual_following) {
+          return sendApiError(403, 'You are not following each other.', 'NOT_MUTUAL_FOLLOWING');
         }
       }
 
