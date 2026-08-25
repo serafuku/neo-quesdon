@@ -16,6 +16,7 @@ import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 import { onApiError } from '@/utils/api-error/onApiError';
 import { FaInfoCircle } from 'react-icons/fa';
 import { BlockEv } from '@/app/main/_events';
+import { checkMutualFollow } from './action/check-mutual-follow';
 
 type FormValue = {
   question: string;
@@ -67,6 +68,7 @@ export default function Profile() {
     title: '성공',
     body: '질문했어요!',
   });
+  const [isMutual, setIsMutual] = useState<boolean | null>(null);
   const questionSendingModalRef = useRef<HTMLDialogElement>(null);
   const blockConfirmModalRef = useRef<HTMLDialogElement>(null);
   const blockSuccessModalRef = useRef<HTMLDialogElement>(null);
@@ -271,6 +273,7 @@ export default function Profile() {
         const data = (await res.json()) as SearchBlockListResDto;
         setIsUserBlocked(data.isBlocked);
       })();
+      checkMutualFollow(profileHandle, localHandle ?? '').then((res) => setIsMutual(res));
     }
   }, [localHandle]);
 
@@ -347,16 +350,28 @@ export default function Profile() {
               maxLength: 1000,
             })}
             placeholder={(() => {
-              if (userProfile?.stopNewQuestion) return '지금은 질문을 받지 않고 있어요...'
-              if (userProfile?.stopAnonQuestion && !localHandle) return '지금은 익명질문을 받지 않고 있어요...'
-              return '질문 내용을 입력해 주세요'
+              if (userProfile?.stopNewQuestion) return '지금은 질문을 받지 않고 있어요...';
+              if (userProfile?.stopAnonQuestion && !localHandle) return '지금은 익명질문을 받지 않고 있어요...';
+              if (localHandle === userProfile?.handle) return '질문 내용을 입력해 주세요';
+              if (userProfile?.mutualOnly && !isMutual && localHandle) return '맞팔 상태가 아니에요...';
+              return '질문 내용을 입력해 주세요';
             })()}
             className={`w-[90%] mb-2 font-thin leading-loose textarea ${errors.question ? 'textarea-error' : 'textarea-bordered'
               }`}
             onKeyDown={onCtrlEnter}
             disabled={(() => {
-              if (userProfile?.stopNewQuestion) { return true; }
-              if (userProfile?.stopAnonQuestion && !localHandle) { return true; }
+              if (userProfile?.stopNewQuestion) {
+                return true;
+              }
+              if (userProfile?.stopAnonQuestion && !localHandle) {
+                return true;
+              }
+              if (localHandle === userProfile?.handle) {
+                return false;
+              }
+              if (userProfile?.mutualOnly && !isMutual && localHandle) {
+                return true;
+              }
               return false;
             })()}
             style={{ resize: 'none' }}
