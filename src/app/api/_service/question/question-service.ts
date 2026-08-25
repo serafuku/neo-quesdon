@@ -77,8 +77,8 @@ export class QuestionService {
   @ValidateBody(CreateQuestionDto)
   public async CreateQuestionApi(
     req: NextRequest,
-    @JwtPayload tokenPayload: jwtPayloadType,
     @Body data: CreateQuestionDto,
+    @JwtPayload tokenPayload?: jwtPayloadType,
   ) {
     try {
       const questionee_user = await this.prisma.user.findUniqueOrThrow({
@@ -95,12 +95,41 @@ export class QuestionService {
       if (questionee_profile.stopAnonQuestion && data.isAnonymous) {
         this.logger.debug('The user has prohibits anonymous questions.');
         return sendApiError(403, 'The user has prohibits anonymous questions.', 'USER_NOT_ACCEPT_ANONYMOUS_QUESTION');
-      } else if (questionee_profile.stopNewQuestion) {
+      }
+      if (questionee_profile.stopNewQuestion) {
         this.logger.debug('User stops NewQuestion');
         return sendApiError(403, 'User stops NewQuestion', 'USER_NOT_ACCEPT_NEW_QUESTION');
       }
-      // 블락 여부 검사
 
+      if (questionee_profile.mutualOnly) {
+        if (!tokenPayload?.handle) {
+          return sendApiError(
+            403,
+            'You must login to send mutual only question',
+            'YOU_MUST_LOGIN_TO_MUTUAL_ONLY_QUESTION',
+          );
+        }
+        const following =
+          (await this.prisma.following.count({
+            where: {
+              followerHandle: tokenPayload.handle,
+              followeeHandle: questionee_profile.handle,
+            },
+          })) != 0;
+        const followed =
+          (await this.prisma.following.count({
+            where: {
+              followerHandle: questionee_profile.handle,
+              followeeHandle: tokenPayload.handle,
+            },
+          })) != 0;
+        if (!followed || !following) {
+          this.logger.debug('The user only allows question to mutual follower');
+          return sendApiError(403, 'NOT_MUTUAL_FOLLOWING...', 'NOT_MUTUAL_FOLLOWING');
+        }
+      }
+
+      // 블락 여부 검사
       const blockeeTarget = tokenPayload?.handle ?? getIpHash(getIpFromRequest(req));
       const blocked = await this.prisma.blocking.findFirst({
         where: { blockeeTarget: blockeeTarget, blockerHandle: questionee_user.handle },
