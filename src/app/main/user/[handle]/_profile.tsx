@@ -312,7 +312,7 @@ export default function Profile() {
                   className={`w-24 h-24 object-cover absolute left-[calc(50%-3rem)] rounded-full`}
                 />
               </Link>
-              {(userProfile.stopNewQuestion || userProfile.stopNewQuestion || userProfile.mutualOnly) && (
+              {(userProfile.stopNewQuestion || userProfile.stopAnonQuestion || userProfile.mutualOnly) && (
                 <ChatBubble
                   stopAnonQuestion={userProfile.stopAnonQuestion}
                   stopNewQuestion={userProfile.stopNewQuestion}
@@ -352,8 +352,8 @@ export default function Profile() {
             placeholder={(() => {
               if (localHandle === userProfile?.handle) return '질문 내용을 입력해주세요';
               if (userProfile?.stopNewQuestion) return '지금은 질문을 받고 있지 않아요...';
-              if (!localHandle && userProfile?.stopAnonQuestion) return '익명 질문은 받고 있지 않아요...';
-              if (localHandle && userProfile?.mutualOnly && !isMutual) return '맞팔 한정으로 질문을 받고 있어요...';
+              if (!localHandle && (userProfile?.stopAnonQuestion || isMutual)) return '익명 질문은 받고 있지 않아요...';
+              if (userProfile?.mutualOnly && !isMutual) return '맞팔 한정으로 질문을 받고 있어요...';
               return '질문 내용을 입력해주세요';
             })()}
             className={`w-[90%] mb-2 font-thin leading-loose textarea ${errors.question ? 'textarea-error' : 'textarea-bordered'
@@ -362,8 +362,8 @@ export default function Profile() {
             disabled={(() => {
               if (localHandle === userProfile?.handle) return false;
               if (userProfile?.stopNewQuestion) return true;
-              if (!localHandle && userProfile?.stopAnonQuestion) return true;
-              if (localHandle && userProfile?.mutualOnly && !isMutual) return true;
+              if (!localHandle && (userProfile?.stopAnonQuestion || isMutual)) return true;
+              if (userProfile?.mutualOnly && !isMutual) return true;
               return false;
             })()}
             style={{ resize: 'none' }}
