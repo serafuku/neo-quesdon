@@ -21,7 +21,7 @@ export class RefreshFollowWorkerService {
     logger.log('Worker started');
     this.misskeyQueue = new Queue(RefreshFollowMisskey, {
       connection,
-      defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 60 * 1000 } },
+      defaultJobOptions: { attempts: 1, backoff: { type: 'exponential', delay: 60 * 1000 } },
     });
     this.workerMisskey = new Worker(RefreshFollowMisskey, this.processMisskey, {
       connection,
@@ -42,7 +42,7 @@ export class RefreshFollowWorkerService {
 
     this.mastodonQueue = new Queue(RefreshFollowMastodon, {
       connection,
-      defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 60 * 1000 } },
+      defaultJobOptions: { attempts: 1, backoff: { type: 'exponential', delay: 60 * 1000 } },
     });
     this.workerMastodon = new Worker(RefreshFollowMastodon, this.processMastodon, {
       connection,
@@ -150,9 +150,9 @@ export class RefreshFollowWorkerService {
         });
       }
 
-      // 30분 이상 지난 레코드는 지난번에 import된 것으로 간주,
+      // 10분 이상 지난 레코드는 지난번에 import된 것으로 간주,
       // 이번에 timeStamp가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
-      const oldTimeStamp = Date.now() - 30 * 60 * 1000;
+      const oldTimeStamp = Date.now() - 10 * 60 * 1000;
       const oldDate = new Date(oldTimeStamp).toISOString();
       const cleaned = await prisma.following.deleteMany({
         where: { followerHandle: job.data.handle, createdAt: { lte: oldDate } },

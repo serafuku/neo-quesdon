@@ -6,11 +6,15 @@ import type { jwtPayloadType } from '@/app/api/_utils/jwt/jwtPayloadType';
 import { RateLimit } from '@/_service/ratelimiter/decorator';
 import { Logger } from '@/utils/logger/Logger';
 import { NextRequest, NextResponse } from 'next/server';
+import { QueueService } from '@/app/api/_service/queue/queueService';
 
 export class ProfileService {
   private logger = new Logger('ProfileService');
+  private queueService: QueueService;
   private static instance: ProfileService;
-  private constructor() {}
+  private constructor() {
+    this.queueService = QueueService.get();
+  }
   public static get() {
     if (!ProfileService.instance) {
       ProfileService.instance = new ProfileService();
@@ -76,6 +80,12 @@ export class ProfileService {
           headers: { 'Content-type': 'application/json', 'Cache-Control': 'private, no-store, max-age=0' },
         });
       } else {
+        if (resNotMe.mutualOnly && tokenPayload) {
+          const user = await prisma.user.findUnique({where: {handle: resNotMe.handle}});
+          if (user) {
+            await this.queueService.addRefreshFollowJob(user, resMe.instanceType);
+          }
+        }
         return NextResponse.json(resNotMe, {
           status: 200,
           headers: { 'Content-type': 'application/json', 'Cache-Control': 'public, max-age=10' },

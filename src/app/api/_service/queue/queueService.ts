@@ -46,7 +46,7 @@ export class QueueService {
     const prisma = GetPrismaClient.getClient();
     const profile = await prisma.profile.findUniqueOrThrow({ where: { handle: user.handle } });
 
-    if (Date.now() - profile.lastFollowRefreshed.getTime() > 1 * 60 * 60 * 1000) {
+    if (Date.now() - profile.lastFollowRefreshed.getTime() > 1 * 60 * 30 * 1000) {
       await this.followWorker.addJob(user, instanceType);
       await prisma.profile.update({
         where: { handle: user.handle },
