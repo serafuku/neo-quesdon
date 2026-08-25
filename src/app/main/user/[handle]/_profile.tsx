@@ -16,6 +16,7 @@ import { getProxyUrl } from '@/utils/getProxyUrl/getProxyUrl';
 import { onApiError } from '@/utils/api-error/onApiError';
 import { FaInfoCircle } from 'react-icons/fa';
 import { BlockEv } from '@/app/main/_events';
+import { checkMutualFollow } from './action/check-mutual-follow';
 
 type FormValue = {
   question: string;
@@ -32,6 +33,29 @@ async function fetchProfile(handle: string) {
   }
 }
 
+function ChatBubble({
+  stopNewQuestion,
+  stopAnonQuestion,
+  mutualOnly,
+}: {
+  stopAnonQuestion: boolean;
+  stopNewQuestion: boolean;
+  mutualOnly: boolean;
+}) {
+  let sentence = '';
+  if (stopAnonQuestion) sentence = '작성자 공개 질문만 받아요!';
+  if (stopNewQuestion) sentence = '지금은 질문을 받고 있지 않아요...';
+  if (mutualOnly) sentence = '맞팔 한정으로 질문을 받고 있어요!';
+  if (stopAnonQuestion && mutualOnly) sentence = '맞팔 한정 기명 질문만 받고 있어요!';
+  return (
+    <div className='chat chat-end w-32 window:w-full desktop:w-full relative bottom-[40%] right-[22%] window:right-[60%] deskstop:left-[60%]'>
+      <div className='chat-bubble text-xs flex items-center bg-base-100 text-slate-700 dark:text-slate-400'>
+        {sentence}
+      </div>
+    </div>
+  );
+}
+
 export default function Profile() {
   const { handle } = useParams() as { handle: string };
   const profileHandle = decodeURIComponent(handle);
@@ -44,6 +68,7 @@ export default function Profile() {
     title: '성공',
     body: '질문했어요!',
   });
+  const [isMutual, setIsMutual] = useState<boolean | null>(null);
   const questionSendingModalRef = useRef<HTMLDialogElement>(null);
   const blockConfirmModalRef = useRef<HTMLDialogElement>(null);
   const blockSuccessModalRef = useRef<HTMLDialogElement>(null);
@@ -248,6 +273,7 @@ export default function Profile() {
         const data = (await res.json()) as SearchBlockListResDto;
         setIsUserBlocked(data.isBlocked);
       })();
+      checkMutualFollow(profileHandle, localHandle ?? '').then((res) => setIsMutual(res));
     }
   }, [localHandle]);
 
@@ -286,12 +312,12 @@ export default function Profile() {
                   className={`w-24 h-24 object-cover absolute left-[calc(50%-3rem)] rounded-full`}
                 />
               </Link>
-              {userProfile.stopAnonQuestion && !userProfile.stopNewQuestion && (
-                <div className="chat chat-end w-32 window:w-full desktop:w-full relative bottom-[40%] right-[22%] window:right-[60%] deskstop:left-[60%]">
-                  <div className="chat-bubble text-xs flex items-center bg-base-100 text-slate-700 dark:text-slate-400">
-                    작성자 공개 질문만 받아요!
-                  </div>
-                </div>
+              {(userProfile.stopNewQuestion || userProfile.stopAnonQuestion || userProfile.mutualOnly) && (
+                <ChatBubble
+                  stopAnonQuestion={userProfile.stopAnonQuestion}
+                  stopNewQuestion={userProfile.stopNewQuestion}
+                  mutualOnly={userProfile.mutualOnly}
+                />
               )}
             </div>
           ) : (
@@ -323,13 +349,21 @@ export default function Profile() {
               required: 'required',
               maxLength: 1000,
             })}
-            placeholder="질문 내용을 입력해 주세요"
+            placeholder={(() => {
+              if (localHandle === userProfile?.handle) return '질문 내용을 입력해주세요';
+              if (userProfile?.stopNewQuestion) return '지금은 질문을 받고 있지 않아요...';
+              if (!localHandle && (userProfile?.stopAnonQuestion || isMutual)) return '익명 질문은 받고 있지 않아요...';
+              if (userProfile?.mutualOnly && !isMutual) return '맞팔 한정으로 질문을 받고 있어요...';
+              return '질문 내용을 입력해주세요';
+            })()}
             className={`w-[90%] mb-2 font-thin leading-loose textarea ${errors.question ? 'textarea-error' : 'textarea-bordered'
               }`}
             onKeyDown={onCtrlEnter}
             disabled={(() => {
-              if (userProfile?.stopNewQuestion) { return true; }
-              if (userProfile?.stopAnonQuestion && !localHandle) { return true; }
+              if (localHandle === userProfile?.handle) return false;
+              if (userProfile?.stopNewQuestion) return true;
+              if (!localHandle && (userProfile?.stopAnonQuestion || isMutual)) return true;
+              if (userProfile?.mutualOnly && !isMutual) return true;
               return false;
             })()}
             style={{ resize: 'none' }}

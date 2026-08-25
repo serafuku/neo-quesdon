@@ -5,6 +5,7 @@ export interface userProfileDto {
   stopNewQuestion: boolean;
   stopAnonQuestion: boolean;
   stopNotiNewQuestion: boolean;
+  mutualOnly: boolean;
   avatarUrl: string;
   questionBoxName: string;
   hostname: string;

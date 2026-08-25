@@ -60,6 +60,7 @@ model profile {
   defaultHideFromTimeline Boolean        @default(false)
   wordMuteList            String[]       @default([])
   announcement            String         @default("")
+  mutualOnly              Boolean        @default(false)
 }
 
 model answer {

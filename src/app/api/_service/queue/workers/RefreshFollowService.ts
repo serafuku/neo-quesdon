@@ -10,6 +10,7 @@ import { MastodonUser } from '@/app/api/_mastodon-entities/user';
 
 const RefreshFollowMisskey = 'RefreshFollowMisskey';
 const RefreshFollowMastodon = 'RefreshFollowMastodon';
+const followLimit = 65535;
 const logger = new Logger('RefreshFollow');
 
 export class RefreshFollowWorkerService {
@@ -21,7 +22,7 @@ export class RefreshFollowWorkerService {
     logger.log('Worker started');
     this.misskeyQueue = new Queue(RefreshFollowMisskey, {
       connection,
-      defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 60 * 1000 } },
+      defaultJobOptions: { attempts: 1, backoff: { type: 'exponential', delay: 60 * 1000 } },
     });
     this.workerMisskey = new Worker(RefreshFollowMisskey, this.processMisskey, {
       connection,
@@ -42,7 +43,7 @@ export class RefreshFollowWorkerService {
 
     this.mastodonQueue = new Queue(RefreshFollowMastodon, {
       connection,
-      defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 60 * 1000 } },
+      defaultJobOptions: { attempts: 1, backoff: { type: 'exponential', delay: 60 * 1000 } },
     });
     this.workerMastodon = new Worker(RefreshFollowMastodon, this.processMastodon, {
       connection,
@@ -117,7 +118,7 @@ export class RefreshFollowWorkerService {
         }
         const data = (await response.json()) as MisskeyFollowingApiResponse;
 
-        if (data.length === 0) {
+        if (data.length === 0 || data.length > followLimit) {
           logger.log(`${counter} follow imported`);
           break;
         }
@@ -150,9 +151,9 @@ export class RefreshFollowWorkerService {
         });
       }
 
-      // 30분 이상 지난 레코드는 지난번에 import된 것으로 간주,
+      // 10분 이상 지난 레코드는 지난번에 import된 것으로 간주,
       // 이번에 timeStamp가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
-      const oldTimeStamp = Date.now() - 30 * 60 * 1000;
+      const oldTimeStamp = Date.now() - 10 * 60 * 1000;
       const oldDate = new Date(oldTimeStamp).toISOString();
       const cleaned = await prisma.following.deleteMany({
         where: { followerHandle: job.data.handle, createdAt: { lte: oldDate } },
@@ -208,7 +209,7 @@ export class RefreshFollowWorkerService {
         }
         logger.debug(`Processed ${counter} follows...`);
 
-        if (data.length === 0) {
+        if (data.length === 0 || data.length > followLimit) {
           logger.log(`${counter} follow imported`);
           break;
         }
@@ -228,9 +229,9 @@ export class RefreshFollowWorkerService {
         url = next_url;
       }
 
-      // 30 분 이상 지난 레코드는 지난번에 import된 것으로 간주,
+      // 10 분 이상 지난 레코드는 지난번에 import된 것으로 간주,
       // 이번에 timeStamp 가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
-      const oldTimeStamp = Date.now() - 30 * 60 * 1000;
+      const oldTimeStamp = Date.now() - 10 * 60 * 1000;
       const oldDate = new Date(oldTimeStamp).toISOString();
       const cleaned = await prisma.following.deleteMany({
         where: { followerHandle: job.data.handle, createdAt: { lte: oldDate } },
