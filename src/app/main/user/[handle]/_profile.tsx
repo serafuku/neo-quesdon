@@ -350,28 +350,20 @@ export default function Profile() {
               maxLength: 1000,
             })}
             placeholder={(() => {
-              if (userProfile?.stopNewQuestion) return '지금은 질문을 받지 않고 있어요...';
-              if (userProfile?.stopAnonQuestion && !localHandle) return '지금은 익명질문을 받지 않고 있어요...';
-              if (localHandle === userProfile?.handle) return '질문 내용을 입력해 주세요';
-              if (userProfile?.mutualOnly && !isMutual && localHandle) return '맞팔 상태가 아니에요...';
-              return '질문 내용을 입력해 주세요';
+              if (localHandle === userProfile?.handle) return '질문 내용을 입력해주세요';
+              if (userProfile?.stopNewQuestion) return '지금은 질문을 받고 있지 않아요...';
+              if (!localHandle && userProfile?.stopAnonQuestion) return '익명 질문은 받고 있지 않아요...';
+              if (localHandle && userProfile?.mutualOnly && !isMutual) return '맞팔 한정으로 질문을 받고 있어요...';
+              return '질문 내용을 입력해주세요';
             })()}
             className={`w-[90%] mb-2 font-thin leading-loose textarea ${errors.question ? 'textarea-error' : 'textarea-bordered'
               }`}
             onKeyDown={onCtrlEnter}
             disabled={(() => {
-              if (userProfile?.stopNewQuestion) {
-                return true;
-              }
-              if (userProfile?.stopAnonQuestion && !localHandle) {
-                return true;
-              }
-              if (localHandle === userProfile?.handle) {
-                return false;
-              }
-              if (userProfile?.mutualOnly && !isMutual && localHandle) {
-                return true;
-              }
+              if (localHandle === userProfile?.handle) return false;
+              if (userProfile?.stopNewQuestion) return true;
+              if (!localHandle && userProfile?.stopAnonQuestion) return true;
+              if (localHandle && userProfile?.mutualOnly && !isMutual) return true;
               return false;
             })()}
             style={{ resize: 'none' }}
