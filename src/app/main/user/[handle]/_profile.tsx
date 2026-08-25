@@ -32,6 +32,25 @@ async function fetchProfile(handle: string) {
   }
 }
 
+function ChatBubble({stopNewQuestion, stopAnonQuestion, mutualOnly}: {
+  stopAnonQuestion: boolean;
+  stopNewQuestion: boolean;
+  mutualOnly: boolean;
+}) {
+  let sentence = '';
+  if (stopAnonQuestion) sentence = '작성자 공개 질문만 받아요!'
+  if (stopNewQuestion) sentence = '지금은 질문을 받고 있지 않아요...'
+  if (mutualOnly) sentence = '맞팔 한정으로 질문을 받고 있어요!'
+  if (stopAnonQuestion && mutualOnly) sentence = '맞팔 한정 기명 질문만 받고 있어요!'
+  return (
+    <div className="chat chat-end w-32 window:w-full desktop:w-full relative bottom-[40%] right-[22%] window:right-[60%] deskstop:left-[60%]">
+      <div className="chat-bubble text-xs flex items-center bg-base-100 text-slate-700 dark:text-slate-400">
+        {sentence}
+      </div>
+    </div>
+  )
+}
+
 export default function Profile() {
   const { handle } = useParams() as { handle: string };
   const profileHandle = decodeURIComponent(handle);
@@ -286,13 +305,7 @@ export default function Profile() {
                   className={`w-24 h-24 object-cover absolute left-[calc(50%-3rem)] rounded-full`}
                 />
               </Link>
-              {userProfile.stopAnonQuestion && !userProfile.stopNewQuestion && (
-                <div className="chat chat-end w-32 window:w-full desktop:w-full relative bottom-[40%] right-[22%] window:right-[60%] deskstop:left-[60%]">
-                  <div className="chat-bubble text-xs flex items-center bg-base-100 text-slate-700 dark:text-slate-400">
-                    작성자 공개 질문만 받아요!
-                  </div>
-                </div>
-              )}
+              <ChatBubble stopAnonQuestion={userProfile.stopAnonQuestion} stopNewQuestion={userProfile.stopNewQuestion} mutualOnly={userProfile.mutualOnly} />
             </div>
           ) : (
             <div className="skeleton h-24 w-24 rounded-full" />
@@ -323,7 +336,11 @@ export default function Profile() {
               required: 'required',
               maxLength: 1000,
             })}
-            placeholder="질문 내용을 입력해 주세요"
+            placeholder={(() => {
+              if (userProfile?.stopNewQuestion) return '지금은 질문을 받지 않고 있어요...'
+              if (userProfile?.stopAnonQuestion && !localHandle) return '지금은 익명질문을 받지 않고 있어요...'
+              return '질문 내용을 입력해 주세요'
+            })()}
             className={`w-[90%] mb-2 font-thin leading-loose textarea ${errors.question ? 'textarea-error' : 'textarea-bordered'
               }`}
             onKeyDown={onCtrlEnter}
