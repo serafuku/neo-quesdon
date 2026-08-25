@@ -109,6 +109,7 @@ export class QuestionService {
             'YOU_MUST_LOGIN_TO_MUTUAL_ONLY_QUESTION',
           );
         }
+        const isMe = questionee_profile.handle === tokenPayload.handle;
         const following =
           (await this.prisma.following.count({
             where: {
@@ -123,7 +124,7 @@ export class QuestionService {
               followeeHandle: tokenPayload.handle,
             },
           })) != 0;
-        if (!followed || !following) {
+        if ((!followed || !following) && !isMe) {
           this.logger.debug('The user only allows question to mutual follower');
           return sendApiError(403, 'NOT_MUTUAL_FOLLOWING...', 'NOT_MUTUAL_FOLLOWING');
         }
