@@ -60,6 +60,7 @@ export class ProfileService {
         hostname: userProfile.user.hostName,
         instanceType: instanceType,
         announcement: userProfile.announcement,
+        mutualOnly: userProfile.mutualOnly
       };
       const resMe: userProfileMeDto = {
         ...resNotMe,

@@ -69,6 +69,7 @@ export class FollowingService {
             hostname: exist.user.hostName,
             instanceType: exist.user.server.instanceType,
             announcement: exist.announcement,
+            mutualOnly: exist.mutualOnly,
           },
         });
       });

@@ -13,6 +13,7 @@ export function profileToDto(profile: profile, hostName: string, instanceType: $
     hostname: hostName,
     instanceType: instanceType,
     announcement: profile.announcement,
+    mutualOnly: profile.mutualOnly,
   };
   return data;
 }
