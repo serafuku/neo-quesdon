@@ -32,23 +32,27 @@ async function fetchProfile(handle: string) {
   }
 }
 
-function ChatBubble({stopNewQuestion, stopAnonQuestion, mutualOnly}: {
+function ChatBubble({
+  stopNewQuestion,
+  stopAnonQuestion,
+  mutualOnly,
+}: {
   stopAnonQuestion: boolean;
   stopNewQuestion: boolean;
   mutualOnly: boolean;
 }) {
   let sentence = '';
-  if (stopAnonQuestion) sentence = '작성자 공개 질문만 받아요!'
-  if (stopNewQuestion) sentence = '지금은 질문을 받고 있지 않아요...'
-  if (mutualOnly) sentence = '맞팔 한정으로 질문을 받고 있어요!'
-  if (stopAnonQuestion && mutualOnly) sentence = '맞팔 한정 기명 질문만 받고 있어요!'
+  if (stopAnonQuestion) sentence = '작성자 공개 질문만 받아요!';
+  if (stopNewQuestion) sentence = '지금은 질문을 받고 있지 않아요...';
+  if (mutualOnly) sentence = '맞팔 한정으로 질문을 받고 있어요!';
+  if (stopAnonQuestion && mutualOnly) sentence = '맞팔 한정 기명 질문만 받고 있어요!';
   return (
-    <div className="chat chat-end w-32 window:w-full desktop:w-full relative bottom-[40%] right-[22%] window:right-[60%] deskstop:left-[60%]">
-      <div className="chat-bubble text-xs flex items-center bg-base-100 text-slate-700 dark:text-slate-400">
+    <div className='chat chat-end w-32 window:w-full desktop:w-full relative bottom-[40%] right-[22%] window:right-[60%] deskstop:left-[60%]'>
+      <div className='chat-bubble text-xs flex items-center bg-base-100 text-slate-700 dark:text-slate-400'>
         {sentence}
       </div>
     </div>
-  )
+  );
 }
 
 export default function Profile() {
@@ -305,7 +309,13 @@ export default function Profile() {
                   className={`w-24 h-24 object-cover absolute left-[calc(50%-3rem)] rounded-full`}
                 />
               </Link>
-              <ChatBubble stopAnonQuestion={userProfile.stopAnonQuestion} stopNewQuestion={userProfile.stopNewQuestion} mutualOnly={userProfile.mutualOnly} />
+              {(userProfile.stopNewQuestion || userProfile.stopNewQuestion || userProfile.mutualOnly) && (
+                <ChatBubble
+                  stopAnonQuestion={userProfile.stopAnonQuestion}
+                  stopNewQuestion={userProfile.stopNewQuestion}
+                  mutualOnly={userProfile.mutualOnly}
+                />
+              )}
             </div>
           ) : (
             <div className="skeleton h-24 w-24 rounded-full" />
