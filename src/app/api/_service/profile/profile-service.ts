@@ -23,7 +23,7 @@ export class ProfileService {
   }
 
   @Auth({ isOptional: true })
-  @RateLimit({ bucket_time: 600, req_limit: 300 }, 'user-or-ip')
+  @RateLimit({ bucket_time: 60, req_limit: 60 }, 'user-or-ip')
   public async fetchProfile(
     req: NextRequest,
     isMe: boolean,

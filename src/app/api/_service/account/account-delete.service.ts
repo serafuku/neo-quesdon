@@ -29,7 +29,7 @@ export class AccountDeleteService {
 
   @ValidateBody(AccountDeleteReqDto)
   @Auth()
-  @RateLimit({ bucket_time: 60, req_limit: 60 }, 'ip')
+  @RateLimit({ bucket_time: 60, req_limit: 2 }, 'ip')
   public async deleteAccountApi(
     _req: NextRequest,
     @Body body: AccountDeleteReqDto,

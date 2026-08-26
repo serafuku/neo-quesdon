@@ -75,7 +75,7 @@ export class NotificationService {
   }
 
   @Auth()
-  @RateLimit({ bucket_time: 60, req_limit: 120 }, 'user')
+  @RateLimit({ bucket_time: 60, req_limit: 30 }, 'user')
   public async getMyNotificationsApi(
     _req: NextRequest,
     @JwtPayload tokenPayload?: jwtPayloadType,
@@ -114,7 +114,7 @@ export class NotificationService {
   }
 
   @Auth()
-  @RateLimit({ bucket_time: 60, req_limit: 120 }, 'user')
+  @RateLimit({ bucket_time: 60, req_limit: 30 }, 'user')
   public async readAllNotificationsApi(
     _req: NextRequest,
     @JwtPayload tokenPayload?: jwtPayloadType,
@@ -133,7 +133,7 @@ export class NotificationService {
   }
 
   @Auth()
-  @RateLimit({ bucket_time: 60, req_limit: 10 }, 'user')
+  @RateLimit({ bucket_time: 60, req_limit: 2 }, 'user')
   public async deleteAllNotificationApi(
     _req: NextRequest,
     @JwtPayload tokenPayload?: jwtPayloadType,

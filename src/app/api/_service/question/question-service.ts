@@ -34,7 +34,7 @@ export class QuestionService {
   }
 
   @Auth()
-  @RateLimit({ bucket_time: 300, req_limit: 150 }, 'user')
+  @RateLimit({ bucket_time: 60, req_limit: 60 }, 'user')
   public async GetMyQuestionsApi(_req: NextRequest, @JwtPayload tokenPayload: jwtPayloadType) {
     try {
       const prisma = GetPrismaClient.getClient();

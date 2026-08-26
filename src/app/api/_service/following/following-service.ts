@@ -20,7 +20,7 @@ export class FollowingService {
   }
 
   @Auth()
-  @RateLimit({ bucket_time: 300, req_limit: 300 }, 'user')
+  @RateLimit({ bucket_time: 60, req_limit: 30 }, 'user')
   @ValidateBody(FollowingListReqDto)
   public async getFollowing(_req: NextRequest, @JwtPayload tokenBody: jwtPayloadType, @Body data: FollowingListReqDto) {
     const prisma = GetPrismaClient.getClient();

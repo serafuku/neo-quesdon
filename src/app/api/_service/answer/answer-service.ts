@@ -46,7 +46,7 @@ export class AnswerService {
   }
 
   @Auth()
-  @RateLimit({ bucket_time: 300, req_limit: 300 }, 'user')
+  @RateLimit({ bucket_time: 60, req_limit: 12 }, 'user')
   @ValidateBody(CreateAnswerDto)
   public async createAnswerApi(
     _req: NextRequest,
@@ -179,7 +179,7 @@ export class AnswerService {
   }
 
   @Auth()
-  @RateLimit({ bucket_time: 600, req_limit: 300 }, 'user')
+  @RateLimit({ bucket_time: 60, req_limit: 60 }, 'user')
   public async deleteAnswer(req: NextRequest, answerId: string, @JwtPayload tokenPayload: jwtPayloadType) {
     if (!isString(answerId)) {
       return sendApiError(400, 'answerId is not string', 'BAD_REQUEST');
@@ -210,7 +210,7 @@ export class AnswerService {
   }
 
   @Auth({ isOptional: true })
-  @RateLimit({ bucket_time: 600, req_limit: 600 }, 'ip')
+  @RateLimit({ bucket_time: 60, req_limit: 60 }, 'ip')
   public async GetAllAnswersApi(req: NextRequest, @JwtPayload tokenPayload?: jwtPayloadType) {
     const prisma = GetPrismaClient.getClient();
     const kv = RedisKvCacheService.getInstance();
@@ -317,7 +317,7 @@ export class AnswerService {
     });
   }
 
-  @RateLimit({ bucket_time: 600, req_limit: 300 }, 'ip')
+  @RateLimit({ bucket_time: 60, req_limit: 60 }, 'ip')
   public async fetchUserAnswers(req: NextRequest, userHandle: string) {
     const prisma = GetPrismaClient.getClient();
     const searchParams = req.nextUrl.searchParams;
@@ -388,7 +388,7 @@ export class AnswerService {
     }
   }
 
-  @RateLimit({ bucket_time: 300, req_limit: 600 }, 'ip')
+  @RateLimit({ bucket_time: 60, req_limit: 60 }, 'ip')
   public async GetSingleAnswerApi(_req: NextRequest, answerId: string, userHandle: string) {
     const dto = await this.GetSingleAnswerDto(answerId, userHandle);
     if (!dto) {

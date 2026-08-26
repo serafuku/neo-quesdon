@@ -207,7 +207,7 @@ export class BlockingService {
   }
 
   @Auth()
-  @RateLimit({ bucket_time: 60, req_limit: 2 }, 'user')
+  @RateLimit({ bucket_time: 120, req_limit: 2 }, 'user')
   public async importBlockFromRemote(_req: NextRequest, @JwtPayload tokenBody: jwtPayloadType) {
     const user = await this.prisma.user.findUnique({ where: { handle: tokenBody.handle } });
     if (!user) {
