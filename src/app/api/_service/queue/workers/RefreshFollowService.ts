@@ -151,9 +151,9 @@ export class RefreshFollowWorkerService {
         });
       }
 
-      // 10분 이상 지난 레코드는 지난번에 import된 것으로 간주,
-      // 이번에 timeStamp가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
-      const oldTimeStamp = Date.now() - 10 * 60 * 1000;
+      // 30분 이상 지난 레코드는 언팔로우 한 것으로 간주,
+      // 최근에 timeStamp가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
+      const oldTimeStamp = Date.now() - 30 * 60 * 1000;
       const oldDate = new Date(oldTimeStamp).toISOString();
       const cleaned = await prisma.following.deleteMany({
         where: { followerHandle: job.data.handle, createdAt: { lte: oldDate } },
@@ -229,9 +229,9 @@ export class RefreshFollowWorkerService {
         url = next_url;
       }
 
-      // 10 분 이상 지난 레코드는 지난번에 import된 것으로 간주,
-      // 이번에 timeStamp 가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
-      const oldTimeStamp = Date.now() - 10 * 60 * 1000;
+      // 30분 이상 지난 레코드는 언팔로우 한 것으로 간주,
+      // 최근에 timeStamp가 업데이트 되지 않았다는 것은 언팔로우 했다는 뜻
+      const oldTimeStamp = Date.now() - 30 * 60 * 1000;
       const oldDate = new Date(oldTimeStamp).toISOString();
       const cleaned = await prisma.following.deleteMany({
         where: { followerHandle: job.data.handle, createdAt: { lte: oldDate } },
