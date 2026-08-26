@@ -270,22 +270,32 @@ export class WebsocketService {
     const kv = RedisKvCacheService.getInstance();
     const all_values = Array.from(this.clientKvMap.values(), (v) => v);
     const client_list = all_values.flatMap((v) => v);
-    const getBlockList = async (): Promise<blocking[]> => {
-      return this.prisma.blocking.findMany({
-        where: { blockerHandle: handle, hidden: false },
-      });
-    };
-    const blockList = await kv.get(getBlockList, {
-      key: `block-${handle}`,
-      ttl: 600,
-    });
-    const blockedList = await this.prisma.blocking.findMany({
-      where: { blockeeTarget: handle, hidden: false },
-    });
+    const blockList = await kv.get(
+      async (): Promise<blocking[]> => {
+        return this.prisma.blocking.findMany({
+          where: { blockerHandle: handle, hidden: false },
+        });
+      },
+      {
+        key: `block-${handle}`,
+        ttl: 600,
+      },
+    );
+    const blockedList = await kv.get(
+      async (): Promise<blocking[]> => {
+        return this.prisma.blocking.findMany({
+          where: { blockeeTarget: handle, hidden: false },
+        });
+      },
+      {
+        key: `blocked-${handle}`,
+        ttl: 600,
+      },
+    );
 
     const questionerBlockList: blocking[] = questioner
       ? await kv.get(
-          async () => {
+          async (): Promise<blocking[]> => {
             return this.prisma.blocking.findMany({
               where: { blockerHandle: questioner, hidden: false },
             });
@@ -294,9 +304,14 @@ export class WebsocketService {
         )
       : [];
     const questionerBlockedList = questioner
-      ? await this.prisma.blocking.findMany({
-          where: { blockeeTarget: questioner, hidden: false },
-        })
+      ? await kv.get(
+          async (): Promise<blocking[]> => {
+            return this.prisma.blocking.findMany({
+              where: { blockeeTarget: questioner, hidden: false },
+            });
+          },
+          { key: `blocked-${questioner}`, ttl: 600 },
+        )
       : [];
 
     const filteredClients = client_list.filter((c) => {

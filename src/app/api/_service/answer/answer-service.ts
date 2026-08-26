@@ -245,7 +245,7 @@ export class AnswerService {
       return prisma.blocking.findMany({
         where: { blockeeTarget: tokenPayload!.handle, hidden: false },
       });
-    }
+    };
     const blockList = tokenPayload?.handle
       ? await kv.get(getBlockList, { key: `block-${tokenPayload.handle}`, ttl: 600 })
       : [];
@@ -266,10 +266,7 @@ export class AnswerService {
             : []),
           // 나를 차단한 사용자가 작성한 답변/질문 제외
           ...(blockedByHandles.length > 0
-            ? [
-                { answeredPersonHandle: { notIn: blockedByHandles } },
-                ...buildQuestionerNotIn(blockedByHandles),
-              ]
+            ? [{ answeredPersonHandle: { notIn: blockedByHandles } }, ...buildQuestionerNotIn(blockedByHandles)]
             : []),
           {
             id: {
@@ -422,29 +419,6 @@ export class AnswerService {
       answeredPerson: profileDto,
     };
     return dto;
-  }
-
-  public async filterBlock(answers: AnswerWithProfileDto[], myHandle: string) {
-    const prisma = GetPrismaClient.getClient();
-    const kv = RedisKvCacheService.getInstance();
-    const getBlockList = async (): Promise<blocking[]> => {
-      return prisma.blocking.findMany({
-        where: { blockerHandle: myHandle, hidden: false },
-      });
-    };
-    const blockList = await kv.get(getBlockList, { key: `block-${myHandle}`, ttl: 600 });
-    const blockedList = await prisma.blocking.findMany({ where: { blockeeTarget: myHandle, hidden: false } });
-    const filteredAnswers = answers.filter((ans) => {
-      if (blockList.find((b) => b.blockeeTarget === ans.answeredPersonHandle || b.blockeeTarget === ans.questioner)) {
-        return false;
-      }
-      if (blockedList.find((b) => b.blockerHandle === ans.answeredPersonHandle || b.blockerHandle === ans.questioner)) {
-        return false;
-      }
-      return true;
-    });
-
-    return filteredAnswers;
   }
 }
 
