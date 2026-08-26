@@ -80,10 +80,12 @@ class RemoteImageProxy {
             'REMOTE_SERVER_UNKNOWN_ERROR',
           );
         }
-        const content_length = remote_res.headers['content-length'];
+        const content_length_value = remote_res.headers['content-length'];
+        let content_length: number | undefined = undefined;
         let content_type = remote_res.headers['content-type'];
-        if (isNumberString(content_length)) {
-          if (parseInt(content_length) > REMOTE_MEDIA_SIZE_LIMIT) {
+        if (typeof content_length_value === 'string' && isNumberString(content_length_value)) {
+          content_length = parseInt(content_length_value);
+          if (content_length > REMOTE_MEDIA_SIZE_LIMIT) {
             abortController.abort();
             return sendApiError(413, `Remote Content Too Large`, 'REMOTE_MEDIA_TOO_LARGE');
           }
@@ -99,7 +101,7 @@ class RemoteImageProxy {
         const etag = remote_res.headers['etag'];
 
         const resHeader = {
-          ...(content_length ? { 'content-length': content_length } : {}),
+          ...(content_length ? { 'content-length': String(content_length) } : {}),
           'Content-Type': content_type,
           'Content-Disposition': content_disposition,
           'Cache-Control': 'public, max-age=31536000, immutable',

@@ -25,7 +25,7 @@ export const AnswersContext = createContext<MainPageContextType | undefined>(und
 export const NotificationContext = createContext<NotificationDto | undefined>(undefined);
 export const MyProfileContext = createContext<userProfileMeDto | undefined>(undefined);
 
-export default function MainLayout({ modal, children }: { children: React.ReactNode; modal: React.ReactNode }) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [userProfileData, setUserProfileData] = useState<userProfileMeDto | undefined>();
   const [answers, setAnswers] = useState<AnswerWithProfileDto[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -211,7 +211,6 @@ export default function MainLayout({ modal, children }: { children: React.ReactN
       <MyProfileContext.Provider value={userProfileData}>
         <AnswersContext.Provider value={{ answers, loading, untilId }}>
           <NotificationContext.Provider value={noti}>
-            {modal}
             <header className="w-full h-full flex justify-center">
               <MainHeader questionsNum={questionsNum} loginChecked={loginChecked} />
             </header>
