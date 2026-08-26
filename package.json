@@ -8,14 +8,14 @@
     "@/_service": "./dist/src/app/api/_service"
   },
   "scripts": {
-    "dev": "source config/local_dev.env && nodemon",
+    "dev": ". config/local_dev.env && nodemon",
     "build": "npm run lint && next build && tsc --project tsconfig.server.json",
-    "start": "source config/local_dev.env && NODE_ENV=production node -r ./paths-bootstrap.js dist/server.js",
+    "start": ". config/local_dev.env && NODE_ENV=production node -r ./paths-bootstrap.js dist/server.js",
     "start:docker": "prisma migrate deploy && NODE_ENV=production node -r ./paths-bootstrap.js dist/server.js",
     "lint": "eslint ./src",
     "format": "prettier --write ./src",
-    "prisma": "source config/local_dev.env && prisma migrate dev",
-    "prisma:studio": "dotenv -e config/local_dev.env -- npx prisma studio"
+    "prisma": ". config/local_dev.env && prisma migrate dev",
+    "prisma:studio": ". config/local_dev.env && npx prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^6.0.1",
