@@ -80,7 +80,7 @@ export class ProfileService {
           headers: { 'Content-type': 'application/json', 'Cache-Control': 'private, no-store, max-age=0' },
         });
       } else {
-        if (resNotMe.mutualOnly && tokenPayload) {
+        if (resNotMe.mutualOnly) {
           const user = await prisma.user.findUnique({where: {handle: resNotMe.handle}});
           if (user) {
             await this.queueService.addRefreshFollowJob(user, resMe.instanceType);
