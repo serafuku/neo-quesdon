@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    forceSwcTransforms: true,
   },
   serverExternalPackages: ['re2'],
   headers: async () => {
