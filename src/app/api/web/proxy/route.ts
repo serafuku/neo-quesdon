@@ -58,21 +58,34 @@ class RemoteImageProxy {
           res.headers.set('Cache-Control', 'public, max-age=3600');
           return res;
         }
-        const remote_res = await axios.get(url.toString(), {
-          timeout: 10000,
-          signal: abortController.signal,
-          onDownloadProgress(progressEvent) {
-            if (progressEvent.loaded > REMOTE_MEDIA_SIZE_LIMIT) {
-              RemoteImageProxy.logger.error('max file size exceeded', progressEvent.loaded);
-              abortController.abort();
-            }
-          },
-          responseType: 'stream',
-          validateStatus: () => {
-            // ignore response code because we handle manually
-            return true;
-          },
-        });
+        let remote_res;
+        try {
+          remote_res = await axios.get(url.toString(), {
+            timeout: 10000,
+            signal: abortController.signal,
+            onDownloadProgress(progressEvent) {
+              if (progressEvent.loaded > REMOTE_MEDIA_SIZE_LIMIT) {
+                RemoteImageProxy.logger.error('max file size exceeded', progressEvent.loaded);
+                abortController.abort();
+              }
+            },
+            responseType: 'stream',
+            validateStatus: () => {
+              // ignore response code because we handle manually
+              return true;
+            },
+          });
+        } catch (err) {
+          if (axios.isAxiosError(err) && err.code === 'ERR_CANCELED') {
+            const res = sendApiError(413, `Remote Content Too Large`, 'REMOTE_MEDIA_TOO_LARGE');
+            res.headers.set('Cache-Control', 'public, max-age=3600');
+            return res;
+          } else {
+            const res = sendApiError(500, `${String(err)}`, 'SERVER_ERROR');
+            res.headers.set('Cache-Control', 'public, max-age=600');
+            return res;
+          }
+        }
 
         if (remote_res.status === 404) {
           const not_found_res = sendApiError(
