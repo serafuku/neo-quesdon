@@ -44,12 +44,12 @@ class RemoteImageProxy {
           if (
             !address.isCorrect() ||
             address.isMulticast() ||
-            address.isInSubnet(new Address4('0.0.0.0/8')) ||
-            address.isInSubnet(new Address4('127.0.0.0/8')) ||
-            address.isInSubnet(new Address4('10.0.0.0/8')) ||
-            address.isInSubnet(new Address4('192.168.0.0/16')) ||
-            address.isInSubnet(new Address4('172.16.0.0/12')) ||
-            address.isInSubnet(new Address4('100.64.0.0/10'))
+            address.isCGNAT() ||
+            address.isPrivate() ||
+            address.isLoopback() ||
+            address.isBroadcast() ||
+            address.isUnspecified() ||
+            address.isLinkLocal()
           ) {
             return sendApiError(400, 'Proxy to private network not allowed', 'BAD_REQUEST');
           }
@@ -57,6 +57,7 @@ class RemoteImageProxy {
           return sendApiError(400, `${String(err)}`, 'BAD_REQUEST');
         }
         const remote_res = await axios.get(url.toString(), {
+          timeout: 10000,
           signal: abortController.signal,
           onDownloadProgress(progressEvent) {
             if (progressEvent.loaded > REMOTE_MEDIA_SIZE_LIMIT) {
@@ -72,13 +73,21 @@ class RemoteImageProxy {
         });
 
         if (remote_res.status === 404) {
-          return sendApiError(remote_res.status, `Proxy Fail! Remote Server Send NOT_FOUND`, 'NOT_FOUND');
+          const not_found_res = sendApiError(
+            remote_res.status,
+            `Proxy Fail! Remote Server Send NOT_FOUND`,
+            'NOT_FOUND',
+          );
+          not_found_res.headers.set('Cache-Control', 'public, max-age=3600');
+          return not_found_res;
         } else if (!(remote_res.status === 200)) {
-          return sendApiError(
+          const error_res = sendApiError(
             500,
             `Proxy Fail! Remote server Sent ${remote_res.status}`,
             'REMOTE_SERVER_UNKNOWN_ERROR',
           );
+          error_res.headers.set('Cache-Control', 'public, max-age=600');
+          return error_res;
         }
         const content_length_value = remote_res.headers['content-length'];
         let content_length: number | undefined = undefined;
