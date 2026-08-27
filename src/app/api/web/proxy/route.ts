@@ -54,7 +54,9 @@ class RemoteImageProxy {
             return sendApiError(400, 'Proxy to private network not allowed', 'BAD_REQUEST');
           }
         } catch (err) {
-          return sendApiError(400, `${String(err)}`, 'BAD_REQUEST');
+          const res = sendApiError(400, `${String(err)}`, 'BAD_REQUEST');
+          res.headers.set('Cache-Control', 'public, max-age=3600');
+          return res;
         }
         const remote_res = await axios.get(url.toString(), {
           timeout: 10000,
@@ -96,7 +98,9 @@ class RemoteImageProxy {
           content_length = parseInt(content_length_value);
           if (content_length > REMOTE_MEDIA_SIZE_LIMIT) {
             abortController.abort();
-            return sendApiError(413, `Remote Content Too Large`, 'REMOTE_MEDIA_TOO_LARGE');
+            const res = sendApiError(413, `Remote Content Too Large`, 'REMOTE_MEDIA_TOO_LARGE');
+            res.headers.set('Cache-Control', 'public, max-age=3600');
+            return res;
           }
         }
         if (typeof content_type !== 'string' || !content_type.startsWith('image/')) {
