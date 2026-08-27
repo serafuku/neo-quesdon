@@ -28,20 +28,13 @@ export class FollowingService {
 
     const fn = async () => {
       const follows = await prisma.following.findMany({ where: { followerHandle: user.handle } });
-
-      const filteredList = [];
-      for (const f of follows) {
-        const exist = await prisma.profile.findUnique({
-          where: { handle: f.followeeHandle },
-          include: {
-            _count: { select: { answer: true } },
-            user: { include: { server: { select: { instances: true, instanceType: true } } } },
-          },
-        });
-        if (exist) {
-          filteredList.push(exist);
-        }
-      }
+      const filteredList = await prisma.profile.findMany({
+        where: { handle: { in: follows.map((f) => f.followeeHandle) } },
+        include: {
+          _count: { select: { answer: true } },
+          user: { include: { server: { select: { instances: true, instanceType: true } } } },
+        },
+      });
       // 답변순 정렬
       filteredList.sort((a, b) => {
         if (a._count.answer > b._count.answer) {
@@ -77,7 +70,7 @@ export class FollowingService {
     };
 
     const kv = RedisKvCacheService.getInstance();
-    const filteredDto = await kv.get(fn, { key: `follow-${user.handle}`, ttl: 600 });
+    const filteredDto = await kv.get(fn, { key: `follow-${user.handle}`, ttl: 300 });
     if (data.limit) {
       filteredDto.followingList = filteredDto.followingList.slice(0, data.limit);
     }
