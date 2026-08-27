@@ -31,19 +31,15 @@ export class FollowingService {
       const filteredList = await prisma.profile.findMany({
         where: { handle: { in: follows.map((f) => f.followeeHandle) } },
         include: {
-          _count: { select: { answer: true } },
           user: { include: { server: { select: { instances: true, instanceType: true } } } },
+          answer: { orderBy: { answeredAt: 'desc' }, take: 1, select: { answeredAt: true } },
         },
       });
-      // 답변순 정렬
+      // 최근 답변순 정렬
       filteredList.sort((a, b) => {
-        if (a._count.answer > b._count.answer) {
-          return -1;
-        }
-        if (b._count.answer > a._count.answer) {
-          return 1;
-        }
-        return 0;
+        const aAnsweredAt = a.answer[0]?.answeredAt.getTime() ?? 0;
+        const bAnsweredAt = b.answer[0]?.answeredAt.getTime() ?? 0;
+        return bAnsweredAt - aAnsweredAt;
       });
 
       const filteredDto: FollowingListResDto = { followingList: [] };
