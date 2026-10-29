@@ -205,7 +205,7 @@ export class AnswerService {
       return NextResponse.json({ message: 'Delete Answer Successful' }, { status: 200 });
     } catch (err) {
       this.logger.error('Error: Delete answer:', err);
-      return sendApiError(500, `Error ${JSON.stringify(err)}`, 'SERVER_ERROR');
+      return sendApiError(500, 'Fail to delete answer', 'SERVER_ERROR');
     }
   }
 

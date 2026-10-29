@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        return sendApiError(500, `Login Error! From Remote: ${await res.text()}`, 'MISSKEY_ERROR');
+        logger.warn('Misskey Login Fail!. Misskey Response: ', await res.text());
+        return sendApiError(500, 'Login Error! Remote instance error', 'MISSKEY_ERROR');
       }
       const data = await res.json();
       const appSecret = data.secret;
@@ -89,7 +90,8 @@ export async function POST(req: NextRequest) {
       });
       const authRes = await initiateMisskeyAuthSession(misskeyHost, appSecret);
       if (!authRes.ok) {
-        return sendApiError(500, `Fail to Create Auth Session: ${await authRes.text()}`, 'SERVER_ERROR');
+        logger.warn('Fail to Create Auth Session. Response: ', await authRes.text());
+        return sendApiError(500, 'Fail to Create Auth Session', 'SERVER_ERROR');
       }
       const misskeyAuthSession = (await authRes.json()) as MiAuthSession;
       const redis = RedisService.getRedis();
@@ -119,7 +121,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(misskeyAuthSession);
     }
   } catch (err) {
-    return sendApiError(500, `login error... ${err}`, 'SERVER_ERROR');
+    logger.error('misskey login error', err);
+    return sendApiError(500, 'Login error', 'SERVER_ERROR');
   }
 }
 

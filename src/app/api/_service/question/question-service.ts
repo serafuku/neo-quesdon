@@ -208,7 +208,8 @@ export class QuestionService {
       // notify send 기다라지 않고 200반환
       return NextResponse.json({}, { status: 200 });
     } catch (err) {
-      return NextResponse.json(`Error! ${err}`, { status: 500 });
+      this.logger.error('Fail to create question', err);
+      return sendApiError(500, 'Fail to create question', 'SERVER_ERROR');
     }
   }
 

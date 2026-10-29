@@ -4,6 +4,7 @@ import { validateStrict } from '@/utils/validator/strictValidator';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendApiError } from '@/api/_utils/apiErrorResponse/sendApiError';
 import { verifyToken } from '@/api/_utils/jwt/verify-jwt';
+import { TokenValidteError } from '@/app/api/_utils/jwt/ValidationErrorType';
 import { cookies } from 'next/headers';
 import { GetPrismaClient } from '@/api/_utils/getPrismaClient/get-prisma-client';
 import { profile, server, user } from '@prisma/client';
@@ -42,7 +43,8 @@ export async function POST(req: NextRequest) {
       throw new Error('Handle not match with JWT');
     }
   } catch (err) {
-    return sendApiError(401, `Auth Error! ${err}`, 'UNAUTHORIZED');
+    const detail = err instanceof TokenValidteError ? `Auth Error: ${err.code}` : 'Auth Error';
+    return sendApiError(401, detail, 'UNAUTHORIZED');
   }
   const prisma = GetPrismaClient.getClient();
   const user = await prisma.user.findUniqueOrThrow({ where: { handle: tokenPayload.handle } });
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     logger.warn('User Revoked Access token. JWT를 Revoke합니다... Detail:', err);
     await prisma.user.update({ where: { handle: user.handle }, data: { jwtIndex: user.jwtIndex + 1 } });
-    return sendApiError(401, `Refresh user failed!! ${err}`, 'REMOTE_ACCESS_TOKEN_REVOKED');
+    return sendApiError(401, 'Refresh user failed', 'REMOTE_ACCESS_TOKEN_REVOKED');
   }
 
   return NextResponse.json({ message: '야호 JWT 갱신에 성공했어요!' }, { status: 200 });

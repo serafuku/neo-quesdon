@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
       }).then((r) => r.json());
 
       if (!res.id) {
-        return sendApiError(500, `Mastodon Response: ${JSON.stringify(res)}`, 'MASTODON_ERROR');
+        logger.warn('Mastodon app create failed. Response:', JSON.stringify(res));
+        return sendApiError(500, 'Mastodon app create error', 'MASTODON_ERROR');
       }
       logger.log('New Mastodon OAuth2 App Created:', res);
 
@@ -94,7 +95,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(session);
     }
   } catch (err) {
-    return sendApiError(500, `login error... ${err}`, 'SERVER_ERROR');
+    logger.error('mastodon login error', err);
+    return sendApiError(500, 'Login error', 'SERVER_ERROR');
   }
 }
 
