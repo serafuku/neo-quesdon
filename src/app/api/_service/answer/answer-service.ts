@@ -352,7 +352,15 @@ export class AnswerService {
           },
         },
         include: {
-          answeredPerson: true,
+          answeredPerson: {
+            include: {
+              user: {
+                include: {
+                  server: { select: { instanceType: true } },
+                },
+              },
+            },
+          },
         },
         orderBy: {
           id: orderBy,
@@ -360,28 +368,35 @@ export class AnswerService {
         take: query_limit,
       });
 
-      const answerCount = await prisma.profile.findMany({
+      // 원본 엔티티를 응답에 포함하면 wordMuteList 등 비공개 프로필 필드가 유출됨.
+      // 반드시 DTO 로 변환해서 반환한다.
+      const answersDto: AnswerWithProfileDto[] = res.map((answer) => {
+        return {
+          ...answerEntityToDto(answer),
+          answeredPerson: profileToDto(
+            answer.answeredPerson,
+            answer.answeredPerson.user.hostName,
+            answer.answeredPerson.user.server.instanceType,
+          ),
+        };
+      });
+
+      const answerCount = await prisma.answer.count({
         where: {
-          handle: userHandle,
-        },
-        select: {
-          _count: {
-            select: {
-              answer: true,
-            },
-          },
+          answeredPersonHandle: userHandle,
         },
       });
 
       return NextResponse.json(
         {
-          answers: res,
-          count: answerCount[0]._count.answer,
+          answers: answersDto,
+          count: answerCount,
         },
         { headers: { 'Content-type': 'application/json', 'Cache-Control': 'private, no-store, max-age=0' } },
       );
     } catch (err) {
-      this.logger.log(err);
+      this.logger.error('Fail to fetch user answers', err);
+      return sendApiError(500, 'Fail to fetch user answers', 'SERVER_ERROR');
     }
   }
 
