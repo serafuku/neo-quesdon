@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { $Enums, profile } from '@prisma/client';
 
 export class UserSettingsUpdateDto {
@@ -36,7 +36,9 @@ export class UserSettingsUpdateDto {
   defaultHideFromTimeline?: boolean;
 
   @IsArray()
+  @ArrayMaxSize(200)
   @IsString({ each: true })
+  @MaxLength(1000, { each: true })
   wordMuteList: profile['wordMuteList'];
 
   @IsString()

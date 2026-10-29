@@ -4,6 +4,12 @@ import next from 'next';
 import { WebSocketServer } from 'ws';
 import { WebsocketService } from '@/app/api/_service/websocket/websocket-service';
 
+// 처리되지 않은 Promise rejection 이 서버 프로세스 전체를 죽이지 않도록 로깅만 한다.
+// (Node 15+ 기본 동작은 프로세스 크래시)
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+
 const dev = process.env.NODE_ENV !== 'production';
 const port = parseInt(process.env.PORT || '3000', 10);
 const app = next({ dev, turbo: true, turbopack: true });

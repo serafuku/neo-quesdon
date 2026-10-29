@@ -36,7 +36,21 @@ export class UserSettingsService {
   ) {
     const prisma = GetPrismaClient.getClient();
     if (data.wordMuteList) {
-      this.onUpdateWordMute(jwtBody.handle, data.wordMuteList);
+      // 저장 전에 정규식 유효성을 검사한다.
+      // 유효하지 않은 정규식이 저장되면 이후 해당 유저에게 오는 모든 질문이
+      // 워드뮤트 매칭 중 throw 되어 500 을 반환하게 된다.
+      const invalidPattern = data.wordMuteList.find((word) => {
+        try {
+          new RE2(word);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+      if (invalidPattern !== undefined) {
+        return sendApiError(400, `Invalid regular expression in wordMuteList: ${invalidPattern.slice(0, 100)}`, 'BAD_REQUEST');
+      }
+      await this.onUpdateWordMute(jwtBody.handle, data.wordMuteList);
     }
     try {
       const updated = await prisma.profile.update({ where: { handle: jwtBody.handle }, data: data });
@@ -51,25 +65,35 @@ export class UserSettingsService {
     const prisma = GetPrismaClient.getClient();
     const questions = await prisma.question.findMany({ where: { questioneeHandle: userHandle } });
     const pubsubService = RedisPubSubService.getInstance();
+
+    // 정규식을 미리 컴파일한다. (질문 수 x 패턴 수 만큼 재컴파일하지 않도록)
+    const regexes = wordMuteList
+      .map((word) => {
+        try {
+          return new RE2(word);
+        } catch {
+          // updateSettings 에서 사전 검증했으므로 여기서 실패하는 패턴은 없어야 하지만,
+          // 방어적으로 무시한다.
+          return undefined;
+        }
+      })
+      .filter((re): re is RE2 => re !== undefined);
+
     const deleted_ids: QuestionDeletedPayload['deleted_id'][] = [];
     for (const q of questions) {
-      const q_text = q.question;
-      for (const word of wordMuteList) {
-        const re = new RE2(word);
-        const matched = q_text.match(re);
-        if (matched) {
-          const d = await prisma.question.delete({ where: { id: q.id } });
-          deleted_ids.push(d.id);
-        }
+      const matched = regexes.some((re) => q.question.match(re));
+      if (matched) {
+        await prisma.question.delete({ where: { id: q.id } });
+        deleted_ids.push(q.id);
       }
     }
-    deleted_ids.forEach(async (deleted_id) => {
+    for (const deleted_id of deleted_ids) {
       const ev_payload: QuestionDeletedPayload = {
         deleted_id: deleted_id,
         question_numbers: questions.length - deleted_ids.length,
         handle: userHandle,
       };
       await pubsubService.pub<QuestionDeletedPayload>('question-deleted-event', ev_payload);
-    });
+    }
   }
 }
