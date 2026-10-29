@@ -30,7 +30,7 @@
     "ip-cidr": "^3.1.0",
     "jose": "^5.9.6",
     "module-alias": "^2.2.3",
-    "next": "^15.1.9",
+    "next": "^15.5.28",
     "pg": "^8.13.1",
     "re2": "^1.21.4",
     "react": "^18.3.1",
@@ -50,7 +50,7 @@
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "eslint": "^8.57.1",
-    "eslint-config-next": "15.0.1",
+    "eslint-config-next": "^15.5.28",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.37.2",
     "globals": "^15.12.0",
@@ -63,5 +63,13 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5",
     "typescript-eslint": "^8.15.0"
+  },
+  "allowScripts": {
+    "@prisma/client@6.5.0": true,
+    "@prisma/engines@6.5.0": true,
+    "esbuild@0.25.1": true,
+    "msgpackr-extract@3.0.4": true,
+    "prisma@6.5.0": true,
+    "re2@1.26.1": true
   }
 }
