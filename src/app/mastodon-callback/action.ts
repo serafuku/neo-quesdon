@@ -138,7 +138,7 @@ async function requestMastodonAccessCodeAndUserInfo(
       const res_verify = await fetch(`https://${payload.mastodonHost}/api/v1/accounts/verify_credentials`, {
         headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
       });
-      if (!res_token.ok) {
+      if (!res_verify.ok) {
         logger.warn('Mastodon Login Fail(token Verify). Mastodon Response: ', await res_verify.text());
         throw new Error('Mastodon Login Fail!');
       }
